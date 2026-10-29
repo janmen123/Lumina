@@ -124,6 +124,9 @@ namespace GlassBoard {
         [DataMember] public int FormatVersion;
         [DataMember(EmitDefaultValue=false)] public long SaveRevision;
         [DataMember] public bool Light = false;
+        [DataMember] public bool ThemeFollowSystem = false;
+        [DataMember] public bool BoardSortRecent = false;
+        [DataMember(EmitDefaultValue=false)] public List<string> RecentUse = new List<string>();
         [DataMember] public bool ReducedMotionBaselineApplied;
         [DataMember] public double DockGap = 12;
         [DataMember] public bool Imported = false;
@@ -557,7 +560,7 @@ namespace GlassBoard {
         internal Controller(bool desktop) {
             persistConfiguration=desktop;
             if(!desktop){Prefs=new Preferences();Board=new BoardWindow(this);Dock=new DockWindow(this);return;}
-            Prefs=Store.Load();bool resetMotion=MotionPresets.ApplyInitialBaseline(Prefs);DesktopPersistence.DesktopOnly=Prefs.AllDesktopLayer;if(!string.IsNullOrEmpty(Store.RecoveryMessage))MessageBox.Show(Store.RecoveryMessage,"GlassBoard 配置恢复");if(Prefs.Removed.Count>0||Prefs.RemovedIdentities.Count>0)MigrateRemovalIdentities(); Board=new BoardWindow(this); Dock=new DockWindow(this);glassSuppressed=Prefs.GameMode||(Prefs.AutoGameMode&&FullscreenState.Active());
+            Prefs=Store.Load();if(Prefs.ThemeFollowSystem)Prefs.Light=SystemTheme.IsLight();bool resetMotion=MotionPresets.ApplyInitialBaseline(Prefs);DesktopPersistence.DesktopOnly=Prefs.AllDesktopLayer;if(!string.IsNullOrEmpty(Store.RecoveryMessage))MessageBox.Show(Store.RecoveryMessage,"GlassBoard 配置恢复");if(Prefs.Removed.Count>0||Prefs.RemovedIdentities.Count>0)MigrateRemovalIdentities(); Board=new BoardWindow(this); Dock=new DockWindow(this);glassSuppressed=Prefs.GameMode||(Prefs.AutoGameMode&&FullscreenState.Active());
             Tray=new Forms.NotifyIcon {Text="GlassBoard v0.2.0 · 玻璃启动台",Icon=Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Drawing.SystemIcons.Application,Visible=true};
             RefreshTrayMenu();
             Tray.DoubleClick+=(s,e)=>Toggle(true);
@@ -565,7 +568,17 @@ namespace GlassBoard {
             if(Prefs.HotkeyMigrationConflict){Tray.ShowBalloonTip(4500,"快捷键升级提示","原有组合与 Ctrl+Alt+H 冲突，已保留原设置并关闭新增项。可在设置中录制新组合。",Forms.ToolTipIcon.Info);Save();}
             RefreshWidgets();
             if(!Prefs.Imported) {Toggle(true);Import();}
-            ApplyGameMode();if(resetMotion)Save();StartDesktopAutoSync();
+            ApplyGameMode();if(resetMotion)Save();StartDesktopAutoSync();SystemTheme.Watch();SystemTheme.Changed+=SystemThemeChanged;
+        }
+        void SystemThemeChanged(){
+            if(!Prefs.ThemeFollowSystem)return;
+            var app=Application.Current;if(app==null||app.Dispatcher==null)return;
+            app.Dispatcher.BeginInvoke(DispatcherPriority.Background,new Action(()=>{
+                if(ShuttingDown||!Prefs.ThemeFollowSystem)return;
+                bool light=SystemTheme.IsLight();if(light==Prefs.Light)return;
+                Prefs.Light=light;Save();
+                try {Dock.Refresh();Board.SyncGroups();Board.Render();RefreshWidgets();} catch(Exception ex) {Store.Log(ex);}
+            }));
         }
         string Shortcut(int id) {return HotkeyRules.Label(Prefs.Hotkeys.First(k=>k.ActionId==id));}
         public void RefreshTrayMenu() {
@@ -599,6 +612,7 @@ namespace GlassBoard {
         }
         public void Launch(Entry entry) {
             bool handled=false;
+            RecentRules.Touch(Prefs,entry==null?null:entry.Path);
             try { handled=RunningWindows.Toggle(entry,Board==null?IntPtr.Zero:Board.foregroundHint); }
             catch(Exception ex) { Store.Log(ex); Store.Trace("LAUNCH toggle failed entry="+entry.Name+" error="+ex.Message); }
             if(handled) { Board.CollapseSmooth(); return; }
@@ -713,7 +727,9 @@ namespace GlassBoard {
                 };
                 Func<StackPanel,string,bool,Action<bool>,CheckBox> check=(panel,label,value,change)=>{var control=new CheckBox{Content=label,IsChecked=value,Foreground=Brushes.White,Margin=new Thickness(0,10,0,8)};panel.Children.Add(control);control.Checked+=(s,e)=>change(true);control.Unchecked+=(s,e)=>change(false);return control;};
                 Func<StackPanel,string,string[],int,Action<int>,ComboBox> combo=(panel,label,items,value,change)=>{panel.Children.Add(new TextBlock{Text=label,Margin=new Thickness(0,12,0,6)});var control=new ComboBox{ItemsSource=items,SelectedIndex=value,Height=32};panel.Children.Add(control);control.SelectionChanged+=(s,e)=>{if(control.SelectedIndex>=0)change(control.SelectedIndex);};return control;};
-                check(appearance,"使用浅色玻璃",Prefs.Light,value=>{Prefs.Light=value;live();});
+                check(appearance,"使用浅色玻璃",Prefs.Light,value=>{Prefs.Light=value;if(value)Prefs.ThemeFollowSystem=false;live();});
+                check(appearance,"跟随 Windows 深浅色主题",Prefs.ThemeFollowSystem,value=>{Prefs.ThemeFollowSystem=value;if(value)Prefs.Light=SystemTheme.IsLight();live();});
+                check(appearance,"按最近使用排序图标",Prefs.BoardSortRecent,value=>{Prefs.BoardSortRecent=value;Save();Board.Render();});
                 combo(appearance,"大面板尺寸",new string[]{"舒适 · 中号","宽阔 · 大号","铺满 · 全屏"},Prefs.PanelSize,value=>{Prefs.PanelSize=value;Prefs.Placement.PanelWidth=Prefs.Placement.PanelHeight=null;Save();});
                 range(appearance,"大面板透明度",0,100,100-(Prefs.OpacityPercent??72),5,"%",value=>{Opacity(100-value);Save();});
                 check(appearance,"所有组件置于桌面层（统一覆盖各自置顶）",Prefs.AllDesktopLayer,value=>{Prefs.AllDesktopLayer=value;DesktopPersistence.SetDesktopOnly(value);Save();});
@@ -869,7 +885,7 @@ namespace GlassBoard {
             if(ShuttingDown)return;
             try{if(settingsWindow!=null)settingsWindow.Close();Store.Save(Prefs);if(widgets!=null&&!widgets.Notes.Flush())throw new IOException("备忘录未能保存，请先导出备忘录或检查配置目录。");}
             catch(Exception ex){Store.Log(ex);MessageBox.Show("退出前保存失败，软件仍保持运行，避免丢失当前内容。\n"+ex.Message,"GlassBoard");return;}
-            ShuttingDown=true;
+            ShuttingDown=true;SystemTheme.Changed-=SystemThemeChanged;SystemTheme.Stop();
             try{DesktopVisibility.RestoreOriginal();}catch(Exception ex){Store.Log(ex);}try{TaskbarAutoHide.Restore();}catch(Exception ex){Store.Log(ex);}
             try{CloseControlCenter();CloseWidgets();}catch(Exception ex){Store.Log(ex);}if(Tray!=null){Tray.Visible=false;Tray.Dispose();}Dock.ReleaseHotkey();Application.Current.Shutdown();
         }
@@ -1167,7 +1183,7 @@ namespace GlassBoard {
             Render(true);
         }
         public void SyncGroups(){if(addExisting!=null)addExisting.IsEnabled=currentGroup!="全部";if(groups==null)return;syncingGroups=true;var names=new string[]{"全部","未分组"}.Concat(C.Prefs.Groups).ToList();groups.ItemsSource=names;if(!names.Contains(currentGroup)){currentGroup="全部";selected.Clear();page=0;}groups.SelectedItem=currentGroup;if(moveGroup!=null){string name=moveGroup.SelectedItem as string;moveGroup.ItemsSource=names.Skip(1).ToList();moveGroup.SelectedItem=names.Contains(name)?name:"未分组";}syncingGroups=false;if(addExisting!=null)addExisting.IsEnabled=currentGroup!="全部";}
-        List<Entry> Filtered() {string q=C.Prefs.BoardHideSearch||Search==null?"":Search.Text.Trim();var list=C.Prefs.Apps.Where(a=>(C.Prefs.BoardHideGroups||currentGroup=="全部"||FeatureRules.InGroup(a,currentGroup))&&LayoutRules.Matches(a.Name,q)).ToList();if(!C.Prefs.BoardHideGroups&&docFilter!="全部"&&string.Equals(currentGroup,C.Prefs.DesktopDocsGroup,StringComparison.OrdinalIgnoreCase))list=list.Where(a=>DesktopAutoRules.DocKind(a.Path)==docFilter).ToList();return list;}
+        List<Entry> Filtered() {string q=C.Prefs.BoardHideSearch||Search==null?"":Search.Text.Trim();var list=C.Prefs.Apps.Where(a=>(C.Prefs.BoardHideGroups||currentGroup=="全部"||FeatureRules.InGroup(a,currentGroup))&&LayoutRules.Matches(a.Name,q)).ToList();if(!C.Prefs.BoardHideGroups&&docFilter!="全部"&&string.Equals(currentGroup,C.Prefs.DesktopDocsGroup,StringComparison.OrdinalIgnoreCase))list=list.Where(a=>DesktopAutoRules.DocKind(a.Path)==docFilter).ToList();if(C.Prefs.BoardSortRecent&&list.Count>1)list=list.OrderByDescending(a=>RecentRules.Stamp(C.Prefs,a.Path)).ThenBy(a=>a.Name,StringComparer.CurrentCultureIgnoreCase).ToList();return list;}
         public void SetStatus(string text) {pendingStatus=text;if(Status!=null)Status.Text=text;}
         void SetSelectionMode(bool enabled) {editing=enabled;selected.Clear();dragEntry=null;if(editSelection!=null)editSelection.Content=enabled?"完成":"多选";}
         public void FinishSelection() {SetSelectionMode(false);}

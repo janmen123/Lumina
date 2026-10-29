@@ -11,6 +11,7 @@ namespace GlassBoard {
         public void LaunchDock(Entry entry){LaunchDock(entry,IntPtr.Zero);}
         public void LaunchDock(Entry entry,IntPtr hint){
             bool handled=false;
+            RecentRules.Touch(Prefs,entry==null?null:entry.Path);
             try{handled=RunningWindows.ToggleDock(entry,hint);}
             catch(Exception ex){Store.Log(ex);Store.Trace("LAUNCH toggle failed entry="+entry.Name+" error="+ex.GetType().Name+" "+ex.Message);}
             if(handled){Board.CollapseSmooth();return;}
