@@ -8,22 +8,22 @@ using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace GlassBoard {
-    // Hover preview for Dock icons: up to four glass bubbles in a row, each holding a
+    // Hover preview for Dock icons: up to four frosted bubbles in a row, each holding a
     // live DWM thumbnail of one window. Hovering a bubble grows it and nudges the
     // neighbours aside; clicking it brings that window to the front.
     public sealed class ThumbnailPopup : IDisposable {
         [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr hwnd,out RECT rect);
         [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr hwnd,IntPtr after,int x,int y,int cx,int cy,uint flags);
         [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr handle,int command);
-        [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT point);
-        [StructLayout(LayoutKind.Sequential)] struct POINT {public int X;public int Y;}
         [DllImport("user32.dll")] static extern bool DestroyWindow(IntPtr handle);
+        [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT point);
         [DllImport("dwmapi.dll")] static extern int DwmRegisterThumbnail(IntPtr dest,IntPtr src,out IntPtr thumb);
         [DllImport("dwmapi.dll")] static extern int DwmUnregisterThumbnail(IntPtr thumb);
         [DllImport("dwmapi.dll")] static extern int DwmUpdateThumbnailProperties(IntPtr thumb,ref ThumbnailProperties properties);
         [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
         [DllImport("user32.dll")] static extern int SetWindowCompositionAttribute(IntPtr hwnd,ref WindowCompositionData data);
         [StructLayout(LayoutKind.Sequential)] struct RECT {public int Left,Top,Right,Bottom;}
+        [StructLayout(LayoutKind.Sequential)] struct POINT {public int X;public int Y;}
         [StructLayout(LayoutKind.Sequential)] struct ThumbnailProperties {
             public int Flags; public RECT Destination; public RECT Source;
             public byte Opacity; public bool Visible; public bool SourceClientAreaOnly;
@@ -37,33 +37,33 @@ namespace GlassBoard {
         const int RectFlag=0x1,OpacityFlag=0x4,VisibleFlag=0x8,SourceClientFlag=0x10;
 
         const int MaxCards=4;
-        const double CardWidth=248,Overlap=26,Radius=20,TitleHeight=26,MinImage=150,MaxImage=190,HoverScale=1.38;
-        const double NeighbourPush=1.28;
+        const double CardWidth=208,Overlap=22,Radius=18,TitleHeight=24,MinImage=120,MaxImage=160,HoverScale=1.38;
+        const double NeighbourPush=1.28,Inset=7;
 
         public event Action<IntPtr> Clicked;
         public event Action Hidden;
         public event Action PointerOut;
 
         readonly List<Card> cards=new List<Card>();
-        readonly DispatcherTimer tick;
         readonly Point anchor;
         readonly double scale;
         int hovered=-1;
-        bool disposed;
+        bool disposed,animating,inside;
+        DateTime animStart;
 
         sealed class Card {
             public IntPtr Target;
             public HwndSource Source;
             public IntPtr Thumb;
             public Border Root;
-            public TextBlock Title;
             public double RestX,RestY,RestW,RestH;
             public double X,Y,W,H;
+            public double StartX,StartY,StartW,StartH;
             public double TargetX,TargetY,TargetW,TargetH;
+            public int ThumbW=-1;
         }
 
         public bool PointerInside {get {return inside;}}
-        bool inside;
         public bool IsUsable {get {return cards.Count>0;}}
         public IntPtr Handle {get {return cards.Count==0?IntPtr.Zero:cards[0].Source.Handle;}}
 
@@ -85,25 +85,24 @@ namespace GlassBoard {
             }
             double rowWidth=(count-1)*(CardWidth-Overlap)+CardWidth;
             Rect work=SystemParameters.WorkArea;
-            double originX=Math.Max(work.Left+8,Math.Min(work.Right-rowWidth-8,anchor.X-rowWidth/2));
-            double bottom=Math.Max(work.Top+sizes[0]+8,anchor.Y-8);
+            double originX=Math.Max(work.Left+6,Math.Min(work.Right-rowWidth-6,anchor.X-rowWidth/2));
+            double bottom=Math.Max(work.Top+sizes[0]+6,anchor.Y-1);
             for(int i=0;i<count;i++) {
                 double x=originX+i*(CardWidth-Overlap);
                 double h=sizes[i];
-                Card card=Create(windows[i],x,bottom-h,CardWidth,h,i);
+                Card card=Create(windows[i],x,bottom-h,CardWidth,h);
                 if(card==null)continue;
                 card.RestX=x;card.RestY=bottom-h;card.RestW=CardWidth;card.RestH=h;
                 card.X=x;card.Y=bottom-h;card.W=CardWidth;card.H=h;
-                card.TargetX=x;card.TargetY=card.Y;card.TargetW=CardWidth;card.TargetH=h;
+                card.StartX=card.TargetX=x;card.StartY=card.TargetY=card.Y;
+                card.StartW=card.TargetW=CardWidth;card.StartH=card.TargetH=h;
                 cards.Add(card);
                 Apply(card);
             }
-            tick=new DispatcherTimer {Interval=TimeSpan.FromMilliseconds(16)};
-            tick.Tick+=(s,e)=>Step();
-            tick.Start();
+            if(cards.Count>0)CompositionTarget.Rendering+=OnFrame;
         }
 
-        Card Create(RunningWindow window,double x,double y,double w,double h,int index) {
+        Card Create(RunningWindow window,double x,double y,double w,double h) {
             var parameters=new HwndSourceParameters("GlassBoardCard") {
                 Width=(int)Math.Round(w*scale),Height=(int)Math.Round(h*scale),
                 WindowStyle=unchecked((int)0x80000000),
@@ -118,15 +117,15 @@ namespace GlassBoard {
             try {ApplyGlass(glass);} catch {}
             var title=new TextBlock {
                 Text=string.IsNullOrEmpty(window.Title)?"窗口":window.Title,
-                Foreground=new SolidColorBrush(Color.FromArgb(0xE8,0xFF,0xFF,0xFF)),
-                FontSize=11.5,VerticalAlignment=VerticalAlignment.Center,
-                Margin=new Thickness(12,0,12,0),TextTrimming=TextTrimming.CharacterEllipsis
+                Foreground=new SolidColorBrush(Color.FromArgb(0xF0,0xFF,0xFF,0xFF)),
+                FontSize=11,VerticalAlignment=VerticalAlignment.Center,
+                Margin=new Thickness(11,0,11,0),TextTrimming=TextTrimming.CharacterEllipsis
             };
-            var titleBar=new Border {Height=TitleHeight,VerticalAlignment=VerticalAlignment.Bottom,Background=new SolidColorBrush(Color.FromArgb(0x66,0x08,0x0C,0x12)),Child=title};
+            var titleBar=new Border {Height=TitleHeight,VerticalAlignment=VerticalAlignment.Bottom,Background=new SolidColorBrush(Color.FromArgb(0x30,0x00,0x00,0x00)),Child=title};
             var root=new Border {
                 CornerRadius=new CornerRadius(Radius),
-                Background=new SolidColorBrush(Color.FromArgb(0xB4,0x14,0x19,0x23)),
-                BorderBrush=new SolidColorBrush(Color.FromArgb(0x38,0xFF,0xFF,0xFF)),
+                Background=new SolidColorBrush(Color.FromArgb(0x22,0xFF,0xFF,0xFF)),
+                BorderBrush=new SolidColorBrush(Color.FromArgb(0x58,0xFF,0xFF,0xFF)),
                 BorderThickness=new Thickness(1),
                 Cursor=System.Windows.Input.Cursors.Hand
             };
@@ -135,7 +134,7 @@ namespace GlassBoard {
             root.Child=titleBar;
             IntPtr thumb=IntPtr.Zero;
             if(DwmRegisterThumbnail(glass,window.Handle,out thumb)!=0)thumb=IntPtr.Zero;
-            var card=new Card {Target=window.Handle,Source=source,Thumb=thumb,Root=root,Title=title,RestH=h};
+            var card=new Card {Target=window.Handle,Source=source,Thumb=thumb,Root=root,RestH=h};
             root.MouseLeftButtonUp+=(s,e)=>{
                 e.Handled=true;
                 var handler=Clicked;
@@ -146,10 +145,9 @@ namespace GlassBoard {
             return card;
         }
 
-        bool cursorInside;
-
+        // A light frosted veil; alpha stays low so the wallpaper keeps showing through.
         static void ApplyGlass(IntPtr hwnd) {
-            var policy=new AccentPolicy {State=AcrylicBlurBehind,Flags=2,GradientColor=unchecked((int)0xCC12161F)};
+            var policy=new AccentPolicy {State=AcrylicBlurBehind,Flags=2,GradientColor=unchecked((int)0x4C1E1A17)};
             IntPtr buffer=Marshal.AllocHGlobal(Marshal.SizeOf(typeof(AccentPolicy)));
             try {
                 Marshal.StructureToPtr(policy,buffer,false);
@@ -158,7 +156,8 @@ namespace GlassBoard {
             } finally {Marshal.FreeHGlobal(buffer);}
         }
 
-        void Step() {
+        void OnFrame(object sender,EventArgs e) {
+            if(disposed)return;
             POINT cursor;
             bool hasCursor=GetCursorPos(out cursor);
             int nextHover=-1;
@@ -170,22 +169,36 @@ namespace GlassBoard {
                     if(cursor.X>=left&&cursor.X<=right&&cursor.Y>=top&&cursor.Y<=bottom){nextHover=i;break;}
                 }
             }
-            hovered=nextHover;
+            if(nextHover!=hovered)SetHover(nextHover);
             bool wasInside=inside;
             inside=hasCursor&&(nextHover>=0);
             if(wasInside&&!inside) {
-                var outHandler=PointerOut;
-                if(outHandler!=null)outHandler();
+                var handler=PointerOut;
+                if(handler!=null)handler();
             }
-            bool moved=false;
-            double hoverCenter=0;
-            if(hovered>=0) {
-                Card h=cards[hovered];
-                hoverCenter=h.RestX+h.RestW/2;
-            }
+            if(!animating)return;
+            double t=(DateTime.UtcNow-animStart).TotalMilliseconds/200.0;
+            if(t<0)t=0;if(t>1)t=1;
+            double ease=1-Math.Pow(1-t,3);
             for(int i=0;i<cards.Count;i++) {
                 Card card=cards[i];
-                if(i==hovered) {
+                card.X=card.StartX+(card.TargetX-card.StartX)*ease;
+                card.Y=card.StartY+(card.TargetY-card.StartY)*ease;
+                card.W=card.StartW+(card.TargetW-card.StartW)*ease;
+                card.H=card.StartH+(card.TargetH-card.StartH)*ease;
+                Apply(card);
+            }
+            if(t>=1)animating=false;
+        }
+
+        void SetHover(int index) {
+            hovered=index;
+            double hoverCenter=0;
+            if(index>=0)hoverCenter=cards[index].RestX+cards[index].RestW/2;
+            for(int i=0;i<cards.Count;i++) {
+                Card card=cards[i];
+                card.StartX=card.X;card.StartY=card.Y;card.StartW=card.W;card.StartH=card.H;
+                if(i==index) {
                     card.TargetW=card.RestW*HoverScale;
                     card.TargetH=card.RestH*HoverScale;
                     card.TargetX=card.RestX-(card.TargetW-card.RestW)/2;
@@ -193,29 +206,26 @@ namespace GlassBoard {
                 } else {
                     card.TargetW=card.RestW;
                     card.TargetH=card.RestH;
-                    if(hovered>=0) {
-                        double center=card.RestX+card.RestW/2;
-                        double next=hoverCenter+(center-hoverCenter)*NeighbourPush;
-                        card.TargetX=next-card.RestW/2;
-                    } else card.TargetX=card.RestX;
                     card.TargetY=card.RestY;
+                    if(index>=0) {
+                        double center=card.RestX+card.RestW/2;
+                        double moved=hoverCenter+(center-hoverCenter)*NeighbourPush;
+                        card.TargetX=moved-card.RestW/2;
+                    } else card.TargetX=card.RestX;
                 }
-                double dx=card.TargetX-card.X,dy=card.TargetY-card.Y,dw=card.TargetW-card.W,dh=card.TargetH-card.H;
-                if(Math.Abs(dx)<.4&&Math.Abs(dy)<.4&&Math.Abs(dw)<.4&&Math.Abs(dh)<.4)continue;
-                card.X+=dx*.24;card.Y+=dy*.24;card.W+=dw*.24;card.H+=dh*.24;
-                Apply(card);
-                moved=true;
             }
-            if(moved&&hovered>=0) {
-                Card h=cards[hovered];
-                SetWindowPos(h.Source.Handle,IntPtr.Zero,(int)Math.Round(h.X*scale),(int)Math.Round(h.Y*scale),(int)Math.Round(h.W*scale),(int)Math.Round(h.H*scale),SwpNoActivate);
-            }
+            animStart=DateTime.UtcNow;
+            animating=true;
+            if(index>=0)SetWindowPos(cards[index].Source.Handle,IntPtr.Zero,(int)Math.Round(cards[index].X*scale),(int)Math.Round(cards[index].Y*scale),(int)Math.Round(cards[index].W*scale),(int)Math.Round(cards[index].H*scale),SwpNoActivate);
         }
 
         void Apply(Card card) {
             SetWindowPos(card.Source.Handle,IntPtr.Zero,(int)Math.Round(card.X*scale),(int)Math.Round(card.Y*scale),(int)Math.Round(card.W*scale),(int)Math.Round(card.H*scale),SwpNoActivate);
             if(card.Thumb==IntPtr.Zero)return;
-            int pad=(int)Math.Round(8*scale);
+            int width=(int)Math.Round(card.W*scale);
+            if(Math.Abs(width-card.ThumbW)<2)return;
+            card.ThumbW=width;
+            int pad=(int)Math.Round(Inset*scale);
             int title=(int)Math.Round(TitleHeight*scale);
             var properties=new ThumbnailProperties {
                 Flags=RectFlag|OpacityFlag|VisibleFlag|SourceClientFlag,
@@ -232,7 +242,7 @@ namespace GlassBoard {
         public void Dispose() {
             if(disposed)return;
             disposed=true;
-            if(tick!=null)tick.Stop();
+            try {CompositionTarget.Rendering-=OnFrame;} catch {}
             foreach(Card card in cards) {
                 try {if(card.Thumb!=IntPtr.Zero)DwmUnregisterThumbnail(card.Thumb);} catch {}
                 try {if(card.Source!=null){DestroyWindow(card.Source.Handle);card.Source.Dispose();}} catch {}

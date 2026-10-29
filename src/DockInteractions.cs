@@ -105,8 +105,12 @@ namespace GlassBoard {
             try{
                 var dpi=VisualTreeHelper.GetDpi(this);double scale=dpi.DpiScaleX<=0?1:dpi.DpiScaleX;
                 DockCursor.POINT cursor;Point anchorDip;
-                if(DockCursor.TryGet(out cursor))anchorDip=new Point(cursor.X/scale,Top-6);
-                else anchorDip=new Point(Left+ActualWidth/2,Top-6);
+                // Sit right on the icon row: some themes keep the glass well above the icons.
+                // The dock keeps its glass above the icon row; sit the row of bubbles just on top
+                // of the icons themselves so it reads as belonging to the dock.
+                double baseY=Top+26;
+                if(DockCursor.TryGet(out cursor))anchorDip=new Point(cursor.X/scale,baseY);
+                else anchorDip=new Point(Left+ActualWidth/2,baseY);
                 var popup=new ThumbnailPopup(windows,anchorDip,scale);
                 thumbnails=popup;
                 popup.PointerOut+=HideThumbnailsSoon;
