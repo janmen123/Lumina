@@ -35,7 +35,10 @@ namespace GlassBoard {
             return Math.Max(1,(count+capacity-1)/capacity);
         }
         public static bool Matches(string name,string query) {
-            return (query??"").Split(new char[]{' '},StringSplitOptions.RemoveEmptyEntries).All(word=>(name??"").IndexOf(word,StringComparison.CurrentCultureIgnoreCase)>=0);
+            string text=name??"";
+            if(string.IsNullOrEmpty((query??"").Trim()))return true;
+            if((query??"").Split(new char[]{' '},StringSplitOptions.RemoveEmptyEntries).All(word=>text.IndexOf(word,StringComparison.CurrentCultureIgnoreCase)>=0))return true;
+            return PinyinRules.Matches(text,query);
         }
         public static double GlassOpacity(double value) {return double.IsNaN(value)||double.IsInfinity(value)?72:Math.Max(0,Math.Min(100,value));}
         public static bool AllowImport(string path,IEnumerable<string> removed,bool manual) {return manual||!removed.Any(p=>string.Equals(p,path,StringComparison.OrdinalIgnoreCase));}
@@ -1079,7 +1082,7 @@ namespace GlassBoard {
         readonly HashSet<string> selected=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         WrapPanel bulkBar;RowDefinition bulkRow;TextBlock selectionCount;Button selectAll,clearSelection,deleteSelected,undoRemoval,editSelection,moveSelected;
         ContextMenu iconMenu;ComboBox groups,moveGroup;string currentGroup="全部";bool syncingGroups,iconSizeSync;Slider boardIconSlider;TextBlock iconSizeText;Button addExisting;Thumb moveGrip,resizeGrip;int visibilitySerial;WrapPanel folderBar,docBar;string docFilter="全部",docSignature="";bool foldersVisible {get{return !C.Prefs.BoardHideGroups&&!C.Prefs.BoardHideFolders;}}
-        readonly DispatcherTimer idleRelease=new DispatcherTimer{Interval=TimeSpan.FromSeconds(20)};bool preparingView;string pendingStatus;
+        readonly DispatcherTimer idleRelease=new DispatcherTimer{Interval=TimeSpan.FromSeconds(20)};bool preparingView;string pendingStatus;string focusPath;
         public string CurrentGroup {get{return currentGroup;}}
         public void ClearSearch(){if(Search!=null)Search.Clear();}
         public BoardWindow(Controller c):base(42) {
@@ -1149,7 +1152,20 @@ namespace GlassBoard {
             var hint=new TextBlock{Text="搜索应用、文件夹…",Foreground=MutedBrush,Margin=new Thickness(18,0,0,0),VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false};searchGrid.Children.Add(hint);
             Search=new TextBox{Text=query,FontSize=15,Foreground=TextBrush,Background=Brushes.Transparent,BorderThickness=new Thickness(0),CaretBrush=TextBrush,VerticalContentAlignment=VerticalAlignment.Center,Padding=new Thickness(18,0,18,0)};
             hint.Visibility=string.IsNullOrEmpty(query)?Visibility.Visible:Visibility.Hidden;
-            Search.TextChanged+=(s,e)=>{hint.Visibility=Search.Text.Length==0?Visibility.Visible:Visibility.Hidden;page=0;Render(true);};searchGrid.Children.Add(Search);header.Children.Add(searchHost);searchHost.Visibility=C.Prefs.BoardHideSearch?Visibility.Collapsed:Visibility.Visible;
+            Search.TextChanged+=(s,e)=>{hint.Visibility=Search.Text.Length==0?Visibility.Visible:Visibility.Hidden;page=0;Render(true);};
+            Search.PreviewKeyDown+=(s,e)=>{
+                if(e.Key==Key.Down||e.Key==Key.Up){
+                    var list=Filtered();if(list.Count==0)return;
+                    int index=list.FindIndex(x=>string.Equals(x.Path,focusPath,StringComparison.OrdinalIgnoreCase));
+                    if(e.Key==Key.Down)index=index<0?0:Math.Min(list.Count-1,index+1);
+                    else index=index<=0?list.Count-1:index-1;
+                    focusPath=list[index].Path;page=index/capacity;Render();e.Handled=true;
+                } else if(e.Key==Key.Enter){
+                    var list=Filtered();if(list.Count==0)return;
+                    var target=list.FirstOrDefault(x=>string.Equals(x.Path,focusPath,StringComparison.OrdinalIgnoreCase))??list[0];
+                    focusPath=null;C.Launch(target);e.Handled=true;
+                } else if(e.Key==Key.Escape) {focusPath=null;Render();}
+            };searchGrid.Children.Add(Search);header.Children.Add(searchHost);searchHost.Visibility=C.Prefs.BoardHideSearch?Visibility.Collapsed:Visibility.Visible;
             if(C.Prefs.BoardHideSearch)header.Children.Add(new TextBlock{Text=C.Prefs.BoardHideGroups?"全部应用":currentGroup,Foreground=TextBrush,FontSize=18,Margin=new Thickness(12,0,0,8),VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false});
             var add=Button("+ 批量添加",(s,e)=>C.Choose(),106);Grid.SetColumn(add,1);header.Children.Add(add);
             editSelection=Button(editing?"完成":"多选",null,68);editSelection.ToolTip="跨页勾选，一次移除多个入口";editSelection.Click+=(s,e)=>{SetSelectionMode(!editing);Search.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));Render();};Grid.SetColumn(editSelection,2);header.Children.Add(editSelection);
@@ -1195,14 +1211,15 @@ namespace GlassBoard {
             deleteSelected.Content="移除已选（"+selected.Count+"）";undoRemoval.IsEnabled=C.CanUndoRemoval;undoRemoval.ToolTip="撤销："+C.UndoLabel+" · Ctrl+Z";undoRemoval.Visibility=C.CanUndoRemoval?Visibility.Visible:Visibility.Collapsed;selectionCount.Text=editing?"已选 "+selected.Count+" · 跨页保留":"可撤销最近操作";
         }
         public void Render(bool animate=false) {
-            if(Tiles==null||(!IsVisible&&!preparingView)){viewRenderDirty=true;return;}viewRenderDirty=false;viewDataKey=ViewDataKey();UpdateSelectionBar();RefreshFolders();RefreshDocBar();Tiles.Children.Clear();var entries=Filtered();int total=LayoutRules.Pages(entries.Count,capacity);page=Math.Min(page,total-1);Pager.Text=(page+1)+" / "+total;Empty.Visibility=entries.Count==0?Visibility.Visible:Visibility.Collapsed;if(pendingStatus!=null)Status.Text=pendingStatus;
+            if(Tiles==null||(!IsVisible&&!preparingView)){viewRenderDirty=true;return;}viewRenderDirty=false;viewDataKey=ViewDataKey();UpdateSelectionBar();RefreshFolders();RefreshDocBar();Tiles.Children.Clear();var entries=Filtered();if(focusPath!=null&&!entries.Any(x=>string.Equals(x.Path,focusPath,StringComparison.OrdinalIgnoreCase)))focusPath=null;int total=LayoutRules.Pages(entries.Count,capacity);page=Math.Min(page,total-1);Pager.Text=(page+1)+" / "+total;Empty.Visibility=entries.Count==0?Visibility.Visible:Visibility.Collapsed;if(pendingStatus!=null)Status.Text=pendingStatus;
             int index=0;foreach(var a in entries.Skip(page*capacity).Take(capacity)) Tiles.Children.Add(Tile(a,index++,animate));
         }
         void ChangePage(int delta) {var entries=Filtered();int total=LayoutRules.Pages(entries.Count,capacity);int next=Math.Max(0,Math.Min(total-1,page+delta));if(next==page)return;page=next;Render();AnimatePage(delta);}
         FrameworkElement Tile(Entry a,int index,bool animate) {
             bool isSelected=editing&&selected.Contains(a.Path);
+            bool isFocused=focusPath!=null&&string.Equals(a.Path,focusPath,StringComparison.OrdinalIgnoreCase);
             var selectedBrush=new SolidColorBrush(Color.FromArgb(48,111,167,255));
-            var tile=new Border{Tag=a,Background=isSelected?selectedBrush:Brushes.Transparent,BorderThickness=new Thickness(1),BorderBrush=isSelected?new SolidColorBrush(Color.FromArgb(150,146,187,255)):Brushes.Transparent,CornerRadius=new CornerRadius(18),Margin=new Thickness(C.Prefs.BoardIconGap),Padding=new Thickness(4),Cursor=Cursors.Hand,ToolTip=a.Name,ContextMenu=editing?null:new ContextMenu(),AllowDrop=!editing};
+            var tile=new Border{Tag=a,Background=isSelected?selectedBrush:isFocused?new SolidColorBrush(Color.FromArgb(34,111,167,255)):Brushes.Transparent,BorderThickness=new Thickness(isFocused?2:1),BorderBrush=isSelected||isFocused?new SolidColorBrush(Color.FromArgb(150,146,187,255)):Brushes.Transparent,CornerRadius=new CornerRadius(18),Margin=new Thickness(C.Prefs.BoardIconGap),Padding=new Thickness(4),Cursor=Cursors.Hand,ToolTip=a.Name,ContextMenu=editing?null:new ContextMenu(),AllowDrop=!editing};
             tile.ContextMenuOpening+=(sender,eventArgs)=>{if(editing){eventArgs.Handled=true;return;}eventArgs.Handled=true;var menu=C.Menu(a,currentGroup);tile.ContextMenu=menu;iconMenu=menu;menu.Closed+=(ss,ee)=>{if(iconMenu==menu)iconMenu=null;};menu.PlacementTarget=tile;menu.IsOpen=true;};
             var container=new Grid();tile.Child=container;var box=new StackPanel{VerticalAlignment=VerticalAlignment.Center};container.Children.Add(box);
             var icon=FeatureUi.Icon(a,C.Prefs.Dock.ShowShortcutOverlays,C.Prefs.Dock.SharperIcons);
@@ -1214,7 +1231,7 @@ namespace GlassBoard {
                 var check=new CheckBox{IsChecked=isSelected,IsHitTestVisible=false,Focusable=false,HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,Margin=new Thickness(2)};container.Children.Add(check);
             }
             var scale=new ScaleTransform(1,1);var lift=new TranslateTransform();var transforms=new TransformGroup();transforms.Children.Add(scale);transforms.Children.Add(lift);var iconVisual=box.Children[0] as FrameworkElement;iconVisual.RenderTransform=transforms;iconVisual.RenderTransformOrigin=new Point(.5,.5);
-            Action<bool> hover=over=>{tile.Background=isSelected?selectedBrush:over?new SolidColorBrush(Color.FromArgb(24,255,255,255)):Brushes.Transparent;if(!C.Prefs.Dock.HoverMotion)return;var ease=new CubicEase{EasingMode=EasingMode.EaseOut};
+            Action<bool> hover=over=>{tile.Background=isSelected?selectedBrush:isFocused?new SolidColorBrush(Color.FromArgb(34,111,167,255)):over?new SolidColorBrush(Color.FromArgb(24,255,255,255)):Brushes.Transparent;if(!C.Prefs.Dock.HoverMotion)return;var ease=new CubicEase{EasingMode=EasingMode.EaseOut};
                 scale.BeginAnimation(ScaleTransform.ScaleXProperty,new DoubleAnimation(over&&InteractionRules.ZoomHover(C.Prefs.Dock.HoverAnimationStyle)?1+.05*MotionLevel:1,TimeSpan.FromMilliseconds(170)){EasingFunction=ease});scale.BeginAnimation(ScaleTransform.ScaleYProperty,new DoubleAnimation(over&&InteractionRules.ZoomHover(C.Prefs.Dock.HoverAnimationStyle)?1+.05*MotionLevel:1,TimeSpan.FromMilliseconds(170)){EasingFunction=ease});lift.BeginAnimation(TranslateTransform.YProperty,new DoubleAnimation(over&&InteractionRules.LiftHover(C.Prefs.Dock.HoverAnimationStyle)?-3*MotionLevel:0,TimeSpan.FromMilliseconds(170)){EasingFunction=ease});};
             tile.MouseEnter+=(s,e)=>hover(true);tile.MouseLeave+=(s,e)=>hover(false);
             tile.MouseLeftButtonDown+=(s,e)=>{dragStart=e.GetPosition(this);dragEntry=a;tile.CaptureMouse();};

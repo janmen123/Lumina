@@ -24,7 +24,8 @@ namespace GlassBoard {
         public void Remove(){Book.Items.Remove(Book.Selected);Book.Normalize();Changed();Flush();}
         public void Select(string id){Flush();if(Book.Items.Any(n=>n.Id==id)){Book.SelectedId=id;Changed();Flush();}}
         public void Export(string destination){var note=Book.Selected;File.WriteAllText(destination,note.Title+Environment.NewLine+Environment.NewLine+note.Body,new UTF8Encoding(true));}
-        public void Reload(){timer.Stop();dirty=false;Book=Load();Book.Normalize();Status="已恢复";}
+        public void TogglePin(){var note=Book.Selected;if(note==null)return;note.Pinned=!note.Pinned;Book.Normalize();Changed();Flush();}
+        public void ExportMarkdown(string destination){var note=Book.Selected;if(note==null)return;var text=new System.Text.StringBuilder();text.AppendLine("# "+(string.IsNullOrWhiteSpace(note.Title)?"未命名备忘录":note.Title));text.AppendLine();if(!string.IsNullOrWhiteSpace(note.Body))text.AppendLine(note.Body);File.WriteAllText(destination,text.ToString(),new UTF8Encoding(true));}        public void Reload(){timer.Stop();dirty=false;Book=Load();Book.Normalize();Status="已恢复";}
         public void Dispose(){timer.Stop();Flush();}
     }
     public sealed class WeatherEngine {

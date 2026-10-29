@@ -159,16 +159,17 @@ namespace GlassBoard {
         [DataMember] public string Id=Guid.NewGuid().ToString("N"),Body="";
         string title="新备忘录";
         [DataMember] public string Title{get{return title;}set{if(title==value)return;title=value;var changed=PropertyChanged;if(changed!=null){changed(this,new System.ComponentModel.PropertyChangedEventArgs("Title"));changed(this,new System.ComponentModel.PropertyChangedEventArgs("DisplayTitle"));}}}
-        public string DisplayTitle{get{return string.IsNullOrWhiteSpace(Title)?"未命名备忘录":Title;}}
+        public string DisplayTitle{get{return (Pinned?"📌 ":"")+(string.IsNullOrWhiteSpace(Title)?"未命名备忘录":Title);}}
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
         [DataMember] public long Updated=DateTime.UtcNow.Ticks;
+        [DataMember] public bool Pinned;
         public void Normalize(){if(string.IsNullOrWhiteSpace(Id))Id=Guid.NewGuid().ToString("N");Title=string.IsNullOrWhiteSpace(Title)?"未命名备忘录":Title.Trim();if(Title.Length>120)Title=Title.Substring(0,120);Body=Body??"";}
         public override string ToString(){return Title;}
     }
     [DataContract] public class NoteBook {
         [DataMember] public List<NoteItem> Items=new List<NoteItem>();
         [DataMember] public string SelectedId;
-        public void Normalize(){Items=(Items??new List<NoteItem>()).Where(n=>n!=null).ToList();foreach(var n in Items)n.Normalize();Items=Items.GroupBy(n=>n.Id).Select(g=>g.First()).ToList();if(Items.Count==0)Items.Add(new NoteItem{Title="随手记"});if(!Items.Any(n=>n.Id==SelectedId))SelectedId=Items[0].Id;}
+        public void Normalize(){Items=(Items??new List<NoteItem>()).Where(n=>n!=null).ToList();foreach(var n in Items)n.Normalize();Items=Items.GroupBy(n=>n.Id).Select(g=>g.First()).ToList();if(Items.Count==0)Items.Add(new NoteItem{Title="随手记"});Items=Items.OrderByDescending(n=>n.Pinned).ThenByDescending(n=>n.Updated).ToList();if(!Items.Any(n=>n.Id==SelectedId))SelectedId=Items[0].Id;}
         public NoteItem Selected{get{return Items.First(n=>n.Id==SelectedId);}}
     }
     [DataContract] public class AppearanceScheme {
