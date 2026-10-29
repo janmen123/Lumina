@@ -1,0 +1,4 @@
+PASS: production PowerShell loop, matching native timeline/seek fallback, delayed artwork retry, stale-track rejection, unrelated-session exclusion, standard native-off mode, cleanup/timeline error isolation.
+PASS: isolated native worker, delayed artwork, cleanup exceptions, native seek, track/source identity checks.
+PASS: cover-only native/standard modes skip timeline APIs while retaining delayed artwork.
+PASS: previous/toggle/next skip timeline before and after transport action.

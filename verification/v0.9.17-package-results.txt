@@ -1,0 +1,2 @@
+PASS: v0.9.17 lightweight 23-file package, under 2 MiB, no engine/.NET 8/TaskbarLyrics, original media dependencies, embedded controls, executable version, hashes and update index.
+PASS: 23 unique paths, CRC, all runtime hashes, exact compiled executable.

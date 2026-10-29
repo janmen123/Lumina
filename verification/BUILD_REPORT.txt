@@ -1,0 +1,39 @@
+GlassBoard v0.9.9 verification (2026-10-15)
+Main .NET Framework 4.8 WPF C#5 executable: cross-compiled successfully.
+Independent updater version 0.9.9.0: cross-compiled successfully.
+Nine groups against production C# models on .NET 8: PASS.
+PowerShell production loops with mocked native backends, including Chinese
+metadata, delayed artwork, stale-track controls, independent discovery: PASS.
+Actual EXE embedded media-script bootstrap with no external src directory,
+Unicode, spaces and apostrophe in path: PASS (Linux expected native API errors).
+Live Open-Meteo geocoding, forecast and wttr.in endpoints: HTTP/JSON PASS.
+New weather route/data validation, compact persisted sizes, tool style bits,
+spring endpoints and saved switch/default compatibility: PASS.
+Automatic update uses unchanged 23-file runtime allowlist and original layout.
+No GitHub publication performed.
+NOT EXECUTED: Windows player/PowerShell 5.1 behavior, actual drag/mouse capture,
+Snap Assist/Alt+Tab visibility, mixed-DPI monitor movement, animation smoothness,
+NVIDIA recording, live Windows update installation/restart.
+
+PersistenceTests: PASS: production Store durability, migration, exact live-entry precedence, corruption/missing-file recovery, deletion journal, explicit recovery/current DIY, 30 snapshots, all-invalid preservation and failed atomic replacement.
+DockPointerTests: PASS: 30 bidirectional press/move/release/save/restart placements, board isolation, duplicate release, short click, missing move, cancel/lost capture, outside/self drop, overflow and invalid coordinates.
+UserFeedbackTests: PASS: deletion aliases/arguments/restart/re-add/undo/shared groups/journal, office documents, 0-100 opacity, widget button flags, independent materials/copies/schemes, game mode rules.
+DockBehaviorTests: PASS: bidirectional whole-icon/gap/leading-padding/overflow drop resolution; Dock before/after/end/overflow reorder, no-op and stale input, board isolation, restart/undo/redo/schemes/migration; executable identity, association and window cycling.
+AppearanceOptionsTests: PASS: old appearance configuration, icon option restart/scheme/copy, group transfer and undo.
+ExperienceTests: PASS: forty-step undo/redo, board-only snapshots, shared groups, artwork identity/expiry, metadata isolation, complete backup/portable icons/notes, invalid archive rejection and multi-file restore rollback.
+UpdateNetworkTests: PASS: real update source fallback/selection, root ZIP compatibility, empty Releases failure handling, checksum rejection, constrained download alternate and network diagnostics.
+UpdateTests: PASS: release/root selection, owner HTTPS, daily throttle, download/file checksums, archive/version/path protections, transactional install/rollback and configuration preservation.
+CompatibilityTests: PASS: production weather primary/backup/failures/normalization/coordinates/data validation, compact persisted sizing, shell styles, embedded media modules and actual executable version
+PASS: production PowerShell loop, matching native timeline/seek fallback, delayed artwork retry, stale-track rejection, unrelated-session exclusion, standard native-off mode, cleanup/timeline error isolation.
+PASS: isolated native worker, delayed artwork, cleanup exceptions, native seek, track/source identity checks.
+PASS: cover-only native/standard modes skip timeline APIs while retaining delayed artwork.
+PASS: previous/toggle/next skip timeline before and after transport action.
+PASS: production native discovery skips broken/stale sessions, selects playing music, Unicode metadata/artwork, routes controls, rejects stale track identity and recovers on next read
+PASS: MediaBridge.ps1 actual EXE resource bootstrap, no external src folder, UTF-8 pipes, Unicode/space/apostrophe path; native API error expected on Linux
+PASS: NativeMediaBridge.ps1 actual EXE resource bootstrap, no external src folder, UTF-8 pipes, Unicode/space/apostrophe path; native API error expected on Linux
+
+GlassBoard.exe SHA256 d880504826d8c6893df893a5b0b3f5a0bdc02e2e9fcbe3ef2da00e60914c259b
+GlassBoard.Updater.exe SHA256 3b8e68533f9cf550612f0180f6d4f77e99fe6b050181ad440e4340fa4cd90e0f
+GlassBoard_v0.9.9_User.zip SHA256 600927adbaf26a2e2d4c7663111daa2bf0c6f779d70f4a70c05cc103b51957f5
+
+Complete 23-file v0.9.9 User.zip accepted by both original v0.9.8 and current updater Extract: PASS; all file hashes and executable version checked.

@@ -1,0 +1,2 @@
+SystemGlassTests: SystemGlassTests: 12 checks PASS: opt-in defaults, legacy migration, independent persistence, bounds, official and tampered signatures.
+CompatibilityTests: PASS: production weather primary/backup/failures/normalization/coordinates/data validation, compact persisted sizing, shell styles, embedded media modules and actual executable version

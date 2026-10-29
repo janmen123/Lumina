@@ -1,0 +1,15 @@
+GlassBoard v0.9.23 rollback revision 2 (file/assembly version 0.9.23.2)
+PASS: main application cross-compiled for .NET Framework 4.8.
+PASS: 19 portable regression suites (fix2-full-results.txt).
+New production process tests spawn real helpers, preserve normal exit codes, kill
+an intentionally blocked child at deadline and launch successfully afterward.
+New motion tests cover first-run migration, saved settings, manual re-enable,
+retained apps/material/layer and the repeatable no-transition preset.
+Source change removes default-open automatic tray launch and separates tray busy
+state from control-center commands; old async results are guarded by view revision.
+Added Windows WPF self-test repeatedly reopens the panel from tray state while
+native tray busy. This WPF test is compiled but NOT executed in Linux.
+Performance changes remove HWND width/left animation and explicit fade fps cap;
+short warm-open backdrop cache and raw BGRA thumbnail transfer avoid repeated
+PNG work. No Windows frame-time or FPS measurements are available.
+System-window glass remains removed; creator assets and layout data are retained.

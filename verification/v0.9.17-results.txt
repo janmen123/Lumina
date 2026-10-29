@@ -1,0 +1,47 @@
+GlassBoard v0.9.17 verification
+
+=== v0.9.17-build-results.txt ===
+PASS: WPF host and updater cross-compiled for .NET Framework 4.8; Windows execution remains required.
+
+=== v0.9.17-rollback-results.txt ===
+MediaServices.cs identical to v0.9.12; SHA256 df3cffdfd5fab757dd9f3761d91ea9882db1de36e25472da326c1d77d0d69674
+MediaBridge.ps1 identical to v0.9.12; SHA256 c3b375942eeca00171184f33be41d522b871a0a1127cc804b987e0cb9c7d6840
+NativeMediaBridge.ps1 identical to v0.9.12; SHA256 c3843c1e73ab3d708786dafa16f6306501947ffb96be31aba655373b20c6d6fb
+PASS: no extra lyrics/progress UI, external enhanced media route or TaskbarLyrics sources/build dependency.
+
+=== v0.9.17-portable-results.txt ===
+NativeControlTests: 17 checks PASS: production native WLAN parsing and profile/security XML, audio COM ABI and JSON control contract. Windows hardware execution remains separate.
+Feedback16Tests: PASS: 34 checks: real new files, no overwrite, safe folder names, group deletion/shared membership, missing-path restart, damaged/missing primary and mirror repair, newest recovery and intentional removal.
+StartupTimingTests: 33 startup XML, timing and persistence checks PASS
+ControlCenterTests: 19 migration/persistence checks PASS
+MixedDockTests: PASS: 59 checks: mixed system/app drag ordering, restart/hide/reenable, schemes/copy/undo/redo, running list reconciliation, settings width, new pin targets, 13 clock presets and minute-based geometry.
+PersonalizationTests: PASS: 34 checks: fixed center, boundaries, restart/legacy/copy/scheme DIY, overflow slots, Chinese weather/landmark/lang_xx, adaptive polling.
+DockTaskTests: PASS: 36 production checks: wheel direction/debounce/high resolution, board/desktop pin insertion, alias deduplication, multi-entry order, cap, undo/redo/restart, display option migration and schemes.
+PersistenceTests: PASS: production Store durability, migration, exact live-entry precedence, corruption/missing-file recovery, deletion journal, explicit recovery/current DIY, 30 snapshots, all-invalid preservation and failed atomic replacement.
+DockPointerTests: PASS: 30 bidirectional press/move/release/save/restart placements, board isolation, duplicate release, short click, missing move, cancel/lost capture, outside/self drop, overflow and invalid coordinates.
+UserFeedbackTests: PASS: deletion aliases/arguments/restart/re-add/undo/shared groups/journal, office documents, 0-100 opacity, widget button flags, independent materials/copies/schemes, game mode rules.
+DockBehaviorTests: PASS: bidirectional whole-icon/gap/leading-padding/overflow drop resolution; Dock before/after/end/overflow reorder, no-op and stale input, board isolation, restart/undo/redo/schemes/migration; executable identity, association and window cycling.
+AppearanceOptionsTests: PASS: old appearance configuration, icon option restart/scheme/copy, group transfer and undo.
+ExperienceTests: PASS: forty-step undo/redo, board-only snapshots, shared groups, artwork identity/expiry, metadata isolation, complete backup/portable icons/notes, invalid archive rejection and multi-file restore rollback.
+UpdateNetworkTests: PASS: real update source fallback/selection, root ZIP compatibility, empty Releases failure handling, checksum rejection, constrained download alternate and network diagnostics.
+UpdateTests: PASS: release/root selection, owner HTTPS, daily throttle, download/file checksums, archive/version/path protections, transactional install/rollback and configuration preservation.
+CompatibilityTests: PASS: production weather primary/backup/failures/normalization/coordinates/data validation, compact persisted sizing, shell styles, embedded media modules and actual executable version
+
+=== v0.9.17-system-results.txt ===
+PASS: shipped system script routing, Unicode/array JSON, native state/actions, invalid request isolation, rejected media/lyrics/transport, password non-disclosure and final EXE resource bootstrap. Windows hardware/PowerShell 5.1 remain untested.
+
+=== v0.9.17-media-results.txt ===
+PASS: production PowerShell loop, matching native timeline/seek fallback, delayed artwork retry, stale-track rejection, unrelated-session exclusion, standard native-off mode, cleanup/timeline error isolation.
+PASS: isolated native worker, delayed artwork, cleanup exceptions, native seek, track/source identity checks.
+PASS: cover-only native/standard modes skip timeline APIs while retaining delayed artwork.
+PASS: previous/toggle/next skip timeline before and after transport action.
+
+=== v0.9.17-bootstrap-results.txt ===
+PASS: MediaBridge.ps1 actual EXE resource bootstrap, no external src folder, UTF-8 pipes, Unicode/space/apostrophe path; native API error expected on Linux
+PASS: NativeMediaBridge.ps1 actual EXE resource bootstrap, no external src folder, UTF-8 pipes, Unicode/space/apostrophe path; native API error expected on Linux
+
+=== v0.9.17-package-results.txt ===
+PASS: v0.9.17 lightweight 23-file package, under 2 MiB, no engine/.NET 8/TaskbarLyrics, original media dependencies, embedded controls, executable version, hashes and update index.
+PASS: 23 unique paths, CRC, all runtime hashes, exact compiled executable.
+
+Windows hardware, Windows PowerShell 5.1, actual logon/reboot, WPF rendering/animation and player integration NOT RUN in this Linux environment. System script routing used simulated devices; embedded bootstrap exercised structured platform errors.

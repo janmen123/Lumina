@@ -1,0 +1,17 @@
+using System;using System.IO;using System.Text;using System.Xml;using System.Runtime.Serialization.Json;using GlassBoard;using System.Reflection;using System.Runtime.InteropServices;
+class StartupTimingTests {
+    static int checks;static void Check(bool value,string text){checks++;if(!value)throw new Exception(text);}
+    static int Main(){
+        string path=Path.Combine(Path.GetTempPath(),"工具 & 我的桌面","GlassBoard.exe"),sid="S-1-5-21-123-456-789-1001";
+        foreach(string mode in new[]{"priority","delayed"}){
+            string xml=StartupRules.TaskXml(path,sid,mode);var doc=new XmlDocument{XmlResolver=null};doc.LoadXml(xml);Check(doc.DocumentElement.NamespaceURI=="http://schemas.microsoft.com/windows/2004/02/mit/task","valid task namespace");
+            Check(doc.GetElementsByTagName("Command")[0].InnerText==path,"Unicode and XML characters round-trip");Check(doc.GetElementsByTagName("WorkingDirectory")[0].InnerText==Path.GetDirectoryName(path),"working directory distinct from executable");Check(doc.GetElementsByTagName("Arguments")[0].InnerText=="--startup","startup arguments explicit");Check(doc.GetElementsByTagName("UserId")[0].InnerText==sid&&doc.GetElementsByTagName("RunLevel")[0].InnerText=="LeastPrivilege","current-user task without elevation");Check(doc.GetElementsByTagName("DisallowStartIfOnBatteries")[0].InnerText=="false"&&doc.GetElementsByTagName("ExecutionTimeLimit")[0].InnerText=="PT0S","portable laptop startup and no timed termination");Check(StartupRules.TaskMode(xml)==mode,"actual task delay determines mode");Check(StartupRules.TaskCommand(xml)==StartupRules.Command(path),"task command readback");Check(doc.GetElementsByTagName("Delay")[0].InnerText==(mode=="delayed"?"PT60S":"PT0S"),"distinct immediate and delayed triggers");
+        }
+        Check(StartupRules.Mode(null)=="priority"&&StartupRules.Mode("invalid")=="priority"&&StartupRules.Mode("standard")=="standard","mode defaults and valid standard mode");
+        foreach(string bad in new[]{"bad\"path.exe","bad\npath.exe",""})try{StartupRules.TaskXml(bad,sid,"priority");throw new Exception("unsafe startup path accepted");}catch(ArgumentException){checks++;}
+        foreach(var error in new Exception[]{new FileNotFoundException("系统找不到指定的文件。"),new COMException("missing task",unchecked((int)0x80070002)),new COMException("task not registered",unchecked((int)0x8004130F)),new TargetInvocationException(new FileNotFoundException()),new TargetInvocationException(new TargetInvocationException(new FileNotFoundException()))})Check(StartupRules.MissingTask(error),"absent task is a normal disabled state for direct and reflected HRESULT projections");
+        foreach(var error in new Exception[]{null,new UnauthorizedAccessException(),new COMException("access denied",unchecked((int)0x80070005)),new IOException("scheduler unavailable"),new TargetInvocationException(new UnauthorizedAccessException())})Check(!StartupRules.MissingTask(error),"real access/service failures must not be mistaken for missing tasks");
+        var p=new Preferences{StartupTiming="delayed"};using(var memory=new MemoryStream()){var serializer=new DataContractJsonSerializer(typeof(Preferences));serializer.WriteObject(memory,p);memory.Position=0;var restored=(Preferences)serializer.ReadObject(memory);restored.Normalize();Check(restored.StartupTiming=="delayed","selected timing survives restart");}
+        Console.WriteLine(checks+" startup XML, timing and persistence checks PASS");return 0;
+    }
+}

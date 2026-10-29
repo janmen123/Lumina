@@ -1,0 +1,15 @@
+Feedback16Tests: PASS: 34 checks: real new files, no overwrite, safe folder names, group deletion/shared membership, missing-path restart, damaged/missing primary and mirror repair, newest recovery and intentional removal.
+StartupTimingTests: 33 startup XML, timing and persistence checks PASS
+ControlCenterTests: 19 migration/persistence checks PASS
+MixedDockTests: PASS: 59 checks: mixed system/app drag ordering, restart/hide/reenable, schemes/copy/undo/redo, running list reconciliation, settings width, new pin targets, 13 clock presets and minute-based geometry.
+PersonalizationTests: PASS: 34 checks: fixed center, boundaries, restart/legacy/copy/scheme DIY, overflow slots, Chinese weather/landmark/lang_xx, adaptive polling.
+DockTaskTests: PASS: 36 production checks: wheel direction/debounce/high resolution, board/desktop pin insertion, alias deduplication, multi-entry order, cap, undo/redo/restart, display option migration and schemes.
+PersistenceTests: PASS: production Store durability, migration, exact live-entry precedence, corruption/missing-file recovery, deletion journal, explicit recovery/current DIY, 30 snapshots, all-invalid preservation and failed atomic replacement.
+DockPointerTests: PASS: 30 bidirectional press/move/release/save/restart placements, board isolation, duplicate release, short click, missing move, cancel/lost capture, outside/self drop, overflow and invalid coordinates.
+UserFeedbackTests: PASS: deletion aliases/arguments/restart/re-add/undo/shared groups/journal, office documents, 0-100 opacity, widget button flags, independent materials/copies/schemes, game mode rules.
+DockBehaviorTests: PASS: bidirectional whole-icon/gap/leading-padding/overflow drop resolution; Dock before/after/end/overflow reorder, no-op and stale input, board isolation, restart/undo/redo/schemes/migration; executable identity, association and window cycling.
+AppearanceOptionsTests: PASS: old appearance configuration, icon option restart/scheme/copy, group transfer and undo.
+ExperienceTests: PASS: forty-step undo/redo, board-only snapshots, shared groups, artwork identity/expiry, metadata isolation, complete backup/portable icons/notes, invalid archive rejection and multi-file restore rollback.
+UpdateNetworkTests: PASS: real update source fallback/selection, root ZIP compatibility, empty Releases failure handling, checksum rejection, constrained download alternate and network diagnostics.
+UpdateTests: PASS: release/root selection, owner HTTPS, daily throttle, download/file checksums, archive/version/path protections, transactional install/rollback and configuration preservation.
+CompatibilityTests: PASS: production weather primary/backup/failures/normalization/coordinates/data validation, compact persisted sizing, shell styles, embedded media modules and actual executable version

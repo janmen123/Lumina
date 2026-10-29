@@ -1,0 +1,10 @@
+GlassBoard v0.9.23 rollback revision
+PASS: main executable cross-compiled against .NET Framework 4.8.
+PASS: 17 portable production-code regression suites, see rollback-portable-results.txt.
+PASS: enabled settings from the cancelled feature are ignored and omitted when saved;
+configured apps, groups and desktop layer selection survive migration.
+PASS: creator data c1.dat/c2.dat/c3.dat and creator-proof.json match the v0.9.23 base byte-for-byte.
+PASS: removed native module/loader/runtime/settings page and cancelled v0.9.24 tray files are absent.
+Native popup launch uses the actual Shell chevron automation provider, with Win+B focus fallback;
+no screenshots, copied icons, coordinate clicks, delayed proxy clicks or IPC tray actions remain.
+PENDING: Windows native popup interaction and WPF layout acceptance. No claim of real Windows execution.

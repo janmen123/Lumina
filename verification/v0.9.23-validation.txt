@@ -1,0 +1,44 @@
+GlassBoard v0.9.23 TEST BUILD
+Build environment: Linux. Native Windows desktop execution is NOT available.
+
+PASS: Windows WPF .NET Framework 4.8 main executable cross-compiled.
+PASS: Windows AMD64 v2 TAP DLL and diagnostics bootstrap cross-compiled.
+PASS: IPC sizeof/offset assertions; required COM exports present.
+PASS: native imports contain Windows system/UCRT DLLs only.
+PASS: executable metadata has no Interop.UIAutomationClient runtime assembly reference.
+PASS: no retired tray-update popup string in production source.
+PASS: no Windhawk mentions in production UI or new native implementation.
+
+Portable production-code regression suites, all exited zero:
+TrayIdentityTests: 10 checks; helper restart, reorder, tooltip updates, provider recreation,
+  ambiguous identities, process replacement, old/corrupt keys, WPF-visible name properties,
+  old scheme JSON compatibility.
+SystemGlassTests: 12 checks; flags, legacy config, bounds, author signature and asset integrity.
+WeatherTransportTests: 12 checks.
+Feedback18Tests: 62 checks.
+NativeControlTests: 17 checks.
+Feedback16Tests: 34 checks.
+StartupTimingTests: 33 checks.
+ControlCenterTests: 19 checks.
+MixedDockTests: 63 checks.
+PersonalizationTests: 34 checks.
+DockTaskTests: 36 checks.
+PersistenceTests: PASS.
+DockPointerTests: 30 checks.
+UserFeedbackTests: PASS.
+DockBehaviorTests: PASS.
+AppearanceOptionsTests: PASS.
+ExperienceTests: PASS.
+CompatibilityTests: PASS, including actual executable version 0.9.23.0,
+  embedded media modules and no runtime external COM interop reference.
+
+PENDING WINDOWS ACCEPTANCE:
+Settings navigation rendering/selected/focus/scaling and actual scheme-list text.
+Tray capture and native menus on real applications, hidden taskbar, mixed DPI,
+Explorer restart and remote control/display changes.
+XAML diagnostic attach, selected backgrounds, restored properties, multiple windows,
+Windows build variation and process-wide RAM/GPU usage.
+Classic opaque Win32 Explorer surfaces may remain opaque; matching is limited.
+The v2 host does not invoke the old remote-thread bootstrap and uses a separate
+DLL filename/COM CLSID/mapping version. The old v1 module may stay in a system
+process until sign-out, but is not included or called by this build.

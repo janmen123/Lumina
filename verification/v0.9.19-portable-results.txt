@@ -1,0 +1,2 @@
+ControlCenterTests: 19 migration/persistence checks PASS
+CompatibilityTests: PASS: production weather primary/backup/failures/normalization/coordinates/data validation, compact persisted sizing, shell styles, embedded media modules and actual executable version

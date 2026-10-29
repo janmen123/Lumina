@@ -1,0 +1,28 @@
+# 构建产物
+/build-output/
+/GlassBoard.exe
+/GlassBoard.exe.config
+/self-test-result.txt
+/LOCAL_SHA256.txt
+
+# 本地备份与打包归档（仓库里只保留源码与资源）
+/backups/
+/*.zip
+
+# 运行日志与配置（真实数据在 %LOCALAPPDATA%\GlassBoard）
+*.log
+/*.log
+/toggle-check.txt
+/layout*.json
+/notes.json
+/removed.json
+/snapshots/
+/taskbar-autohide.json
+/debug-log.on
+
+# 编辑器/系统
+.vs/
+*.user
+*.suo
+Thumbs.db
+desktop.ini

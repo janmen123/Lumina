@@ -1,0 +1,2 @@
+PASS: MediaBridge.ps1 actual EXE resource bootstrap, no external src folder, UTF-8 pipes, Unicode/space/apostrophe path; native API error expected on Linux
+PASS: NativeMediaBridge.ps1 actual EXE resource bootstrap, no external src folder, UTF-8 pipes, Unicode/space/apostrophe path; native API error expected on Linux

@@ -1,0 +1,10 @@
+using System;using System.Linq;using System.Windows;using System.Windows.Controls;
+namespace GlassBoard {
+    public partial class Controller {
+        internal void CheckOrbNavigation(){var anchor=new ControlOrbWindow(this);var panel=new ControlCenterWindow(this,anchor);try{panel.CheckPeerSections();panel.CheckReopenAfterTray();}finally{panel.Close();anchor.Close();}}
+        internal void CheckFeedback18Pages(){var manual=new StackPanel();BuildManual(manual);var entries=manual.Children.OfType<Expander>().ToList();if(entries.Count<18||entries.Any(e=>e.IsExpanded||!(e.Content is TextBlock)))throw new Exception("说明书折叠条目不完整");var home=new StackPanel();BuildHomePage(home,Dock);if(!home.Children.OfType<Image>().Any(i=>i.Source!=null))throw new Exception("抖音主页码没有加载");var panel=new StackPanel();BuildUpdateSettings(panel,Dock);if(panel.Children.OfType<CheckBox>().Any()||!panel.Children.OfType<TextBox>().Any(t=>t.Text==RepositoryUrl))throw new Exception("GitHub 手动更新入口异常");}
+    }
+    public static class Feedback18Checks {
+        public static void Run(){var c=new Controller(false);WidgetManager manager=null;try{c.CheckFeedback18Pages();c.CheckOrbNavigation();foreach(string style in InteractionRules.OpenStyles){c.Prefs.Dock.OpenAnimationStyle=style;c.Prefs.Dock.OpeningAnimation=true;c.Prefs.Dock.HoverAnimation=false;c.Board.Open();c.Board.Hide();c.Prefs.Dock.OpeningAnimation=false;c.Prefs.Dock.HoverAnimation=true;c.Board.Open();c.Board.Hide();}c.Prefs.Dock.AutoHide=true;c.Prefs.Dock.AlwaysOnTop=false;c.Dock.Refresh(false);if(c.Dock.Topmost)throw new Exception("自动隐藏仍强制置顶");c.Prefs.Widgets.Clock=true;manager=new WidgetManager(c);manager.Sync();var window=manager.SnapshotWindows.First();if(c.Prefs.Widgets.Style("clock").Frameless)throw new Exception("新组件默认无框");c.ShuttingDown=true;window.Close();if(!c.Prefs.Widgets.Clock)throw new Exception("退出关闭窗口清除了组件启用状态");}finally{c.ShuttingDown=true;if(manager!=null)manager.Dispose();c.Systems.Dispose();c.Dock.ReleaseHotkey();c.Board.Close();c.Dock.Close();}}
+    }
+}

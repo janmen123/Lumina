@@ -1,0 +1,11 @@
+using System;using System.Diagnostics;using System.Runtime.InteropServices;using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;
+namespace GlassBoard {
+    public partial class DockWindow {
+        [DllImport("PowrProf.dll",SetLastError=true)] [return:MarshalAs(UnmanagedType.U1)] static extern bool SetSuspendState([MarshalAs(UnmanagedType.U1)]bool hibernate,[MarshalAs(UnmanagedType.U1)]bool force,[MarshalAs(UnmanagedType.U1)]bool disableWake);
+        void AddQuickButtons(){if(C.Prefs.Dock.ShowRecycleBin)AddSystemButton(DockLayoutRules.RecycleBin,DockButton("♻",null,OpenRecycleBin,"回收站"),OpenRecycleBin);if(C.Prefs.Dock.ShowPower)AddQuickButton(DockLayoutRules.Power,"⏻","电源",new[]{"睡眠","重启","关机"},i=>Power(i));if(C.Prefs.Dock.ShowNetwork)AddQuickButton(DockLayoutRules.Network,"⌁","控制中心",new[]{"打开控制中心","小球设置"},i=>{if(i==0)C.OpenControlCenter();else C.ControlCenterSettings(this);});}
+
+        void OpenRecycleBin(){try{C.Board.Hide();Process.Start(new ProcessStartInfo("explorer.exe","shell:RecycleBinFolder"){UseShellExecute=true});}catch(Exception ex){MessageBox.Show(ex.Message,"回收站");}}
+        void AddQuickButton(string key,string glyph,string title,string[] names,Action<int> action){var b=DockButton(glyph,null,()=>{},title);var menu=MenuTheme.Create(C.Prefs.Light);for(int i=0;i<names.Length;i++){int index=i;var item=new MenuItem{Header=names[i]};item.Click+=(s,e)=>action(index);menu.Items.Add(item);}b.ContextMenu=menu;Action open=()=>{menu.PlacementTarget=b;menu.Placement=PlacementMode.Top;menu.IsOpen=true;};b.Click+=(s,e)=>{if(!DockDragSuppresses(b))open();};AddSystemButton(key,b,open);}
+        void Power(int action){string name=new[]{"睡眠","重启","关机"}[action];if(MessageBox.Show(this,"确定要"+name+"电脑吗？请先保存正在编辑的内容。","电源 · "+name,MessageBoxButton.YesNo,MessageBoxImage.Question,MessageBoxResult.No)!=MessageBoxResult.Yes)return;try{if(action==0){if(!SetSuspendState(false,false,false))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());}else{Process.Start(new ProcessStartInfo("shutdown.exe",action==1?"/r /t 0":"/s /t 0"){UseShellExecute=false,CreateNoWindow=true});}}catch(Exception ex){MessageBox.Show(this,ex.Message,"电源操作失败");}}
+    }
+}

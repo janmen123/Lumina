@@ -1,0 +1,4 @@
+BoundedProcessTests: 5 real child-process exit/timeout/cleanup/retry checks PASS
+RollbackTests: RollbackTests: 9 checks PASS: legacy data retained, removed feature stays removed, creator signatures and encrypted assets intact.
+ControlCenterTests: 19 migration/persistence checks PASS
+CompatibilityTests: PASS: production weather primary/backup/failures/normalization/coordinates/data validation, compact persisted sizing, shell styles, embedded media modules and actual executable version

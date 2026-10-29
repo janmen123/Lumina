@@ -1,0 +1,22 @@
+GlassBoard v0.9.10 verification — 2026-10-16
+Base: complete Library v0.9.9 source and user packages.
+Main executable and independent updater: C# 5 / .NET Framework 4.8 cross-compilation PASS.
+DockTaskTests: PASS: 36 production checks: wheel direction/debounce/high resolution, board/desktop pin insertion, alias deduplication, multi-entry order, cap, undo/redo/restart, display option migration and schemes.
+PersistenceTests: PASS: production Store durability, migration, exact live-entry precedence, corruption/missing-file recovery, deletion journal, explicit recovery/current DIY, 30 snapshots, all-invalid preservation and failed atomic replacement.
+DockPointerTests: PASS: 30 bidirectional press/move/release/save/restart placements, board isolation, duplicate release, short click, missing move, cancel/lost capture, outside/self drop, overflow and invalid coordinates.
+UserFeedbackTests: PASS: deletion aliases/arguments/restart/re-add/undo/shared groups/journal, office documents, 0-100 opacity, widget button flags, independent materials/copies/schemes, game mode rules.
+DockBehaviorTests: PASS: bidirectional whole-icon/gap/leading-padding/overflow drop resolution; Dock before/after/end/overflow reorder, no-op and stale input, board isolation, restart/undo/redo/schemes/migration; executable identity, association and window cycling.
+AppearanceOptionsTests: PASS: old appearance configuration, icon option restart/scheme/copy, group transfer and undo.
+ExperienceTests: PASS: forty-step undo/redo, board-only snapshots, shared groups, artwork identity/expiry, metadata isolation, complete backup/portable icons/notes, invalid archive rejection and multi-file restore rollback.
+UpdateNetworkTests: PASS: real update source fallback/selection, root ZIP compatibility, empty Releases failure handling, checksum rejection, constrained download alternate and network diagnostics.
+UpdateTests: PASS: release/root selection, owner HTTPS, daily throttle, download/file checksums, archive/version/path protections, transactional install/rollback and configuration preservation.
+CompatibilityTests: PASS: production weather primary/backup/failures/normalization/coordinates/data validation, compact persisted sizing, shell styles, embedded media modules and actual executable version
+
+Current and original v0.9.9 UpdateApply.Extract: complete v0.9.10 User.zip PASS (23 runtime files, per-file SHA256, EXE version, index size/digest).
+Runtime filenames and directory layout preserved from v0.9.9. No configuration files included in user ZIP.
+No GitHub publication performed.
+NOT EXECUTED: native Windows WPF checks, real desktop/board OLE drag, foreground activation, store-app enumeration, taskbar parity, high DPI/multi-monitor operation, physical wheel/trackpad behavior, visual animation quality.
+CheckWindows.cmd includes additional WPF button hit-test and routed wheel checks; those checks are provided but not executed here.
+SHA256 GlassBoard.exe 8932c6c87b9cba7049e4df152715a537436a82c9a949ce05787cf74a53d4104b
+SHA256 GlassBoard.Updater.exe 4f5888540bec0908fd84da74396e6bd9fb26098624512216d7d676c6f6e8401c
+SHA256 GlassBoard_v0.9.10_User.zip f0b8362c0c87c80ff9b53feff9119d68c28328307482822fc0ab36e4a3e0f8e6

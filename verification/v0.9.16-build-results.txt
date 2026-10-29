@@ -1,0 +1,1 @@
+PASS: WPF host and updater cross-compiled for .NET Framework 4.8; Windows execution remains required.

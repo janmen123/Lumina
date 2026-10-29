@@ -1,0 +1,96 @@
+GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 去掉 Dock 悬停浮窗
+
+使用：按住上方自建分组左右拖动。目标分组左半边表示插入其前方，右半边表示插入其后方；蓝色边线指示插入位置。
+松开后自动保存，取消拖动不改变顺序。Ctrl+Z 撤销、Ctrl+Y 重做（焦点不在文本输入框时）。
+“全部”和“未分组”固定在前两位。拖入应用仍然用于归类，分组排序不修改应用归属。
+
+代码基于原包 v0.2.0（上游说明基于 v0.9.23）。保留原许可证、作者支持页和第三方素材。
+本地变更：
+1. src/GlassBoard.cs 移除底部署名并接入分组排序；新增 src/GroupReorder.cs。
+2. 去掉 Dock 图标悬停时的灰色提示浮窗（原“Microsoft Edge · 点击打开；按住拖动调整 Dock 位置”这类文字）：
+   - src/DockInteractions.cs 在共用的悬停层创建函数里调用 ToolTipService.SetIsEnabled(element,false)，所有 Dock 元素（应用图标、分组、对话框卡片、固定按钮、边缘感应区、运行指示点等）生效；
+   - src/GlassBoard.cs（原设置 0 ms 初始延迟 / 10 秒显示时长的位置）改为 ToolTipService.SetIsEnabled(b,false)。
+   提示字符串本身保留（ShowLabels 改名、AddSystemButton 命名仍会读取它），只是永不显示浮窗；悬停放大/上抬动画与提示浮窗互不影响，仍可在“设置 → UI 动效”里单独开关。
+   注意：Dock 顶部拖动条的 ToolTip（“拖动 Dock；在设置中可锁定位置”）按本次范围要求未改动。
+验证：.NET Framework 4.8 编译通过，419 项排列组合、配置序列化、撤销重做及内存中 WPF 拖放事件检查通过。
+移除浮窗后实测：WeChat、Edge、哔哩哔哩三个图标各悬停 2 秒，未出现提示浮窗，进程也没有创建额外的弹窗窗口。
+尚未通过真实鼠标交互进行桌面实测。verification 和 package-size.json 中其余记录来自上游，不能作为本地版本的验收结果。
+
+3. 空闲开销调优（本轮新增，源码 src\IdleState.cs）：
+   - 新增 src\IdleState.cs：包装 GetLastInputInfo，500 ms 缓存一次，供各处判断“用户是否真的在操作”；阈值 IDLE_AFTER=20 秒、复查 REIDLE_AFTER=5 秒。
+   - src\GlassBoard.cs：Dock 图标扫描 runningTimer 间隔 3 秒 → 5 秒；持续 60 秒无输入时降频到 15 秒，之后每次扫描若已空闲 ≥5 秒改排 15 秒，否则 5 秒。
+   - src\GlassBoard.cs：全屏游戏轮询 GamePollingIntervalMs 3000 → 5000 ms。
+   - src\RunningWindows.cs：图标文件夹缓存 AppPathMaxAge 3 秒 → 25 秒（窗口枚举仍每次执行）。
+   实测（同一进程稳态 30 秒采样）：调优前单核 1.67–1.85%；调优后 1.41–1.72%（全机 24 线程约占 0.07%）。
+   拆分：隐藏全部窗口后仍约 1%，来自 1 秒一次的时间组件刷新与 Dock 指针轮询；可见时另有约 0.4–0.7% 为窗口合成/重绘。
+   尚未通过真实鼠标交互实测；README 与分发包未更新。
+
+4. 桌面自动收录（本轮新增，源码 src\DesktopAutoGroups.cs）：
+   - 自动收录桌面第一层（用户桌面 + 公共桌面）：文件夹进入「文件夹」分组；PDF、Word（doc/docx/docm/dot/wps…）、Excel（xls/xlsx/xlsm/csv…）、其他文档（ppt/txt/md/mp4/mp3/zip/图片等）进入「文档」分组。快捷方式、desktop.ini、隐藏/系统/重解析点不收；只读第一层，不进子目录。
+   - 进入「文档」分组后，顶部出现子筛选条：全部 / PDF / Word / Excel / 其他（带数量），点击即可过滤。
+   - 用 FileSystemWatcher 监视两个桌面目录（900 ms 去抖）+ 30 秒周期兜底：桌面新增自动加入，删除或移走自动移除；手动移动到其他分组的入口不会被挪回（按路径去重）。被手动移除的入口记入现有移除记录，不会被重新加回。
+   - 分组名可在设置中修改：改「文件夹」「文档」分组名会同步更新收录目标；删除分组会关闭对应自动收录开关。设置 → 通用新增“自动收录桌面上的文件夹与文档”复选框与“立即同步桌面”按钮。
+   - 首次启用时若分组栏被隐藏，会自动恢复显示一次（DesktopAutoRevealed 标记），之后按用户设置为准。
+   验证：编译通过；本机 17 个桌面文件夹（其中 3 个原本已手动收录）与 16 个文档全部正确归组（Word 7、Excel 4、其他 5），实时新建 txt/文件夹 3 秒内自动出现、删除后 3 秒内自动移除；错误日志无新增。`--self-test` 的 Dock 指针检查在该机器上本就失败（旧版同样失败，与本次改动无关）。
+   限制：监视只覆盖桌面第一层；程序未运行时桌面变化会在下次启动同步；网络/同步盘占位符若带重解析属性会被跳过。
+5. Dock 图标倒影 + 主面板拖动动效（本轮新增，源码 src\BoardDragMotion.cs）：
+   - 设置 → UI 动效新增两个开关：「Dock 图标倒影」「图标拖动动效（放大跟手、实时让位）」；即时预览、即时保存。
+   - 倒影：Dock 图标下方绘制镜像（VisualBrush 取图标下 45%，垂直翻转），高度约图标 34%，自上而下 170→0 渐隐；Dock 玻璃高度随之增加。先做固定观感，强度/距离调节留待后续。
+   - 拖动动效：从图标左键拖动即触发（无需长按）；被拖图标以浮动卡片跟随鼠标（独立置顶、点击穿透的窗口，可跨出面板，拖到 Dock/分组时仍可见），图标放大到 54px、圆角卡片+阴影+落位缩放；源图标变淡；经过其他图标时按格位实时让出空位（135ms 缓动），松开或取消后复原；落点仍是目标图标，顺序按原规则提交。
+   - 关键文件：src\BoardDragMotion.cs 新增；src\BoardExperience.cs 移除面板内预览、改为独立幽灵窗口并保留跨窗口拖动；src\GlassBoard.cs 的 DockButton 增加倒影、设置页加开关、DockOptions 增加 Reflection/DragMotion 字段。
+   验证：编译通过；模拟拖动截图确认幽灵卡片、源图标变淡、相邻图标实时左移；取消后复原且无重排；倒影截图确认多枚图标可见镜像。未做真实鼠标交互实测。
+6. Codex 拖动修复与倒影自定义（2026-10-30）
+- 按固定网格位置预览和提交排序，修复让位后空位无法放下；空白格取消，排序可撤销。
+- 关闭拖动动效仍保留基础预览；快速取消清理未开始位移的动画；独立预览窗口随面板关闭释放。
+- 仅为目标位置变化的图标更新动画；预览缓存、每帧最多一次窗口移动；拖动期间暂停 Dock 后台窗口扫描。按下后捕获鼠标，修复快速跨格时拖动未启动的问题。
+- 增加 Windows FileDrop（真实文件和文件夹）；外部复制，内部仍排序、归组、固定 Dock；过滤不存在和虚拟路径，面板空白不重复导入内部文件。
+- 设置 → UI 动效新增倒影浓度、长度、倾斜角度、柔化、距离、渐隐终点，含轻柔玻璃 / 清晰镜面 / 斜光掠影三套预设和恢复默认。旧配置自动补全默认值，Dock 尺寸随效果变化。
+- 验证：编译成功；28 项专项测试通过，含真实 PreviewDrop 路由、Windows 原生 CF_HDROP 内容、参数保存和预设控件；原有 MotionPresetsTests 5 项通过；隔离面板真实鼠标长距离跨行排序通过。
+- ChatGPT 附件接收尚需手工验收：工具禁止跨窗口拖放，未向任何外部服务发送测试文件。
+- 既有 GroupReorderTests（顺序序列化断言）及 ExperienceTests（BackupFiles.Create 集合枚举异常）在修改前版本同样失败，本次未修复这些旧问题。
+- 回退备份：backups\codex-drag-reflection-20261030\ 内有旧 exe、源码压缩包、布局和便签备份。
+- 设计参考：MyDockFinder GitHub 的倒影选项、Microsoft WPF 图形和拖放文档；代码独立编写，未引入新依赖。
+
+7. 跟随渲染的拖动预览 + 统一弹出菜单（2026-10-30）
+- 浮动拖动卡片改用 CompositionTarget.Rendering 更新，去掉固定 16ms 定时器；同一 RenderingTime 仅处理一次；结束/隐藏/关闭时解除静态事件订阅，不在空闲时持续占用。
+- 下拉、右键、多级菜单统一半透明玻璃配色、圆角、细边框与独立阴影。背景仅在打开时对本应用可见内容做一次低分辨率取样/柔化；菜单超出所属窗口时使用半透明渐变回退。文字不经过模糊。
+- 统一 8px 窄滚动条，无旧式上下箭头；鼠标移入时增强显著度。保留 Track/Thumb、横纵滚动及标准滚动命令。
+- 下拉选中项使用淡蓝底和勾选标记；去掉黑色虚线焦点框，键盘焦点保留柔和边框。
+- “更多”保留所有原操作，将显示选项、分组管理、备份恢复分成子菜单；撤销/重做的快捷键独立靠右显示。
+- 验证：完整编译；45 项菜单/渲染生命周期检查及 28 项拖动/倒影回归检查通过；深浅主题静态渲染验证。没有使用 computer use 或鼠标自动化。
+- 限制：本次没有测实际屏幕帧率或进行真人手感验收。渲染回调跟随 WPF 场景绘制，不能承诺所有机器/多屏下每帧达到显示器标称最高刷新率。
+- 回退：backups\codex-render-menus-20261030\ 中保存更新前 exe、源码、布局及便签。
+- 参考：Microsoft Learn / How to Render on a Per Frame Interval Using CompositionTarget、WPF ScrollBar 文档。未增加第三方依赖。
+
+8. Dock 紧凑留白、底边定位与点击收起（2026-10-30）
+- 新增 VerticalPadding（默认 4）和 UseScreenBounds（默认 true），兼容旧配置并支持外观方案复制/序列化。上下悬停空间独立计算，允许图标上抬使用透明阴影区域，下方倒影保持在可见玻璃范围内。
+- 拖动、松手保存和 Refresh 统一使用 DockGeometryRules；以可见玻璃底边计算 DockGap，透明阴影外边距可越过屏幕底边。设置中可切回工作区边界。
+- Dock 专用 LaunchDock/ToggleDock：前台窗口最小化，后台或最小化窗口恢复，没有匹配窗口则启动。普通主面板 Launch 保留原行为；多窗口只操作选中的一个。
+- MA_NOACTIVATE 保留鼠标消息并维持当前应用焦点。窗口所属对话框识别及 PID/句柄身份检查，防止对其他窗口误操作；不增加后台扫描。
+- 完整编译、32 项离屏/逻辑/隐藏窗口身份检查（含 144 组布局组合）及 28 项拖动倒影回归检查通过。当前配置高度约 182.2 → 144.3 DIP。
+- 没有使用 computer use 或操作用户的应用窗口；真实鼠标点击及第三方应用最小化响应未实测。
+- 备份：backups\codex-dock-compact-toggle-20261030\。
+
+9. 点击图标切换窗口：主面板、搜索回车与 Dock 统一任务栏语义（2026-10-30）
+- 行为：未运行则启动；已在最前则最小化（程序继续运行，不退出）；被遮挡或已最小化为恢复并切到前台；同一程序多窗口只操作选中的一个。
+- RunningWindows 新增 Foreground/CaptureForegroundHint/Minimized，以及 AttachThreadInput + SetForegroundWindow + BringWindowToTop 的前台夺取（原 SetForegroundWindow 在前台不是自己时经常被系统拒绝，所以切不回来）。最小化改为同步 ShowWindow(SW_MINIMIZE) 并回读 IsIconic 校验。
+- BoardWindow.Open 在 Show 之前记录 foregroundHint，点击时以“用户点图标之前正在看的窗口”为判据；此前面板自身抢到前台，GetForegroundWindow 永远不是目标应用，即使走切换也只能激活不能最小化。
+- Controller.Launch 改走 RunningWindows.Toggle(entry, Board.foregroundHint)，主面板图标与搜索回车因此与 Dock 一致；For() 去掉按句柄排序，恢复 EnumWindows 自上而下的 z 序，多窗口选择顺序为 前台提示 → 当前前台 → 上次使用 → 最上层可见未最小化 → 第一个。
+- 新增诊断：session.log 记录 WINDOW pick / none / minimize / activate；`--toggle-check <exe> [--act] [--minimize] [--restore] [--hint hwnd]` 把匹配与前台信息写入配置目录 toggle-check.txt。
+- 验证：完整编译；临时探针窗口（独立进程，测完已删除）实测匹配、最小化、恢复正确；两个探针窗口在前台为 A 时用 --hint B 只最小化 B、A 不受影响，反向亦然，确认提示分支与“只操作一个窗口”。
+- 限制：未做真人鼠标点击主面板的验收；面板打开时的前台提示依赖点击前的真实前台窗口，多显示器/无边框应用等场景请以实际使用为准。
+- 回退：backups\codex-toggle-window-20261030-022648\ 中保存更新前 exe、源码、布局。
+- 修复（2026-10-30 02:36）：抢前台用的 GetCurrentThreadId 误声明在 user32.dll（该 API 属于 kernel32.dll）。第一次点击若只需最小化不会走这段，第二次点击需要把窗口拉回前台时就会抛 EntryPointNotFoundException，弹出“无法打开…入口可能已移动”。已改到 kernel32.dll，并给 ForceForeground 的 AttachThreadInput 段加 try/catch：失败只影响置前，不再中断点击。
+- Launch 拆成三步：切换成功则收起；切换失败（没有匹配窗口）才启动；启动失败才提示入口问题。异常同时写 error.log 与 LAUNCH trace，不再把代码缺陷误报成入口丢失。
+- 复测：douyin.exe（hwnd 67306）最小化→恢复→再最小化；哔哩哔哩.exe（hwnd 68840）从最小化恢复并切到前台；两次都没有弹框，error.log 仍为 77 行无新增。
+
+10. Dock 点击与任务栏一致：记住真实前台窗口（2026-10-30）
+- 症状：Dock 图标点击永远只是“激活/前置”，从不会最小化；主面板图标却正常。
+- 根因：Dock 窗口构造为 ShowActivated=false，且 Hook 对 WM_MOUSEACTIVATE(0x21) 返回 MA_NOACTIVATE(3)，点击时 Windows 把前台窗口清空，GetForegroundWindow() 返回 0；“目标是否已在最前”恒为假，Toggle 只能走激活分支。主面板因为会自己抢前台，才拿到前台提示。
+- 修复：RunningWindows 增加 remembered 前台缓存。RememberForeground() 忽略前台为 0、本进程窗口与 Shell 界面（Shell_TrayWnd/Shell_SecondaryTrayWnd/Progman/WorkerW/Windows.UI.Core.CoreWindow/MultitaskingViewFrame/ForegroundStaging/空类名）；EffectiveForeground() 在真实前台无效时回退缓存。Toggle/ToggleWindow/ForegroundMatch/CaptureForegroundHint 全部改用 EffectiveForeground()。回退链本身要求缓存窗口仍然 IsWindow 有效。
+- Dock 点击在指针按下时记录 pointerHint：DockInteractions.StartPointerItem → LaunchDock(entry, pointerHint) → RunningWindows.ToggleDock(entry, hint) → Toggle(entry, hint)，与主面板 BoardWindow.foregroundHint 语义一致。
+- Controller 新增 300ms 的 foregroundTimer 轮询（原来只有开启自动隐藏时 autoTimer 才跑）；ReleaseHotkey 时停止。
+- 新增诊断 trace：WINDOW decide handle/hint/fg/fgpid/fgtitle/front/iconic，配合 WINDOW pick 可一眼看出前台判定为何失败。
+- 实测（真实屏幕点击，DPI 感知）：前台为 douyin 时点 Dock 抖音图标 → hint=67306 fg=67306 front=True iconic=False → WINDOW minimize handle=67306，第一次点击就最小化；点已最小化的 DeepSeek Harness 图标 → front=False iconic=True → 恢复并置前。
+- 事故与修复：一次合成点击被判定为拖拽，revision 1154 把抖音从第 4 位挪到第 7 位；已按 layout.json.previous(revision 1153) 的顺序写回并重启（启动后 SAVE revision 1155）。合成点击在 hover 动画期间不可靠，后续不要用连续合成点击验收 Dock。
+- 关于“白色条状物”：Shell_TrayWnd hwnd 196948 可见、rect 0,1998 3200x96；HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3 的 Settings 自动隐藏位为 1；本机 Windows NT 10.0.26200 的浮动任务栏背景是浅色圆角条。把光标移到屏幕最下缘让任务栏弹出后截图（y1860-2000）可见其浅色背景夹在 Dock 图标之间/下方。→ 白条是系统浮动任务栏被自动隐藏触发后露出的背景，与 GlassBoard 的绘制无关；GlassBoard 从未调用任务栏定位 API，配置里 TaskbarAutoHide/HideTaskbar/HideDesktopIcons 均为空。可选处理：把 Dock 静止位置抬离可见底边几个 DIP，或关闭任务栏自动隐藏。

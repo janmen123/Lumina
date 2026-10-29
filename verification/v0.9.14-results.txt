@@ -1,0 +1,120 @@
+GlassBoard v0.9.14 validation
+
+Windows UI / hardware / Win+D / startup manual acceptance: NOT RUN (Linux environment). Upstream Full Windows verification and WPF App test execution: NOT RUN.
+
+
+=== v14-main-build.log ===
+WPF .NET Framework 4.8 + updater build PASS
+
+=== v14-original-solution-final.log ===
+  TaskbarLyrics.Core -> /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics/TaskbarLyrics.Core/bin/Release/net8.0/TaskbarLyrics.Core.dll
+  TaskbarLyrics.App -> /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics/TaskbarLyrics.App/bin/Release/net8.0-windows10.0.22621.0/TaskbarLyrics.App.dll
+  TaskbarLyrics.App.Tests -> /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics/TaskbarLyrics.App.Tests/bin/Release/net8.0-windows10.0.22621.0/TaskbarLyrics.App.Tests.dll
+  TaskbarLyrics.Core.Tests -> /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics/TaskbarLyrics.Core.Tests/bin/Release/net8.0/TaskbarLyrics.Core.Tests.dll
+  TaskbarLyrics.Diagnostics -> /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics/TaskbarLyrics.Diagnostics/bin/Release/net8.0-windows10.0.22621.0/TaskbarLyrics.Diagnostics.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.72
+
+=== v14-original-publish.log ===
+  Determining projects to restore...
+  Restored /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics/TaskbarLyrics.App/TaskbarLyrics.App.csproj (in 7.54 sec).
+  Restored /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics/TaskbarLyrics.Core/TaskbarLyrics.Core.csproj (in 7.54 sec).
+  TaskbarLyrics.Core -> /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics/TaskbarLyrics.Core/bin/Release/net8.0/TaskbarLyrics.Core.dll
+  TaskbarLyrics.App -> /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics/TaskbarLyrics.App/bin/Release/net8.0-windows10.0.22621.0/win-x64/TaskbarLyrics.App.dll
+  TaskbarLyrics.App -> /workspace/scratch/5b8a63e9f289/glassboard/GlassBoard/engine/
+
+=== v14-bridge-publish.log ===
+  Determining projects to restore...
+  Restored /workspace/scratch/5b8a63e9f289/glassboard/GlassBoard/vendor/TaskbarLyrics/TaskbarLyrics.Core/TaskbarLyrics.Core.csproj (in 238 ms).
+  Restored /workspace/scratch/5b8a63e9f289/glassboard/GlassBoard/bridge/GlassBoard.SystemBridge.csproj (in 4.81 sec).
+  TaskbarLyrics.Core -> /workspace/scratch/5b8a63e9f289/glassboard/GlassBoard/vendor/TaskbarLyrics/TaskbarLyrics.Core/bin/Release/net8.0/TaskbarLyrics.Core.dll
+  GlassBoard.SystemBridge -> /workspace/scratch/5b8a63e9f289/glassboard/GlassBoard/bridge/bin/Release/net8.0-windows10.0.19041.0/win-x64/GlassBoard.SystemBridge.dll
+  GlassBoard.SystemBridge -> /workspace/scratch/5b8a63e9f289/glassboard/GlassBoard/engine/
+
+=== v14-portable-tests.log ===
+StartupTimingTests: 23 startup XML, timing and persistence checks PASS
+ControlCenterTests: 12 migration/persistence checks PASS
+MixedDockTests: PASS: 59 checks: mixed system/app drag ordering, restart/hide/reenable, schemes/copy/undo/redo, running list reconciliation, settings width, new pin targets, 13 clock presets and minute-based geometry.
+PersonalizationTests: PASS: 34 checks: fixed center, boundaries, restart/legacy/copy/scheme DIY, overflow slots, Chinese weather/landmark/lang_xx, adaptive polling.
+DockTaskTests: PASS: 36 production checks: wheel direction/debounce/high resolution, board/desktop pin insertion, alias deduplication, multi-entry order, cap, undo/redo/restart, display option migration and schemes.
+PersistenceTests: PASS: production Store durability, migration, exact live-entry precedence, corruption/missing-file recovery, deletion journal, explicit recovery/current DIY, 30 snapshots, all-invalid preservation and failed atomic replacement.
+DockPointerTests: PASS: 30 bidirectional press/move/release/save/restart placements, board isolation, duplicate release, short click, missing move, cancel/lost capture, outside/self drop, overflow and invalid coordinates.
+UserFeedbackTests: PASS: deletion aliases/arguments/restart/re-add/undo/shared groups/journal, office documents, 0-100 opacity, widget button flags, independent materials/copies/schemes, game mode rules.
+DockBehaviorTests: PASS: bidirectional whole-icon/gap/leading-padding/overflow drop resolution; Dock before/after/end/overflow reorder, no-op and stale input, board isolation, restart/undo/redo/schemes/migration; executable identity, association and window cycling.
+AppearanceOptionsTests: PASS: old appearance configuration, icon option restart/scheme/copy, group transfer and undo.
+ExperienceTests: PASS: forty-step undo/redo, board-only snapshots, shared groups, artwork identity/expiry, metadata isolation, complete backup/portable icons/notes, invalid archive rejection and multi-file restore rollback.
+UpdateNetworkTests: PASS: real update source fallback/selection, root ZIP compatibility, empty Releases failure handling, checksum rejection, constrained download alternate and network diagnostics.
+UpdateTests: PASS: release/root selection, owner HTTPS, daily throttle, download/file checksums, archive/version/path protections, transactional install/rollback and configuration preservation.
+CompatibilityTests: PASS: production weather primary/backup/failures/normalization/coordinates/data validation, compact persisted sizing, shell styles, embedded media modules and actual executable version
+
+=== v14-final-update-tests.log ===
+UpdateNetworkTests: PASS: real update source fallback/selection, root ZIP compatibility, empty Releases failure handling, checksum rejection, constrained download alternate and network diagnostics.
+UpdateTests: PASS: release/root selection, owner HTTPS, daily throttle, download/file checksums, archive/version/path protections, transactional install/rollback and configuration preservation.
+CompatibilityTests: PASS: production weather primary/backup/failures/normalization/coordinates/data validation, compact persisted sizing, shell styles, embedded media modules and actual executable version
+
+=== AudioInteropContractTests.log ===
+PASS: four production Core Audio COM interface contracts (including IMMDeviceCollection regression).
+
+=== OriginalMusicContractTests.log ===
+16 original music lifecycle protocol checks PASS
+
+=== v14-core-tests.log ===
+Total=303, Failed=0, Skipped=0, Seconds=1.3097833
+
+=== v14-web-tests.log ===
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> test:web
+> vitest run
+
+
+ RUN  v3.2.4 /workspace/scratch/5b8a63e9f289/vendor/TaskbarLyrics
+
+ ✓ tests/web/lyrics-control-panel.test.js (9 tests) 469ms
+ ✓ tests/web/spectrum-tuning.test.js (3 tests) 745ms
+   ✓ spectrum tuning defaults and help > restores each frequency default while keeping the adjustable range  427ms
+ ✓ tests/web/display-presentation.test.js (4 tests) 754ms
+   ✓ display presentation > plays on the first display-page visit and mode changes, without replaying for setting edits or page revisits  368ms
+ ✓ tests/web/lyrics-region.test.js (15 tests) 827ms
+ ✓ tests/web/lyrics-layout.test.js (25 tests) 1001ms
+ ✓ tests/web/smtc-monitor.test.js (3 tests) 281ms
+ ✓ tests/web/lyrics-cover.test.js (39 tests) 1412ms
+ ✓ tests/web/lyrics-transition-primitives.test.js (3 tests) 105ms
+ ✓ tests/web/lyrics-text-alignment.test.js (3 tests) 197ms
+ ✓ tests/web/lyrics-bridge.test.js (1 test) 54ms
+ ✓ tests/web/lyrics-floating-layout.test.js (7 tests) 302ms
+ ✓ tests/web/bridge.test.js (79 tests) 17644ms
+   ✓ settings WebView bridge > refreshes single-line zoom and its upper bound in both taskbar resize directions without posting edits  923ms
+   ✓ settings WebView bridge > refreshes floating readouts, direct offsets and collapsed appearance without posting edits  492ms
+   ✓ settings WebView bridge > keeps embedded size readouts independent through floating resize updates and mode changes  492ms
+   ✓ settings WebView bridge > previews and commits taskbar material independently: embeddedPanelBrightness  308ms
+   ✓ settings WebView bridge > previews and commits taskbar material independently: embeddedPanelTintOpacity  346ms
+   ✓ settings WebView bridge > previews and commits taskbar material independently: embeddedPanelBlurAmount  320ms
+   ✓ settings WebView bridge > adds a detected media session and configures it as a player  689ms
+   ✓ settings WebView bridge > defaults to double line and sends boolean values when switching lyric line count  320ms
+   ✓ settings WebView bridge > offers single method selection and independent regions without permitting an empty selection  433ms
+   ✓ settings WebView bridge > supports all three floating levels by keyboard and preserves the choice across mode changes  346ms
+   ✓ settings WebView bridge > preserves the panel preference while switching display modes and cover visibility  465ms
+   ✓ settings WebView bridge > keeps each offset slider synchronized with its editable value above  311ms
+   ✓ settings WebView bridge > preserves zero offsets when loading and editing 'embedded center anchor'  302ms
+   ✓ settings WebView bridge > keeps a dragged slider responsive while layout previews arrive out of order  344ms
+   ✓ settings WebView bridge > selects a window presentation card and mirrors embedded taskbar bounds  354ms
+   ✓ settings WebView bridge > combines cover visibility and position while preserving alignment and the hidden position  711ms
+   ✓ settings WebView bridge > navigates layout radio cards with arrows and Home/End without duplicate updates  391ms
+
+ Test Files  12 passed (12)
+      Tests  191 passed (191)
+   Start at  09:55:31
+   Duration  18.43s (transform 425ms, setup 0ms, collect 4.91s, tests 23.79s, environment 5ms, prepare 946ms)
+
+
+Core xUnit was executed in-process using the upstream test DLL, with unchanged fixtures and assertions; this environment cannot launch the default VSTest testhost reliably. The 16 new host parsing cases also compiled in App.Tests; portable parser checks ran independently. Windows WPF hit-area acceptance added to CheckWindows.cmd, not executed on Linux.
+
+PASS: complete v0.9.14 self-contained engine package, executable version, file hashes, index size and digest.
+
+PASS: all original music production Web assets are byte-identical in source and packaged runtime.
+PASS: source package includes full upstream App/Core and lifecycle regression tests, excludes build caches.

@@ -1,0 +1,2 @@
+1000 target updates: 36 ms (UI-thread synthetic workload)
+PASS: 28 drag/reflection checks

@@ -1,0 +1,4 @@
+MediaServices.cs identical to v0.9.12; SHA256 df3cffdfd5fab757dd9f3761d91ea9882db1de36e25472da326c1d77d0d69674
+MediaBridge.ps1 identical to v0.9.12; SHA256 c3b375942eeca00171184f33be41d522b871a0a1127cc804b987e0cb9c7d6840
+NativeMediaBridge.ps1 identical to v0.9.12; SHA256 c3843c1e73ab3d708786dafa16f6306501947ffb96be31aba655373b20c6d6fb
+PASS: no extra lyrics/progress UI, external enhanced media route or TaskbarLyrics sources/build dependency.

@@ -1,0 +1,1114 @@
+{
+  "version": "0.2.0",
+  "build_revision": 4,
+  "single_bundle_with_source": true,
+  "runtime_file_count": 17,
+  "runtime_unpacked_bytes": 1339916,
+  "runtime_only_zip_estimate_bytes": 919688,
+  "native_module_bytes": 0,
+  "rollback_from": "0.9.24",
+  "base_version": "0.9.23",
+  "system_glass_removed": true,
+  "tray_mode": "Windows native popup",
+  "source_and_development_bytes": 2286057,
+  "native_windows_execution_tested": false,
+  "runtime_ram_measured": false,
+  "assets_signature_private_key_included": false,
+  "files": [
+    {
+      "path": "Build.cmd",
+      "size": 103,
+      "sha256": "b74cf70521cac3ccd2776f18d49f010dad796f1da683393bf24a0aaf35f8ea56"
+    },
+    {
+      "path": "Build.ps1",
+      "size": 2036,
+      "sha256": "7ba0c1970d4a9690ce0a9d928f80d9af766e0a9eedb6122db1554ce845b73a14"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size": 80648,
+      "sha256": "4cedc06e26d646286075b98981b37eb3b1c192bbe0e87d4e6468aec1e8b7c020"
+    },
+    {
+      "path": "CheckMemory.cmd",
+      "size": 130,
+      "sha256": "14a3f435e5ec347379f53682241a9f8b030ef717fba2581411b996026a673249"
+    },
+    {
+      "path": "CheckWindows.cmd",
+      "size": 121,
+      "sha256": "84a876eb25c35a90d8be25fcb24a0f108a69a104837a047ec7fe2342538c893a"
+    },
+    {
+      "path": "CollectDiagnostics.cmd",
+      "size": 158,
+      "sha256": "c3c2ece186d3cf53ef3184b713a6e4368bcf743876bebd30e359b474b8cdb5e4"
+    },
+    {
+      "path": "GlassBoard.exe",
+      "size": 1261568,
+      "sha256": "2a093d63b6cce92e6b95425b50dd689b9ca017d085634c9229519b8acebc4cbb"
+    },
+    {
+      "path": "GlassBoard.exe.config",
+      "size": 333,
+      "sha256": "4dec343b1a94780713397dd05613c6628f7ca7e412f6071e03be5cb414adf151"
+    },
+    {
+      "path": "LICENSE",
+      "size": 1313,
+      "sha256": "11f8851af89c89dfc70dce7b6fcc4ee223e03021965f521c8c4757fccbc6e59c"
+    },
+    {
+      "path": "README.md",
+      "size": 3166,
+      "sha256": "ee2c01bb0f45df6cfd0e2b4223d0454c164dde5fe06ba789f40cb58433b956a9"
+    },
+    {
+      "path": "RELEASE_NOTES_v0.9.23.md",
+      "size": 4558,
+      "sha256": "d25007b6dd134bdb46d9b9dee4061fc433770a11ac5b2122ff75b6f16c8cfea7"
+    },
+    {
+      "path": "RecoverWidgets.cmd",
+      "size": 86,
+      "sha256": "96b2a68ac06aca985e4ee1c3a8b8858f08ae10701b4c64bdf641434f0a95619c"
+    },
+    {
+      "path": "RestoreDesktop.cmd",
+      "size": 71,
+      "sha256": "ade3fd8894a4b0ec6ff9154e7eab6dddbfa6a8c6c2885bd2a08b43d62bb2ae93"
+    },
+    {
+      "path": "Start.cmd",
+      "size": 182,
+      "sha256": "5e5959250cd105602aa7febd6d3190c07bf2776166de1fab5ef70b5b63961ba9"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "size": 2232,
+      "sha256": "9f188f38438ee737978b2a8c8a4e375a9dbb3d7ca21d7d011019aa958d0da572"
+    },
+    {
+      "path": "assets/support/ASSET_NOTICE.md",
+      "size": 551,
+      "sha256": "029ba23ae49ce86332d45e45e82208dc1fb8328f4dc8ce961ba03892bc61db6c"
+    },
+    {
+      "path": "assets/support/c1.dat",
+      "size": 211476,
+      "sha256": "62c5159608df0606563bbb8b226f85665aacd2ec4780cff09ca94a4e598458e9"
+    },
+    {
+      "path": "assets/support/c2.dat",
+      "size": 221604,
+      "sha256": "6752976c421694cb6d5d3a67be3355da1da7f47a4859324efb06cd4295c26ed8"
+    },
+    {
+      "path": "assets/support/c3.dat",
+      "size": 182836,
+      "sha256": "9a4f2d1c6a27d964df5206d9ac9f1096dabead7485a872c56f257facf3c1d961"
+    },
+    {
+      "path": "assets/support/creator-proof.json",
+      "size": 1584,
+      "sha256": "e4f5aa522f57c91f594f2be4446abf3bc4f164306daa238c31a0418e7b0c18a9"
+    },
+    {
+      "path": "data/AppGroups.tsv",
+      "size": 15546,
+      "sha256": "d77f1b8d17379650b2bfd6f8c2276cef0946736108ed8f44c3f695c28d9ca533"
+    },
+    {
+      "path": "data/分组对照说明.md",
+      "size": 1756,
+      "sha256": "30b22a603632d0d312b0deb3f88dff41e7d50edd0d59ed4ce4f7ac54fbb588e5"
+    },
+    {
+      "path": "lib/NPSMLib.dll",
+      "size": 28672,
+      "sha256": "063614ea251ebebee8a65c16d0a2f80469163da58a9972d0136b60124701bdd5"
+    },
+    {
+      "path": "licenses/NPSMLib_LICENSE.txt",
+      "size": 1064,
+      "sha256": "83436f66a2fd67f6276682230d4e9be1049cd6f48d95c46d4453edac5a8a62ee"
+    },
+    {
+      "path": "src/AiSupport.cs",
+      "size": 2401,
+      "sha256": "793fb5d5a3cbc7788d25d7675c472f43f71b5bc7c491ad0e1fd1a5ed4b724b48"
+    },
+    {
+      "path": "src/AiSupportUi.cs",
+      "size": 1889,
+      "sha256": "2dd57f4a5a18f7377ff3d2474ee196549a4fccb6ce65b3c451a3bc54a552e4de"
+    },
+    {
+      "path": "src/BoardExperience.cs",
+      "size": 7505,
+      "sha256": "5ab38ea27b6fe01d5f46c6cee29597706e986857f61d7b33646fbae556b6b4b4"
+    },
+    {
+      "path": "src/BoardFileUi.cs",
+      "size": 2926,
+      "sha256": "9bf84b17d600b483227ecf798a5cee7d5152032bbe781c7d06ec88b24dcd0e46"
+    },
+    {
+      "path": "src/BoardPerformance.cs",
+      "size": 3131,
+      "sha256": "e474d336e02048b84a868a764524837fee22e943149e85314c6e40b7053ffa91"
+    },
+    {
+      "path": "src/BoardResize.cs",
+      "size": 2141,
+      "sha256": "b5ec044a18442c505bbd4d73d24b013e67ed607fb54ea2c1a3877ea3d48e400a"
+    },
+    {
+      "path": "src/BoundedProcess.cs",
+      "size": 1134,
+      "sha256": "69599f0a31337073094158c34f9c594cf40fa2c50d0d5261160c281c35dee5e0"
+    },
+    {
+      "path": "src/CheckMemory.ps1",
+      "size": 3533,
+      "sha256": "68d77c42de83dd9c286627e01163594dc28b71fb05bfe6256a4dc83019608132"
+    },
+    {
+      "path": "src/CheckWindows.ps1",
+      "size": 1708,
+      "sha256": "f5de20664ecb151861bad7e73af6fc208c23bcbcb4250400abb5df84fc5ddd27"
+    },
+    {
+      "path": "src/ClockVariants.cs",
+      "size": 9303,
+      "sha256": "2d5e576a542d9173036394268a01baa5e1d5409739ffbfc0334669db682dd72d"
+    },
+    {
+      "path": "src/CollectDiagnostics.ps1",
+      "size": 671,
+      "sha256": "ac09ea8a5cbb5a1b417ab36e0e599e74796f4c61d4535b7674bbee2583bfae55"
+    },
+    {
+      "path": "src/ComponentFiles.cs",
+      "size": 2190,
+      "sha256": "4cbdea187cf5c9fde0c800fad16ba71d40f9c79fd64d65fcf76d75bf14ad641f"
+    },
+    {
+      "path": "src/ControlCenter.cs",
+      "size": 20926,
+      "sha256": "ba27770589181a195cfa10adeb85b777e12d92c2760af324c0b06b873c5eb211"
+    },
+    {
+      "path": "src/ControlCenterTray.cs",
+      "size": 2375,
+      "sha256": "e1fe8347c1b7624a8cfebfc281358312e0c7ea18dd5e5fa05e8994f7ccb53a5a"
+    },
+    {
+      "path": "src/ControlCenterWireless.cs",
+      "size": 12239,
+      "sha256": "6afb4be910d70e74816948f9086f57597faac8fdbc85f242723435ed82192237"
+    },
+    {
+      "path": "src/ControlIcons.cs",
+      "size": 2683,
+      "sha256": "e92ec4cfc4a9e0468f7993bbe991d97bf5a851d0fcab0c863e871a3a0a93490f"
+    },
+    {
+      "path": "src/ControllerFeatures.cs",
+      "size": 16343,
+      "sha256": "1043027acc7ce26e712de29338b84ef26a29f67183fb464ea67d2d4531a2d3b4"
+    },
+    {
+      "path": "src/CreatorAssets.cs",
+      "size": 2803,
+      "sha256": "bd2a64a972d5abb4bf60102c6458a901401d62040a3a679875608fe83e5b2e97"
+    },
+    {
+      "path": "src/CreatorIdentityProof.cs",
+      "size": 3586,
+      "sha256": "a76f98eb3122369d48b96e461de98dc76b68d00b27eba6128b97f2ccb4755e3d"
+    },
+    {
+      "path": "src/DesignUi.cs",
+      "size": 17980,
+      "sha256": "4f53e3ee36edef046b3c4e3d92fd94457766d3dc7180b6781a192baff46ca894"
+    },
+    {
+      "path": "src/DesktopPersistence.cs",
+      "size": 6031,
+      "sha256": "210ce27b9ef74d433237b5ee036fc2ff783163341e5053afff32c64068e64ea1"
+    },
+    {
+      "path": "src/DesktopServices.cs",
+      "size": 6736,
+      "sha256": "fad0d93d85349d8fa405c0b78b88d89c837c04c64772bf2ec41747adf40144b1"
+    },
+    {
+      "path": "src/DesktopWindowPolicy.cs",
+      "size": 2472,
+      "sha256": "f7824b26a66bad0cbe8855f94306d147d3c63f1ac917791a3460a78c96467b70"
+    },
+    {
+      "path": "src/DockBehaviorChecks.cs",
+      "size": 2468,
+      "sha256": "5af7e95388407c12fdbbff0341aa66b92de76bc0cd7b6821c67eed07bdcf2df0"
+    },
+    {
+      "path": "src/DockBehaviorRules.cs",
+      "size": 6108,
+      "sha256": "fcdc0798d96a634429d565b7a705981e3e00b960174c8cf4edc6450b6fd898df"
+    },
+    {
+      "path": "src/DockInteractions.cs",
+      "size": 13932,
+      "sha256": "e5635689093f32ed30745a148b4e7cf48c831f14ebca09697c9215a539bee83f"
+    },
+    {
+      "path": "src/DockLayout.cs",
+      "size": 4875,
+      "sha256": "5cb6e9c8d2fedc37db8b3e8cf3aab19318901378a7edc8e70a090cf4cbe4b0f1"
+    },
+    {
+      "path": "src/DockLayoutRules.cs",
+      "size": 4404,
+      "sha256": "614af654b3450afd6df3f070cefe79bd668a909bb92b18d8a793543551889743"
+    },
+    {
+      "path": "src/DockMotion.cs",
+      "size": 5343,
+      "sha256": "8cd65c6749237a1c60bef612eedddfbad209088d65d05573fe91aa9b79430fc5"
+    },
+    {
+      "path": "src/DockTaskRules.cs",
+      "size": 2786,
+      "sha256": "7d5f68e4116a22781f9f50fa4decaa92a146e082d89de9635512b0c6352da0b2"
+    },
+    {
+      "path": "src/DockTasks.cs",
+      "size": 13293,
+      "sha256": "b3b295692e5493b1170ec82f795bedad4b8561177c2a269aa8be51b20604a362"
+    },
+    {
+      "path": "src/EntryPathRules.cs",
+      "size": 869,
+      "sha256": "471b8c394fa8cc577e1854ac17bfa29c0991986ef4ab93b59329ce7247966420"
+    },
+    {
+      "path": "src/ExplorerWindows.cs",
+      "size": 1654,
+      "sha256": "3a3f8d703b117379af5db2cbde9f137d4b5a1e48a2f3d0e095bd5ff5dc74729a"
+    },
+    {
+      "path": "src/FeatureCore.cs",
+      "size": 32843,
+      "sha256": "5ccdf1f78c142cad5d79b75add186eeb50a6c889fb66c1b305e40463b496323c"
+    },
+    {
+      "path": "src/FeatureWindows.cs",
+      "size": 9324,
+      "sha256": "003aec9974785aae3997aab13e91633827a4f4271f0eb4b4812a07c0af33cfcb"
+    },
+    {
+      "path": "src/Feedback18Checks.cs",
+      "size": 2145,
+      "sha256": "1c316b65ed00594dd4b9fbd82bdf210f3103aae9a2aa43b3ae51e76c5aefff5d"
+    },
+    {
+      "path": "src/Feedback18Ui.cs",
+      "size": 5129,
+      "sha256": "073d33dacce0b8c3af470908fafefc8d96e67a9b91faeee2c40b74a9701503d6"
+    },
+    {
+      "path": "src/FeedbackChecks.cs",
+      "size": 1722,
+      "sha256": "77fae69af33363ad57a7be5b7e9081b7c409626157bab2977348f625f9d94bf4"
+    },
+    {
+      "path": "src/FeedbackUi.cs",
+      "size": 6479,
+      "sha256": "cf042404558d4ce61a9ade75ec060db00c46f6b940d16fbc8fc3d9d995d88276"
+    },
+    {
+      "path": "src/GlassBoard.cs",
+      "size": 166730,
+      "sha256": "3c1bc52a35dbe898074a8c466f6325c92a3ef356c91811a6265468ad57104895"
+    },
+    {
+      "path": "src/GlassBoard.ico",
+      "size": 14191,
+      "sha256": "750dc1fc49a250f4a4cc8618393b0d8560c06d69876f6794d64399a92c6f5cd3"
+    },
+    {
+      "path": "src/GlassMaterials.cs",
+      "size": 3346,
+      "sha256": "65fe4e1c989dbd89b770e292ad408c497fffe2d886758996c8c7098ef8d69881"
+    },
+    {
+      "path": "src/InteractionRules.cs",
+      "size": 1743,
+      "sha256": "863c0f81996741f68fd4b518bda7250f797efdb420de2166cdd0014cfe2f8aa5"
+    },
+    {
+      "path": "src/LegacyMusicOptions.cs",
+      "size": 344,
+      "sha256": "282fa6d8479266ec1e7f854ae9f74a94ae2de485d070caa0217fa61debcd3659"
+    },
+    {
+      "path": "src/ManualUi.cs",
+      "size": 10780,
+      "sha256": "225c480fa127985ef6c6deddc3224cbfaf864c340be5542579701cee9c6d335d"
+    },
+    {
+      "path": "src/MaterialOptions.cs",
+      "size": 723,
+      "sha256": "180929e59d75c37e814d6038c012cc7aa547f5a2d8eb03b6bad70a81448aefeb"
+    },
+    {
+      "path": "src/MediaBridge.ps1",
+      "size": 14874,
+      "sha256": "c3b375942eeca00171184f33be41d522b871a0a1127cc804b987e0cb9c7d6840"
+    },
+    {
+      "path": "src/MediaServices.cs",
+      "size": 25197,
+      "sha256": "df3cffdfd5fab757dd9f3761d91ea9882db1de36e25472da326c1d77d0d69674"
+    },
+    {
+      "path": "src/MemoryResources.cs",
+      "size": 4112,
+      "sha256": "c0361e0d10a5110c0f94ebc10fb9797f802dacc6f7cc7e4a871c9c04daff2ff7"
+    },
+    {
+      "path": "src/MenuAppearanceChecks.cs",
+      "size": 6110,
+      "sha256": "3e1d8fd49de602567ad0c507343028b35f4dba9498d59d902c01fd849bef9e51"
+    },
+    {
+      "path": "src/MenuTheme.cs",
+      "size": 5987,
+      "sha256": "c2cfa482eb0947a52a10aeb1dfd8da45e59f7d19867201abe8965a534b81c940"
+    },
+    {
+      "path": "src/MotionPresets.cs",
+      "size": 668,
+      "sha256": "564c8a5df3485929dbd87a0465b3bc53e684a3eff26e10d7e8f276ddb58a2328"
+    },
+    {
+      "path": "src/NativeAudio.cs",
+      "size": 6400,
+      "sha256": "4176b178b689cf1364529b191bdf056f501b7923983820efefebfd81c30d839b"
+    },
+    {
+      "path": "src/NativeBluetooth.cs",
+      "size": 3678,
+      "sha256": "5919abac95a53f2237e5c0d571567e17eb1a1f8932f85e94f8ce024c2bdd385e"
+    },
+    {
+      "path": "src/NativeBrightness.cs",
+      "size": 921,
+      "sha256": "f1b5225c79a984508e87457f71d4c05e840d80d44e0b9de19ebda24872e9d67a"
+    },
+    {
+      "path": "src/NativeMediaBridge.ps1",
+      "size": 9443,
+      "sha256": "c3843c1e73ab3d708786dafa16f6306501947ffb96be31aba655373b20c6d6fb"
+    },
+    {
+      "path": "src/NativeTrayLauncher.cs",
+      "size": 2731,
+      "sha256": "672e9f646ab30cadcf558f80221bac5d418367910c4cafa05dac02872b5c8488"
+    },
+    {
+      "path": "src/NativeWireless.cs",
+      "size": 7817,
+      "sha256": "5c71e192cfe7b06014c8d9d825ccb378663b7e80440ae36c22391a203a7c30b7"
+    },
+    {
+      "path": "src/NeteaseMusicHelper.cs",
+      "size": 19677,
+      "sha256": "826c0569a9e1b27ad5406860b0a5b415a0fee6b019e66a9493c1c58bf2496654"
+    },
+    {
+      "path": "src/NeteaseUiReader.cs",
+      "size": 7993,
+      "sha256": "37331ffec63539bd7c1a58010b2659eebca4feb1dfe3e4ef09e2fd16ac81d45c"
+    },
+    {
+      "path": "src/NewBoardFiles.cs",
+      "size": 4128,
+      "sha256": "f293e0eb97aac9c0234769cd4e131cb0d756e972f284dfff19adc39419002423"
+    },
+    {
+      "path": "src/NoteFiles.cs",
+      "size": 1115,
+      "sha256": "0a1b36d539aabde41eccbc9051730c7eebf481d787fdb0adc2ce71d3c1baef96"
+    },
+    {
+      "path": "src/OrbNavigation.cs",
+      "size": 3834,
+      "sha256": "2b92473f3589b45fb290f37079b5861fbaecc873475d06c59f912b7cd1d7be06"
+    },
+    {
+      "path": "src/Persistence.cs",
+      "size": 10405,
+      "sha256": "b2451ba89bbd1baeca829fb8446fd8e61e7723aa72165decda10e77e4420b671"
+    },
+    {
+      "path": "src/PersonalizationChecks.cs",
+      "size": 3641,
+      "sha256": "b4a713c16b0fde03952fbc998be66a506f50253e8b02f1a9f0e078992b50bd65"
+    },
+    {
+      "path": "src/PersonalizationCore.cs",
+      "size": 3989,
+      "sha256": "82681ed762a13e538a9d6052fe18c65a1d0a54b748987e7ee5eeb37a4e55e441"
+    },
+    {
+      "path": "src/PersonalizationUi.cs",
+      "size": 7636,
+      "sha256": "a291a84d65720c59b09630c3e39e790cc403c9df8841b38ce831b3441fbacbad"
+    },
+    {
+      "path": "src/ProductCore.cs",
+      "size": 13635,
+      "sha256": "9e6f85c7e74fa8b7b32a309f9da4059674ba2be5807aa1cb7f907d86ca67f82b"
+    },
+    {
+      "path": "src/ProductExperience.cs",
+      "size": 7071,
+      "sha256": "e7405967d0389bc38c4683ee5a31837a0a9c0eb59d51b7a3632a7533f64ce055"
+    },
+    {
+      "path": "src/QuickActions.cs",
+      "size": 2359,
+      "sha256": "d6af2558f7126faeb7deaaf6e29c311adc01c3651d722cd13547138b6f15f1c4"
+    },
+    {
+      "path": "src/RecoveryUi.cs",
+      "size": 2948,
+      "sha256": "308df15af4ead888d3c49fb4a4e3b1d648d58c6a6fd0d4a2b1947710a716cf40"
+    },
+    {
+      "path": "src/Release20Ui.cs",
+      "size": 4892,
+      "sha256": "aec95478d064d2326fa1e994050d43608c2028cb480c264b8348d7811870f26c"
+    },
+    {
+      "path": "src/RepositoryUi.cs",
+      "size": 1196,
+      "sha256": "276e5b7c8d2b96d55aa34ce120e8238712dfbc514edaadae247b4c1a5f2a5873"
+    },
+    {
+      "path": "src/RunningWindows.cs",
+      "size": 9523,
+      "sha256": "bc4d7d043101d5f14cc32282237a863eaf8b374cff2e3b21af66df36425a19e5"
+    },
+    {
+      "path": "src/SettingsPlacementRules.cs",
+      "size": 1029,
+      "sha256": "a13a892583171d7881701415b55d95f65daf2ba1253643f0a8ae4e3f3aa31ed3"
+    },
+    {
+      "path": "src/ShellIconImages.cs",
+      "size": 3776,
+      "sha256": "50012b1a276cc541f040c6ccc0f61fa7116618ded78af16af49a35737a0ab38c"
+    },
+    {
+      "path": "src/StartupTiming.cs",
+      "size": 7405,
+      "sha256": "11efab4d93a4019e114230417bff06a15e138eff50ec66c25c053d03eea7184f"
+    },
+    {
+      "path": "src/SystemBridge.cs",
+      "size": 6145,
+      "sha256": "56fa4a0a550a72adc149b099c15120feb13acd837617d68237f984d663c26401"
+    },
+    {
+      "path": "src/SystemControl.ps1",
+      "size": 8306,
+      "sha256": "af983fdbd67a6f8a8a3ec498f1e7d0f0da1e0b5ec17a4b9bb421c2402b68302f"
+    },
+    {
+      "path": "src/UserFeedbackCore.cs",
+      "size": 3710,
+      "sha256": "769b3c06a4b3515600d8849bdbebe4499e4d0dd994c9d628f789aa8daaa1beca"
+    },
+    {
+      "path": "src/WeatherPresentation.cs",
+      "size": 2547,
+      "sha256": "d17aa3472ad52062ee325e2f9ec86fd09c08d3cd9b70cd1f4debfbcdc5d7f65b"
+    },
+    {
+      "path": "src/WeatherTransport.cs",
+      "size": 2962,
+      "sha256": "3a77172d86a4b695289a94b0330d60335fa0605de0f4405af78ebd9f7bb53556"
+    },
+    {
+      "path": "src/WidgetAppearance.cs",
+      "size": 10979,
+      "sha256": "7949030a04166e8a229c2f6ae35ea16121e2f41255134e369f325904d6c77364"
+    },
+    {
+      "path": "src/WidgetViews.cs",
+      "size": 39650,
+      "sha256": "5ed35083c4a745d47dc9ce51698e8fdd96605cce38376562de57dc650f620586"
+    },
+    {
+      "path": "src/Widgets.cs",
+      "size": 11361,
+      "sha256": "bb75717e1d6dfac7aa777700157908938e687bf15082262ed0f7f2a22c76d84c"
+    },
+    {
+      "path": "src/WindowsHost.cs",
+      "size": 516,
+      "sha256": "3373d372a7ae0e203748bba608c7d9c87bff100321fd1d9f5fbe6b25945d92f0"
+    },
+    {
+      "path": "src/app.manifest",
+      "size": 1006,
+      "sha256": "e8536b566f5be1985e736f7e19200ad6c256722c8bac41e44724d126d5e38619"
+    },
+    {
+      "path": "vendor/NPSMLib/Enums.cs",
+      "size": 9566,
+      "sha256": "08c53a49c9d9bb0a475defc17dd22c58ce25877c53dc2133a8746fba6e96aa1d"
+    },
+    {
+      "path": "vendor/NPSMLib/Interop/COMInterop.cs",
+      "size": 14702,
+      "sha256": "ed00b774af18b417e01891402921855f2d34f197408d6dde56abe61dac61225d"
+    },
+    {
+      "path": "vendor/NPSMLib/Interop/Helpers.cs",
+      "size": 1304,
+      "sha256": "db37762d39ce7bacff2ee4a325a3e97a8e8b23bca7181a4c100e91341b0dc835"
+    },
+    {
+      "path": "vendor/NPSMLib/Interop/NativeMethods.cs",
+      "size": 742,
+      "sha256": "cc7dbedb9c80a7763f87fee063b23552f24cbc2524b072fbafb858c6f8f69f67"
+    },
+    {
+      "path": "vendor/NPSMLib/Interop/PropVariant.cs",
+      "size": 10422,
+      "sha256": "a6f12008f87adec521353768260abfd4095f63479ac3bf436e416176a1639278"
+    },
+    {
+      "path": "vendor/NPSMLib/LICENSE",
+      "size": 1064,
+      "sha256": "83436f66a2fd67f6276682230d4e9be1049cd6f48d95c46d4453edac5a8a62ee"
+    },
+    {
+      "path": "vendor/NPSMLib/MediaPlaybackDataSource.cs",
+      "size": 18983,
+      "sha256": "7071a17c54d92ed7c0158757631d19aa9aa0823e65319bcc954d0ba61aa407f1"
+    },
+    {
+      "path": "vendor/NPSMLib/NPSMLib.csproj",
+      "size": 1187,
+      "sha256": "8a638639dd1205eb7d994e40587e5348b650296a2d71a94dbb7e207774fb56c3"
+    },
+    {
+      "path": "vendor/NPSMLib/NowPlayingSession.cs",
+      "size": 6720,
+      "sha256": "47fec1eabb6bedee9be0e2772a1d1ca15761f69ce3734eca53716781a3710943"
+    },
+    {
+      "path": "vendor/NPSMLib/NowPlayingSessionInfo.cs",
+      "size": 2806,
+      "sha256": "e11e94cc98b34fbf722722323640d5a7e71e88e507f0404f03a332be42c31934"
+    },
+    {
+      "path": "vendor/NPSMLib/NowPlayingSessionManager.cs",
+      "size": 12351,
+      "sha256": "5e221d3af0f3fc456a49d1d0e633ae65afb256b3744983598fb1ef7e492a6e29"
+    },
+    {
+      "path": "vendor/NPSMLib/Structs.cs",
+      "size": 12519,
+      "sha256": "f7d280856f1d95b03db01ef09af8a787dd927f1c4d0aab13841d598f6cef23ed"
+    },
+    {
+      "path": "vendor/now-playing-service/Interop.UIAutomationClient.dll",
+      "size": 151040,
+      "sha256": "dcea43a1f5a2114b7bcc9e41cc1377064307611d0caa50f1ec203b887f4c20bb"
+    },
+    {
+      "path": "vendor/now-playing-service/LICENSE",
+      "size": 1063,
+      "sha256": "0c3b97b2ee4898e293d4af6a902c45aad6da3e1e7fa4b76579b7de5f8e85ff71"
+    },
+    {
+      "path": "vendor/now-playing-service/NeteaseMusicHelper.cs",
+      "size": 19922,
+      "sha256": "a6f2b5a325c81e9eec89e66e5fb4898c5eeb72795736067abf5ac772c9a6ff47"
+    },
+    {
+      "path": "vendor/now-playing-service/NeteaseMusicHelper.upstream.cs.txt",
+      "size": 19034,
+      "sha256": "2dc51bfeb43aacb75775ba444b57779a1779c25c1e40996786a606472e1d5578"
+    },
+    {
+      "path": "vendor/now-playing-service/REFERENCE.md",
+      "size": 1785,
+      "sha256": "309ace6fc4fa2b826e72a81cef66f46a5607ed4074171f95ed1b9c0bf5209c7d"
+    },
+    {
+      "path": "verification/AppearanceOptionsTests.cs",
+      "size": 2934,
+      "sha256": "facbc0beed271d3b76ab191bac212c407adc8e2e759bea525eecd3700a6ff8c6"
+    },
+    {
+      "path": "verification/BUILD_REPORT.txt",
+      "size": 4398,
+      "sha256": "91f507c69d892d6b317c0142d3305b1b8899ce5ea697b40538753050a861ad39"
+    },
+    {
+      "path": "verification/BUILD_REPORT_v0.9.10.txt",
+      "size": 3216,
+      "sha256": "0dc17913b9b47505b686135097b975c4fa59a639be594492113bfa87997b03ad"
+    },
+    {
+      "path": "verification/BoundedProcessTests.cs",
+      "size": 1597,
+      "sha256": "7a8ba58190e04cb1a489cd3324e46643d0ac6c3b74a6a56e7b6cca91e6f53e25"
+    },
+    {
+      "path": "verification/BuildPortable.py",
+      "size": 1901,
+      "sha256": "2ac4cbffcbae6892729bbc6fc286f384c06b9296fa6b8e31bbbafa4244cf570e"
+    },
+    {
+      "path": "verification/BulkSelectionTests.cs",
+      "size": 4860,
+      "sha256": "f40975c05e02f2bf7f268a66c6db25d8163d714c4ae4d00cab2bdc29b6699fb2"
+    },
+    {
+      "path": "verification/CompatibilityTests.cs",
+      "size": 6175,
+      "sha256": "df2bae07cfc989679514137d6753ee63b63a7065fc9710d3b9a07f4504f6a5fb"
+    },
+    {
+      "path": "verification/ControlCenterTests.cs",
+      "size": 4847,
+      "sha256": "3fd4a9c19f51e0bca1d4506df2043a89096dd8de21ed03eee81d619873f83ab7"
+    },
+    {
+      "path": "verification/CoreTests.cs",
+      "size": 119425,
+      "sha256": "3bceb469e83fbc3e0757a98463f747b6b115d3efaabb6b2e49e0901acdc4d085"
+    },
+    {
+      "path": "verification/CoreTests.md",
+      "size": 9608,
+      "sha256": "7cbcfa82eccb6dd1b320876bf0550d48b64c3fc6e21172b99bb5b00beb8e7d22"
+    },
+    {
+      "path": "verification/CoreTestsHarness.cs",
+      "size": 48932,
+      "sha256": "0da1f286377d3f81f116316cb0c6a405fe4c9e2447eeb3091d9582ff2be0e9a1"
+    },
+    {
+      "path": "verification/DockBehaviorTests.cs",
+      "size": 6700,
+      "sha256": "3bdb48d516832b219ea0a068de38b975a3ea461cd049e6d9479ca8d6f96c84b4"
+    },
+    {
+      "path": "verification/DockPointerTests.cs",
+      "size": 4465,
+      "sha256": "579b554a0d9ee0a05bf9f3596377c5ee31b5d404b09065cb4cca156f991b4ce3"
+    },
+    {
+      "path": "verification/DockTaskTests.cs",
+      "size": 5520,
+      "sha256": "266111c21f32bcd0154dffbe430e6849931ce5c6379d3ec0a2290ba78d7f6654"
+    },
+    {
+      "path": "verification/ExperienceTests.cs",
+      "size": 7962,
+      "sha256": "330d583ef928563e613297b897881cb81b101e9efefdc8ba94399ea202cae50a"
+    },
+    {
+      "path": "verification/Feedback16Tests.cs",
+      "size": 5506,
+      "sha256": "e2371b6f416381c434b748f0dedfac2d3fb64f37c0a2f07cf154781710c0d197"
+    },
+    {
+      "path": "verification/Feedback18Tests.cs",
+      "size": 6161,
+      "sha256": "2a76c323c26fdda766cc10d2a77427877d290abf04993029ca12a01d8021d231"
+    },
+    {
+      "path": "verification/GroupImportTests.cs",
+      "size": 8574,
+      "sha256": "b333ae44a5f2b28b166d786a9315c679bd8790f47d1549c216d2993fbe061c29"
+    },
+    {
+      "path": "verification/GroupReviewTests.cs",
+      "size": 1946,
+      "sha256": "db6b42f9a6127a6d2d357ce75e8513bfc51694121c64c7ad3717d4be7aa6c695"
+    },
+    {
+      "path": "verification/MediaTransportTests.cs",
+      "size": 5018,
+      "sha256": "78ff103efbb437625d8cc0bfdbb0bc4ed4ebd74edf37bd3e5f7afb0430e1a6d4"
+    },
+    {
+      "path": "verification/MemoryResourceTests.cs",
+      "size": 2355,
+      "sha256": "1efb3c21099f04652f8a598c665b275065fd1aa4fca6647afb2bc07a418fc363"
+    },
+    {
+      "path": "verification/MixedDockTests.cs",
+      "size": 6214,
+      "sha256": "9e5cc2e37370e019bd740d1b7674643e5ee27c9737beaad4f01d66cabd502063"
+    },
+    {
+      "path": "verification/MotionPresetsTests.cs",
+      "size": 1745,
+      "sha256": "40b01d5a3352b3d9099f43a22e83241eccfbb02c216d0e14fa7fc064803e2970"
+    },
+    {
+      "path": "verification/NativeControlTests.cs",
+      "size": 4558,
+      "sha256": "ef85194a32d981022c97e1ddc490b8f169400b0e1610ea93fb012cd9ffa821cc"
+    },
+    {
+      "path": "verification/PackageRelease.py",
+      "size": 3048,
+      "sha256": "954d0c60a30ada1dcdba8985048361d24b7e1263c59f2b19a9a4d8467798a628"
+    },
+    {
+      "path": "verification/PersistenceTests.cs",
+      "size": 5196,
+      "sha256": "9fe824844b0d83ae65262303aaa8d638f7e814754e6772044ec2fc7b63755c5c"
+    },
+    {
+      "path": "verification/PersonalizationTests.cs",
+      "size": 5843,
+      "sha256": "4cb86ec7b9bfca277ddf3d04dfc92e0be65d284c2456320f9906c1579e83d25a"
+    },
+    {
+      "path": "verification/Release18Tests.cs",
+      "size": 1930,
+      "sha256": "aee0cf9f644b6c94185eded83e104eb8dabce2562fad0efd0c5a8b1232f6ebdd"
+    },
+    {
+      "path": "verification/RemovalStoreTests.cs",
+      "size": 1455,
+      "sha256": "a48a25863ff19f85387d9c439e11ad57ef110dc7c879eb6e5558ca8af81d2f84"
+    },
+    {
+      "path": "verification/ResourceTests.cs",
+      "size": 2343,
+      "sha256": "153f8a98bc6ec060f5641e7feea474db91a0a6b2eca822592f99658f7c8cac8f"
+    },
+    {
+      "path": "verification/RollbackTests.cs",
+      "size": 2511,
+      "sha256": "d3bb666a1da791d3d20d755b484ffb39cbbd61a075a85262e5c14cefa7429dad"
+    },
+    {
+      "path": "verification/RunCoreTests.ps1",
+      "size": 1042,
+      "sha256": "ab2bbc8d96af7c64dbd60973b8b8d7cfa23918b1ad02b462b61cbda243e6d98b"
+    },
+    {
+      "path": "verification/RunPortableTests.py",
+      "size": 6019,
+      "sha256": "5480228f5d8a6c7685f80e9d4aa97fe9aa3d2c9fcdbcbf3ea9d7364ad4522e56"
+    },
+    {
+      "path": "verification/SettingsPlacementTests.cs",
+      "size": 789,
+      "sha256": "a3914de6021c10cb7669986f6f779e30a358515499452aa9e6edbb02a6468e22"
+    },
+    {
+      "path": "verification/StartupTimingTests.cs",
+      "size": 3526,
+      "sha256": "abf342db18b8bf4decf1843af36a3a3b424c243b9a60cfc69bacb26f7c4ad7ee"
+    },
+    {
+      "path": "verification/UserFeedbackTests.cs",
+      "size": 4657,
+      "sha256": "7330d5d9197fa78e2b5b0883f956c5b96349422eea71327e40ad23c029b8f094"
+    },
+    {
+      "path": "verification/WINDOWS_CHECKLIST.md",
+      "size": 4400,
+      "sha256": "89527d2281e0cf665c805dd70a39fec71e2f58d71d06a0a750cee5348cf358c7"
+    },
+    {
+      "path": "verification/WeatherTransportTests.cs",
+      "size": 3883,
+      "sha256": "f26e822627dbda0ccbeeb03d694ae01862e9cc7d395a35302e7cc5b98fb83c05"
+    },
+    {
+      "path": "verification/build-refs/Interop.UIAutomationClient.dll",
+      "size": 151040,
+      "sha256": "dcea43a1f5a2114b7bcc9e41cc1377064307611d0caa50f1ec203b887f4c20bb"
+    },
+    {
+      "path": "verification/fix2-full-results.txt",
+      "size": 3152,
+      "sha256": "793d2eff90c6c30f68cfd8e74dd0e036858b2b9d5f1267c86854262278ea4267"
+    },
+    {
+      "path": "verification/fix2-results.txt",
+      "size": 489,
+      "sha256": "b08c80054f3b7680a84f11544fce59252622c36b48ca5dbcc98545b562075f7f"
+    },
+    {
+      "path": "verification/fix2-validation.txt",
+      "size": 1125,
+      "sha256": "5946f06781279fe5d4b1560a0e45536e32504f91fa735f032a71e2a46e357805"
+    },
+    {
+      "path": "verification/legacy-update/README.md",
+      "size": 99,
+      "sha256": "9b0a7e1b348d79ec5321d002edc3d2ced15a1cc3e7f3d0f6b9681c72bb935a83"
+    },
+    {
+      "path": "verification/legacy-update/ReleasePackageTests.cs",
+      "size": 2186,
+      "sha256": "a28f358b8d1367b440a7e4f4db3a4bf6a7a4f264fe4ca75472d0ad031ee9bcab"
+    },
+    {
+      "path": "verification/legacy-update/UpdateNetworkTests.cs",
+      "size": 2936,
+      "sha256": "ac822142eea9fafcdecacba60e06c6e5ca9d7b1476d6d8bccf28e6f9d0ecb0ed"
+    },
+    {
+      "path": "verification/legacy-update/UpdateTests.cs",
+      "size": 6618,
+      "sha256": "f8b2a39bd097a861f568bc1239647864f6518f23b28459f82d34d93d85f5c972"
+    },
+    {
+      "path": "verification/rollback-portable-results.txt",
+      "size": 2992,
+      "sha256": "56e50562299084a0649985c5885caebd1aabb8a2887931d2947dde5b1b33b975"
+    },
+    {
+      "path": "verification/rollback-validation.txt",
+      "size": 851,
+      "sha256": "55f03eeba914b739dc2f2bce3282cc3b2619fd4159361e3779a1d2beb60d10cb"
+    },
+    {
+      "path": "verification/v0.9.11-results.txt",
+      "size": 2258,
+      "sha256": "8c6e3bfc0e3966453576cd766330b880061104d6ef753fdf10ea02e0d7ae0295"
+    },
+    {
+      "path": "verification/v0.9.12-results.txt",
+      "size": 2476,
+      "sha256": "8faa6e327ebcc2acc37fcb7d900d7c69e9366413a9369dc20c0e495acf35eee7"
+    },
+    {
+      "path": "verification/v0.9.13-results.txt",
+      "size": 3270,
+      "sha256": "781f313c9c9dfd35d1e291b8fe51403b23246a5fb9b1cb0af7bab744a68f67d5"
+    },
+    {
+      "path": "verification/v0.9.14-results.txt",
+      "size": 10300,
+      "sha256": "f9ac492f8abd38eb76ba666f264484e7fd20d4fd0f3b2ed572b288ddc3355033"
+    },
+    {
+      "path": "verification/v0.9.15-results.txt",
+      "size": 4306,
+      "sha256": "9810a2e3fb38c5feb5dc364eb9c1bf974129317e0d6bb66e8d6c03e9a994ba4c"
+    },
+    {
+      "path": "verification/v0.9.16-build-results.txt",
+      "size": 102,
+      "sha256": "a4b4295c88d3b11469cd72465b1e31a5f647b2b3874a5361391732360255ac56"
+    },
+    {
+      "path": "verification/v0.9.16-durability-results.txt",
+      "size": 693,
+      "sha256": "38eff529a716ddc66f6b750bc949c4c1c73c4572f5445848fb9d0a5efa43b444"
+    },
+    {
+      "path": "verification/v0.9.16-package-results.txt",
+      "size": 186,
+      "sha256": "7e3f0a27d7f2038f5a22b3791ee9d89d0a09ca0fd2e65bd17fae084a94c3a466"
+    },
+    {
+      "path": "verification/v0.9.16-portable-results.txt",
+      "size": 2827,
+      "sha256": "2da2683bfbf53630f577849c00238a60d0483a510689a19da992b7c1ce8ec930"
+    },
+    {
+      "path": "verification/v0.9.16-results.txt",
+      "size": 3535,
+      "sha256": "ef37197f8b3506d0caf8bc0623e42635f583ea57564cacbb473b491b340baa27"
+    },
+    {
+      "path": "verification/v0.9.17-bootstrap-results.txt",
+      "size": 318,
+      "sha256": "3bec44fae728353ccd79ee7f119a8e78a74d1e173f37977728523e0c947d456c"
+    },
+    {
+      "path": "verification/v0.9.17-build-results.txt",
+      "size": 102,
+      "sha256": "a4b4295c88d3b11469cd72465b1e31a5f647b2b3874a5361391732360255ac56"
+    },
+    {
+      "path": "verification/v0.9.17-media-results.txt",
+      "size": 486,
+      "sha256": "11a462087b65781f30aef90710fbeb9b1f75f7c8a7e77af701e7cc3cf296b0e4"
+    },
+    {
+      "path": "verification/v0.9.17-package-results.txt",
+      "size": 256,
+      "sha256": "bcf88116dc3eee6b8978fefbe55ea63ea8aae79edad5273a28a9ffa8c37a7ad0"
+    },
+    {
+      "path": "verification/v0.9.17-portable-results.txt",
+      "size": 3006,
+      "sha256": "afe2b46c24fd5813b162ce2c8875390faf8063c055064e2d5bcec8367511ca95"
+    },
+    {
+      "path": "verification/v0.9.17-results.txt",
+      "size": 5398,
+      "sha256": "b7eceb59283684b32568494cb59c04adacac75c2d60e1183c6eea4641290a0e5"
+    },
+    {
+      "path": "verification/v0.9.17-rollback-results.txt",
+      "size": 445,
+      "sha256": "65834eab1b96c8b818fd2427d69a1ca944510460435d273f059bafcaff980d18"
+    },
+    {
+      "path": "verification/v0.9.17-system-results.txt",
+      "size": 246,
+      "sha256": "1391a403f2408661aadb6cb2f01490444b237c1b5e5040740851e723a7f6c18d"
+    },
+    {
+      "path": "verification/v0.9.18-bootstrap-results.txt",
+      "size": 318,
+      "sha256": "3bec44fae728353ccd79ee7f119a8e78a74d1e173f37977728523e0c947d456c"
+    },
+    {
+      "path": "verification/v0.9.18-build-results.txt",
+      "size": 129,
+      "sha256": "8ce451bddf1477501e0b714e5974254cb9077a043748309e3bdb0ee1ca11d939"
+    },
+    {
+      "path": "verification/v0.9.18-media-results.txt",
+      "size": 486,
+      "sha256": "11a462087b65781f30aef90710fbeb9b1f75f7c8a7e77af701e7cc3cf296b0e4"
+    },
+    {
+      "path": "verification/v0.9.18-portable-results.txt",
+      "size": 2846,
+      "sha256": "2d83fd8f74adb45faf107e7c3aa64b53da7df7f4ba3a1e6a180501577b4de668"
+    },
+    {
+      "path": "verification/v0.9.18-release-results.txt",
+      "size": 138,
+      "sha256": "e3700ad43a454e0ddd523e14dc1cbbba6a44dbf50995e18bc2506efc10297a5e"
+    },
+    {
+      "path": "verification/v0.9.18-system-results.txt",
+      "size": 246,
+      "sha256": "1391a403f2408661aadb6cb2f01490444b237c1b5e5040740851e723a7f6c18d"
+    },
+    {
+      "path": "verification/v0.9.19-build-results.txt",
+      "size": 129,
+      "sha256": "8ce451bddf1477501e0b714e5974254cb9077a043748309e3bdb0ee1ca11d939"
+    },
+    {
+      "path": "verification/v0.9.19-portable-results.txt",
+      "size": 262,
+      "sha256": "709649c4cec99c2f6d35217f064e0c9deb19913c20bdd5322485d7f7011b1ff6"
+    },
+    {
+      "path": "verification/v0.9.20-build-results.txt",
+      "size": 129,
+      "sha256": "8ce451bddf1477501e0b714e5974254cb9077a043748309e3bdb0ee1ca11d939"
+    },
+    {
+      "path": "verification/v0.9.20-portable-results.txt",
+      "size": 2846,
+      "sha256": "c75f8cfe02311359ddd6280e3a3ee2d5363b4b990e9fbfdf53f7c8fb7243818e"
+    },
+    {
+      "path": "verification/v0.9.21-build-results.txt",
+      "size": 129,
+      "sha256": "8ce451bddf1477501e0b714e5974254cb9077a043748309e3bdb0ee1ca11d939"
+    },
+    {
+      "path": "verification/v0.9.22-build-results.txt",
+      "size": 129,
+      "sha256": "8ce451bddf1477501e0b714e5974254cb9077a043748309e3bdb0ee1ca11d939"
+    },
+    {
+      "path": "verification/v0.9.22-final-checks.txt",
+      "size": 359,
+      "sha256": "d60bb453a5914ebb5abf797af317a624cb4efe03488357cdfe69d81167e784f4"
+    },
+    {
+      "path": "verification/v0.9.22-portable-results.txt",
+      "size": 2986,
+      "sha256": "f1b096e2cee56fc72cef4ecc926e154299a060fe67cd3de58be1e6e37b670564"
+    },
+    {
+      "path": "verification/v0.9.23-validation.txt",
+      "size": 2239,
+      "sha256": "addd9e68b4a75cd8ee22853ddd9177d41838fd100ea6c5413066c21e802e374f"
+    },
+    {
+      "path": "verification/v020-results.txt",
+      "size": 3152,
+      "sha256": "d442b38ef1c1133fce6160a542bb4aa76cf91057d1000b60ecf3007fbff52ace"
+    },
+    {
+      "path": "verification/v020-weather-size-results.txt",
+      "size": 3152,
+      "sha256": "d442b38ef1c1133fce6160a542bb4aa76cf91057d1000b60ecf3007fbff52ace"
+    },
+    {
+      "path": "verification/v020-weather-small-results.txt",
+      "size": 3152,
+      "sha256": "d442b38ef1c1133fce6160a542bb4aa76cf91057d1000b60ecf3007fbff52ace"
+    },
+    {
+      "path": "verification/v15-integration-results.txt",
+      "size": 307,
+      "sha256": "41358fe80ddb65b943ea1f5ca137671a3560b76e0483033a8bcc679d4e3686c4"
+    },
+    {
+      "path": "verification/verify_embedded_bridge.py",
+      "size": 1485,
+      "sha256": "3b7dc54757907c0702b4cfc5ee20e7d5ca588eb7f72500881103407047acb78e"
+    },
+    {
+      "path": "verification/verify_light_system.py",
+      "size": 6359,
+      "sha256": "6e7b5cdad644eec0429191abc158108b3cd9ed4ce11a8f63ed80ed19b7546c5e"
+    },
+    {
+      "path": "verification/verify_media_bridge.py",
+      "size": 10386,
+      "sha256": "2b88c5e5797b33aeab59712277487e88a4fa4315e80cd1634b2b9117556bb817"
+    },
+    {
+      "path": "verification/verify_native_discovery.py",
+      "size": 3021,
+      "sha256": "685f0e052fc306d95c80441f753b3e49d75a8c55023d94c62874622b3b91a594"
+    },
+    {
+      "path": "verification/widget-style-results.txt",
+      "size": 3152,
+      "sha256": "d442b38ef1c1133fce6160a542bb4aa76cf91057d1000b60ecf3007fbff52ace"
+    },
+    {
+      "path": "使用说明.md",
+      "size": 3166,
+      "sha256": "ee2c01bb0f45df6cfd0e2b4223d0454c164dde5fe06ba789f40cb58433b956a9"
+    }
+  ]
+}

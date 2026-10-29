@@ -1,0 +1,3 @@
+Feedback16Tests: PASS: 34 checks: real new files, no overwrite, safe folder names, group deletion/shared membership, missing-path restart, damaged/missing primary and mirror repair, newest recovery and intentional removal.
+PersistenceTests: PASS: production Store durability, migration, exact live-entry precedence, corruption/missing-file recovery, deletion journal, explicit recovery/current DIY, 30 snapshots, all-invalid preservation and failed atomic replacement.
+ExperienceTests: PASS: forty-step undo/redo, board-only snapshots, shared groups, artwork identity/expiry, metadata isolation, complete backup/portable icons/notes, invalid archive rejection and multi-file restore rollback.

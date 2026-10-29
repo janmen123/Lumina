@@ -1,0 +1,1 @@
+PASS: shipped system script routing, Unicode/array JSON, native state/actions, invalid request isolation, rejected media/lyrics/transport, password non-disclosure and final EXE resource bootstrap. Windows hardware/PowerShell 5.1 remain untested.

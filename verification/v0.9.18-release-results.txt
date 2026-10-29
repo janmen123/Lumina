@@ -1,0 +1,1 @@
+PASS: final 0.9.18 EXE, updater absence, original embedded media/control scripts, exact supplied QR resource, framework-only dependencies
