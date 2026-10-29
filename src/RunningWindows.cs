@@ -126,6 +126,11 @@ namespace GlassBoard {
             try{Native.SetForegroundWindow(handle);BringWindowToTop(handle);}
             finally{try{if(attachTarget)AttachThreadInput(own,targetThread,false);if(attachForeground)AttachThreadInput(own,foregroundThread,false);}catch(Exception ex){Store.Log(ex);}}
         }
+        public static void Focus(IntPtr handle){
+            if(handle==IntPtr.Zero||!IsWindow(handle))return;
+            if(IsIconic(handle))ShowWindowAsync(handle,9);
+            ForceForeground(handle);
+        }
         public static bool ActivateHandle(IntPtr handle){
             if(!IsWindow(handle))return false;if(IsIconic(handle))ShowWindowAsync(handle,9);
             var popup=GetLastActivePopup(handle);var target=popup!=IntPtr.Zero&&IsWindowVisible(popup)?popup:handle;

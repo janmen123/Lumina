@@ -37,14 +37,14 @@ namespace GlassBoard {
         static readonly DependencyProperty DragSuppressed=DependencyProperty.RegisterAttached("DockDragSuppressed",typeof(bool),typeof(DockWindow),new PropertyMetadata(false));
         Action dockPointerClick;bool dockIconDragging,dockPointerPreviousBusy;DockPointerGesture dockPointer;FrameworkElement dockPointerOwner;bool dockPointerFromMenu;
         internal IntPtr pointerHint;
-        KeyWatch escapeWatch;ThumbnailPopup thumbnails;DispatcherTimer thumbnailTimer;FrameworkElement thumbnailSource;string thumbnailName;
+        KeyWatch escapeWatch;ThumbnailPopup thumbnails;DispatcherTimer thumbnailTimer,thumbnailHide;FrameworkElement thumbnailSource;string thumbnailName;
         Border dockPointerPreview;TextBlock dockPointerLabel;
         bool DockInputBusy{get{return dockPointer!=null||dockIconDragging;}}
         bool DockDragSuppresses(FrameworkElement element){return element!=null&&(bool)element.GetValue(DragSuppressed);}
         void BindDockSource(FrameworkElement element,Entry entry,Action beforeDrag=null){BindPointerItem(element,entry.Path,entry.Name,()=>C.LaunchDock(entry,pointerHint),beforeDrag);}
         void BindPointerItem(FrameworkElement element,string key,string name,Action click,Action beforeDrag=null){
             element.ToolTip=name+" · 点击打开；按住拖动调整 Dock 位置";ToolTipService.SetIsEnabled(element,false);
-            element.MouseEnter+=(s,e)=>ScheduleThumbnails(element,name);element.MouseLeave+=(s,e)=>HideThumbnails();
+            element.MouseEnter+=(s,e)=>ScheduleThumbnails(element,name);element.MouseLeave+=(s,e)=>HideThumbnailsSoon();
             element.AddHandler(Mouse.PreviewMouseDownEvent,new MouseButtonEventHandler((s,e)=>{if(e.ChangedButton!=MouseButton.Left||DockInputBusy)return;Point point=e.GetPosition(this);if(StartPointerItem(element,key,name,click,point,beforeDrag))e.Handled=true;}),true);
         }
         bool StartDockPointer(FrameworkElement owner,Entry entry,Point point,Action beforeDrag){return StartPointerItem(owner,entry.Path,entry.Name,()=>C.LaunchDock(entry),point,beforeDrag);}
@@ -84,30 +84,42 @@ namespace GlassBoard {
         }
         void RouteDockPointer(Action action){try{action();}catch(Exception ex){Store.Log(ex);CancelDockPointer(false);if(IsVisible&&!C.ShuttingDown)Refresh(false);}}
 
-        // ---- hover thumbnails (DWM live previews) ----
+        // ---- hover cards (stacked window previews) ----
         void ScheduleThumbnails(FrameworkElement element,string name){
-            HideThumbnails();
+            if(thumbnailHide!=null)thumbnailHide.Stop();
             if(element==null||!C.Prefs.Dock.ShowRunning)return;
+            if(thumbnails!=null){HideThumbnails();}
             thumbnailSource=element;thumbnailName=name;
             if(thumbnailTimer==null){thumbnailTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(420)};thumbnailTimer.Tick+=(s,e)=>{thumbnailTimer.Stop();ShowThumbnails();};}
             thumbnailTimer.Stop();thumbnailTimer.Start();
         }
         void ShowThumbnails(){
-            var element=thumbnailSource;var name=thumbnailName;thumbnailSource=null;thumbnailName=null;
+            var element=thumbnailSource;var name=thumbnailName;
             if(element==null||!IsVisible||dockPointer!=null||!element.IsMouseOver)return;
             var entry=C.Prefs.Apps.FirstOrDefault(a=>a.Name==name);if(entry==null)return;
-            var windows=RunningWindows.For(entry).Select(w=>w.Handle).Take(3).ToList();if(windows.Count==0)return;
+            var windows=RunningWindows.For(entry).Where(w=>w.Handle!=IntPtr.Zero).Take(5).ToList();if(windows.Count==0)return;
             try{
                 Point anchor=element.PointToScreen(new Point(element.ActualWidth/2,0));
-                int rows=Math.Min(3,windows.Count);var dpi=VisualTreeHelper.GetDpi(this);double scale=dpi.DpiScaleX<=0?1:dpi.DpiScaleX;
-                double width=268*scale;double height=(20+rows*140+(rows-1)*8)*scale;
-                double left=Math.Max(0,anchor.X-width/2);double top=Math.Max(0,anchor.Y-height-10);
-                thumbnails=new ThumbnailPopup(windows,left,top,scale);
-                Store.Trace("THUMB show entry="+name+" windows="+windows.Count+" available="+thumbnails.Available+" at "+left.ToString("0")+","+top.ToString("0"));
+                var dpi=VisualTreeHelper.GetDpi(this);double scale=dpi.DpiScaleX<=0?1:dpi.DpiScaleX;
+                Size size=ThumbnailPopup.Measure(windows,scale);
+                double width=size.Width,height=size.Height;
+                double left=Math.Max(0,anchor.X-width/2);double top=Math.Max(0,anchor.Y-height-8*scale);
+                var popup=new ThumbnailPopup(windows,left,top,scale);
+                thumbnails=popup;
+                popup.PointerOut+=HideThumbnailsSoon;
+                popup.Clicked+=target=>{try{RunningWindows.Focus(target);}catch(Exception ex){Store.Log(ex);}HideThumbnails();};
+                Store.Trace("THUMB show entry="+name+" windows="+windows.Count+" usable="+popup.IsUsable+" at "+left.ToString("0")+","+top.ToString("0"));
+                if(!popup.IsUsable)HideThumbnails();
             }catch(Exception ex){Store.Log(ex);HideThumbnails();}
+        }
+        void HideThumbnailsSoon(){
+            if(thumbnails==null)return;
+            if(thumbnailHide==null){thumbnailHide=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(220)};thumbnailHide.Tick+=(s,e)=>{thumbnailHide.Stop();if(thumbnails!=null&&!thumbnails.PointerInside&&(thumbnailSource==null||!thumbnailSource.IsMouseOver))HideThumbnails();};}
+            thumbnailHide.Stop();thumbnailHide.Start();
         }
         internal void HideThumbnails(){
             if(thumbnailTimer!=null)thumbnailTimer.Stop();
+            if(thumbnailHide!=null)thumbnailHide.Stop();
             thumbnailSource=null;thumbnailName=null;
             if(thumbnails!=null){try{thumbnails.Dispose();}catch(Exception ex){Store.Log(ex);}thumbnails=null;}
         }

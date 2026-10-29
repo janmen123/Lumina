@@ -131,3 +131,10 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 时钟改为按分钟更新：src\WidgetAppearance.cs 的 ClockTick 用 yyyyMMddHHmm 作为键，普通时钟只在分钟变化时重绘文字；倒计时进行中仍保持每秒刷新。
 - Dock 指针不再用 33ms 定时器轮询按键：新增 src\KeyWatch.cs（WH_KEYBOARD_LL 全局键盘钩子，只处理 Esc，Dispose 时解挂），按下 Dock 图标时挂上、松手即解，减少空闲开销；src\DockTasks.cs 里外部拖拽仍需要的 GetAsyncKeyState 保留。
 - 实测：悬停抖音图标，session.log 记录 `THUMB show entry=抖音 windows=1 available=True at 596,700`，截图确认弹窗位置正确、画面是实时内容（视频播放时画面同步变化）；卸载时无残留窗口。时钟与指针改动后 Dock 交互正常，error.log 未新增。
+15) Dock 悬停预览改版（2026-10-30）
+- 放弃 DwmRegisterThumbnail 直接合成：DWM 缩略图会盖住窗口里的 WPF 边框与标题条，卡片重叠时前后顺序也不可控。
+- 改为 PrintWindow 截图 + 纯 WPF 卡片：ThumbnailPopup.cs 用 HwndSource（WS_POPUP + TOOLWINDOW|NOACTIVATE|TOPMOST）承载 Canvas，外层圆角玻璃底 + DwmSetWindowAttribute(33) 圆角 + SetWindowCompositionAttribute 亚克力；每 1.5 秒用 PrintWindow(flag 2) 重新截图刷新。
+- 布局改成手机后台式堆叠：5 张卡斜向错位（StaggerX=22、StaggerY=14），所有卡片共用同一图片高度（ImageHeight 取各窗口比例的最大值并夹在 132–230 DIP），只有最前面那张显示标题条。
+- 交互：鼠标移进预览不消失（PointerInside + 220ms 缓冲），悬停某张卡用 TranslateTransform + ZIndex 把它提到最前，单击卡片调用 RunningWindows.Focus(handle) 切到该窗口并关闭预览。
+- 尺寸统一：新增 ThumbnailPopup.Measure(windows,scale)，Dock 在创建前就能拿到与真实窗口一致的宽高（之前硬编码估算导致弹窗偏高、底部卡片被裁）。
+- 实测：抖音/微信单窗口卡片正常；Edge 开 5 个窗口时 824x520 的 5 层堆叠、点击正面卡片前台切到 “Example Domain - 用户1 - Microsoft Edge” 且预览关闭。
