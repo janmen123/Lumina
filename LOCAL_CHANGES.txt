@@ -138,3 +138,11 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 交互：鼠标移进预览不消失（PointerInside + 220ms 缓冲），悬停某张卡用 TranslateTransform + ZIndex 把它提到最前，单击卡片调用 RunningWindows.Focus(handle) 切到该窗口并关闭预览。
 - 尺寸统一：新增 ThumbnailPopup.Measure(windows,scale)，Dock 在创建前就能拿到与真实窗口一致的宽高（之前硬编码估算导致弹窗偏高、底部卡片被裁）。
 - 实测：抖音/微信单窗口卡片正常；Edge 开 5 个窗口时 824x520 的 5 层堆叠、点击正面卡片前台切到 “Example Domain - 用户1 - Microsoft Edge” 且预览关闭。
+
+16) Dock 悬停预览再改版：一排实时气泡（2026-10-30）
+- 上一版用 PrintWindow 截图塞进一张大卡片：Chromium 系窗口（Edge）经常整块抓成白板，而且斜向堆叠会互相遮住内容，观感差。
+- 改为每个窗口一个独立的小窗口（HwndSource，类名 GlassBoardCard，WS_POPUP + TOOLWINDOW|NOACTIVATE|TOPMOST），每个窗口里用 DwmRegisterThumbnail 注册该窗口的实时缩略图，亚克力底 + DwmSetWindowAttribute(33) 圆角 + 一圈淡描边，缩略图向内缩 8 DIP，看起来就是“实时画面镶在透明气泡里”。
+- 布局：最多 4 个气泡横向排开，间隔 26 DIP 重叠；整体居中在图标上方、贴着 Dock 顶边。
+- 交互：用 GetCursorPos 轮询判断鼠标落在哪个气泡（NOACTIVATE 窗口的 WPF 鼠标事件不可靠），悬停的气泡放大到 1.38 倍并上移对齐底边，左右相邻气泡按 1.28 倍向两侧让开；移开恢复。点击气泡调用 RunningWindows.Focus 切到该窗口并关闭整排预览。
+- 位置锚点改用 DockWindow.Top，避免 Dock 图标 zoom 动画导致锚点漂移；同一个图标重复 MouseEnter 不再销毁重建（之前会闪烁）。
+- 实测：Edge 开 4 个窗口时 4 个气泡横排、内容实时（网页画面可见）；把鼠标移到第二个气泡后它放大、左右让开；点该气泡后前台切到“联通ai面试 - 小红书搜索”，预览全部关闭。

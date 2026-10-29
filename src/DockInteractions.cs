@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -88,6 +89,8 @@ namespace GlassBoard {
         void ScheduleThumbnails(FrameworkElement element,string name){
             if(thumbnailHide!=null)thumbnailHide.Stop();
             if(element==null||!C.Prefs.Dock.ShowRunning)return;
+            // Same icon again: keep the live row, do not tear it down and rebuild.
+            if(thumbnails!=null&&thumbnailName==name&&thumbnails.IsUsable){thumbnailSource=element;return;}
             if(thumbnails!=null){HideThumbnails();}
             thumbnailSource=element;thumbnailName=name;
             if(thumbnailTimer==null){thumbnailTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(420)};thumbnailTimer.Tick+=(s,e)=>{thumbnailTimer.Stop();ShowThumbnails();};}
@@ -96,19 +99,19 @@ namespace GlassBoard {
         void ShowThumbnails(){
             var element=thumbnailSource;var name=thumbnailName;
             if(element==null||!IsVisible||dockPointer!=null||!element.IsMouseOver)return;
+            if(thumbnails!=null&&thumbnailName==name&&thumbnails.IsUsable)return;
             var entry=C.Prefs.Apps.FirstOrDefault(a=>a.Name==name);if(entry==null)return;
-            var windows=RunningWindows.For(entry).Where(w=>w.Handle!=IntPtr.Zero).Take(5).ToList();if(windows.Count==0)return;
+            var windows=RunningWindows.For(entry).Where(w=>w.Handle!=IntPtr.Zero).Take(4).ToList();if(windows.Count==0)return;
             try{
-                Point anchor=element.PointToScreen(new Point(element.ActualWidth/2,0));
                 var dpi=VisualTreeHelper.GetDpi(this);double scale=dpi.DpiScaleX<=0?1:dpi.DpiScaleX;
-                Size size=ThumbnailPopup.Measure(windows,scale);
-                double width=size.Width,height=size.Height;
-                double left=Math.Max(0,anchor.X-width/2);double top=Math.Max(0,anchor.Y-height-8*scale);
-                var popup=new ThumbnailPopup(windows,left,top,scale);
+                DockCursor.POINT cursor;Point anchorDip;
+                if(DockCursor.TryGet(out cursor))anchorDip=new Point(cursor.X/scale,Top-6);
+                else anchorDip=new Point(Left+ActualWidth/2,Top-6);
+                var popup=new ThumbnailPopup(windows,anchorDip,scale);
                 thumbnails=popup;
                 popup.PointerOut+=HideThumbnailsSoon;
                 popup.Clicked+=target=>{try{RunningWindows.Focus(target);}catch(Exception ex){Store.Log(ex);}HideThumbnails();};
-                Store.Trace("THUMB show entry="+name+" windows="+windows.Count+" usable="+popup.IsUsable+" at "+left.ToString("0")+","+top.ToString("0"));
+                Store.Trace("THUMB show entry="+name+" windows="+windows.Count+" usable="+popup.IsUsable+" at "+anchorDip.X.ToString("0")+","+anchorDip.Y.ToString("0"));
                 if(!popup.IsUsable)HideThumbnails();
             }catch(Exception ex){Store.Log(ex);HideThumbnails();}
         }
@@ -152,5 +155,13 @@ namespace GlassBoard {
             if(!StartDockPointer(buttons.First(),last,start,null))throw new Exception("第二次排序未捕获鼠标");MoveDockPointer(end);FinishDockPointer(end);UpdateLayout();if(DockOrderRules.Ordered(C.Prefs).Last().Path!=last.Path)throw new Exception("前向后松手未提交");
             buttons=Items.Children.OfType<Button>().Where(b=>b.Tag is Entry).ToList();string order=string.Join("|",C.Prefs.DockOrder);start=buttons.First().TranslatePoint(new Point(20,20),this);if(!StartDockPointer(buttons.First(),first,start,null))throw new Exception("取消测试未捕获鼠标");MoveDockPointer(new Point(start.X+30,start.Y));CancelDockPointer();if(string.Join("|",C.Prefs.DockOrder)!=order||Mouse.Captured==this||dockPointer!=null)throw new Exception("取消后排序或捕获未恢复");
         }
+    }
+
+    // Physical cursor position, used to anchor hover cards above the icon under the pointer.
+    internal static class DockCursor {
+        [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool GetCursorPos(out POINT point);
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        internal struct POINT {public int X;public int Y;}
+        internal static bool TryGet(out POINT point){return GetCursorPos(out point);}
     }
 }
