@@ -37,14 +37,14 @@ namespace GlassBoard {
         static readonly DependencyProperty DragSuppressed=DependencyProperty.RegisterAttached("DockDragSuppressed",typeof(bool),typeof(DockWindow),new PropertyMetadata(false));
         Action dockPointerClick;bool dockIconDragging,dockPointerPreviousBusy;DockPointerGesture dockPointer;FrameworkElement dockPointerOwner;bool dockPointerFromMenu;
         internal IntPtr pointerHint;
-        readonly DispatcherTimer dockPointerWatch=new DispatcherTimer(DispatcherPriority.Input){Interval=TimeSpan.FromMilliseconds(33)};
+        KeyWatch escapeWatch;ThumbnailPopup thumbnails;DispatcherTimer thumbnailTimer;FrameworkElement thumbnailSource;string thumbnailName;
         Border dockPointerPreview;TextBlock dockPointerLabel;
-        [System.Runtime.InteropServices.DllImport("user32.dll")]static extern short GetAsyncKeyState(int key);
         bool DockInputBusy{get{return dockPointer!=null||dockIconDragging;}}
         bool DockDragSuppresses(FrameworkElement element){return element!=null&&(bool)element.GetValue(DragSuppressed);}
         void BindDockSource(FrameworkElement element,Entry entry,Action beforeDrag=null){BindPointerItem(element,entry.Path,entry.Name,()=>C.LaunchDock(entry,pointerHint),beforeDrag);}
         void BindPointerItem(FrameworkElement element,string key,string name,Action click,Action beforeDrag=null){
             element.ToolTip=name+" · 点击打开；按住拖动调整 Dock 位置";ToolTipService.SetIsEnabled(element,false);
+            element.MouseEnter+=(s,e)=>ScheduleThumbnails(element,name);element.MouseLeave+=(s,e)=>HideThumbnails();
             element.AddHandler(Mouse.PreviewMouseDownEvent,new MouseButtonEventHandler((s,e)=>{if(e.ChangedButton!=MouseButton.Left||DockInputBusy)return;Point point=e.GetPosition(this);if(StartPointerItem(element,key,name,click,point,beforeDrag))e.Handled=true;}),true);
         }
         bool StartDockPointer(FrameworkElement owner,Entry entry,Point point,Action beforeDrag){return StartPointerItem(owner,entry.Path,entry.Name,()=>C.LaunchDock(entry),point,beforeDrag);}
@@ -53,11 +53,12 @@ namespace GlassBoard {
             // Remember what the user was looking at before the click is handled,
             // so a Dock click can minimize/restore exactly like the taskbar.
             pointerHint=RunningWindows.CaptureForegroundHint();
+            HideThumbnails();
             if(beforeDrag!=null)beforeDrag();
             if(!Mouse.Capture(this,CaptureMode.Element)){Store.Trace("DOCK pointer capture failed");return false;}
             StopDockLayoutMotion();dockPointer=new DockPointerGesture(key,point.X,point.Y,SystemParameters.MinimumHorizontalDragDistance,SystemParameters.MinimumVerticalDragDistance);
             dockPointerClick=click;dockPointerOwner=owner;dockPointerFromMenu=owner is MenuItem;owner.SetValue(DragSuppressed,true);dockPointerPreviousBusy=C.Board.ModalBusy;C.Board.ModalBusy=true;
-            dockPointerLabel.Text=name;dockPointerWatch.Start();Store.Trace("DOCK pointer press");return true;
+            dockPointerLabel.Text=name;KeyWatch.DisposeOf(ref escapeWatch);escapeWatch=new KeyWatch(0x1B,()=>CancelDockPointer());Store.Trace("DOCK pointer press");return true;
         }
         void MoveDockPointer(Point point){
             if(dockPointer==null)return;bool wasDragging=dockPointer.Dragging;dockPointer.Move(point.X,point.Y);if(!dockPointer.Dragging)return;
@@ -76,12 +77,40 @@ namespace GlassBoard {
             if(result.Click&&click!=null)click();
         }
         void ClearDockPointer(){
-            var owner=dockPointerOwner;dockPointer=null;dockPointerClick=null;dockPointerOwner=null;dockIconDragging=false;dockPointerWatch.Stop();C.Board.ModalBusy=dockPointerPreviousBusy;
+            var owner=dockPointerOwner;dockPointer=null;dockPointerClick=null;dockPointerOwner=null;dockIconDragging=false;KeyWatch.DisposeOf(ref escapeWatch);C.Board.ModalBusy=dockPointerPreviousBusy;
             try{ClearDockMarkers();dockPointerPreview.Visibility=Visibility.Collapsed;dockPointerLabel.Text="";
                 if(owner!=null){owner.BeginAnimation(OpacityProperty,null);owner.Opacity=1;if(!Dispatcher.HasShutdownStarted)Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,new Action(()=>owner.SetValue(DragSuppressed,false)));}
             }finally{if(Mouse.Captured==this)Mouse.Capture(null);}
         }
         void RouteDockPointer(Action action){try{action();}catch(Exception ex){Store.Log(ex);CancelDockPointer(false);if(IsVisible&&!C.ShuttingDown)Refresh(false);}}
+
+        // ---- hover thumbnails (DWM live previews) ----
+        void ScheduleThumbnails(FrameworkElement element,string name){
+            HideThumbnails();
+            if(element==null||!C.Prefs.Dock.ShowRunning)return;
+            thumbnailSource=element;thumbnailName=name;
+            if(thumbnailTimer==null){thumbnailTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(420)};thumbnailTimer.Tick+=(s,e)=>{thumbnailTimer.Stop();ShowThumbnails();};}
+            thumbnailTimer.Stop();thumbnailTimer.Start();
+        }
+        void ShowThumbnails(){
+            var element=thumbnailSource;var name=thumbnailName;thumbnailSource=null;thumbnailName=null;
+            if(element==null||!IsVisible||dockPointer!=null||!element.IsMouseOver)return;
+            var entry=C.Prefs.Apps.FirstOrDefault(a=>a.Name==name);if(entry==null)return;
+            var windows=RunningWindows.For(entry).Select(w=>w.Handle).Take(3).ToList();if(windows.Count==0)return;
+            try{
+                Point anchor=element.PointToScreen(new Point(element.ActualWidth/2,0));
+                int rows=Math.Min(3,windows.Count);var dpi=VisualTreeHelper.GetDpi(this);double scale=dpi.DpiScaleX<=0?1:dpi.DpiScaleX;
+                double width=268*scale;double height=(20+rows*140+(rows-1)*8)*scale;
+                double left=Math.Max(0,anchor.X-width/2);double top=Math.Max(0,anchor.Y-height-10);
+                thumbnails=new ThumbnailPopup(windows,left,top,scale);
+                Store.Trace("THUMB show entry="+name+" windows="+windows.Count+" available="+thumbnails.Available+" at "+left.ToString("0")+","+top.ToString("0"));
+            }catch(Exception ex){Store.Log(ex);HideThumbnails();}
+        }
+        internal void HideThumbnails(){
+            if(thumbnailTimer!=null)thumbnailTimer.Stop();
+            thumbnailSource=null;thumbnailName=null;
+            if(thumbnails!=null){try{thumbnails.Dispose();}catch(Exception ex){Store.Log(ex);}thumbnails=null;}
+        }
 
         void CancelDockPointer(bool refresh=true){if(dockPointer==null)return;dockPointer.Cancel();ClearDockPointer();Store.Trace("DOCK pointer cancelled");if(refresh&&IsVisible&&!C.ShuttingDown)Refresh(false);}
         void ClearDockMarkers(){foreach(var button in Items.Children.OfType<Button>()){var grid=button.Content as Grid;if(grid!=null)foreach(var marker in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="dockInsert"))marker.Visibility=Visibility.Collapsed;}}
@@ -101,8 +130,7 @@ namespace GlassBoard {
             AddHandler(Mouse.PreviewMouseUpEvent,new MouseButtonEventHandler((s,e)=>{if(dockPointer==null||e.ChangedButton!=MouseButton.Left)return;e.Handled=true;RouteDockPointer(()=>FinishDockPointer(e.GetPosition(this)));}),true);
             AddHandler(Mouse.LostMouseCaptureEvent,new MouseEventHandler((s,e)=>{if(dockPointer!=null&&Mouse.Captured!=this)CancelDockPointer();}),true);
             PreviewKeyDown+=(s,e)=>{if(dockPointer!=null&&e.Key==Key.Escape){e.Handled=true;CancelDockPointer();}};
-            dockPointerWatch.Tick+=(s,e)=>{if(dockPointer==null){dockPointerWatch.Stop();return;}if((GetAsyncKeyState(0x1B)&0x8000)!=0){CancelDockPointer();return;}if(Mouse.Captured!=this){CancelDockPointer();return;}if((GetAsyncKeyState(System.Windows.Forms.SystemInformation.MouseButtonsSwapped?0x02:0x01)&0x8000)==0)RouteDockPointer(()=>FinishDockPointer(Mouse.GetPosition(this)));};
-            IsVisibleChanged+=(s,e)=>{if(!IsVisible)CancelDockPointer(false);};Closed+=(s,e)=>{CancelDockPointer(false);dockPointerWatch.Stop();};
+            IsVisibleChanged+=(s,e)=>{if(!IsVisible)CancelDockPointer(false);};Closed+=(s,e)=>CancelDockPointer(false);
         }
         internal void CheckPointerReorder(){
             var buttons=Items.Children.OfType<Button>().Where(b=>b.Tag is Entry).ToList();if(buttons.Count<3)throw new Exception("指针排序测试缺少可见图标");

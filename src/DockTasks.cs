@@ -118,6 +118,7 @@ namespace GlassBoard {
             if(!wheel.Handled||!taskWheel.Running)throw new Exception("Dock 滚轮未切换运行软件");
             SetTaskMode(false);
         }
+        [System.Runtime.InteropServices.DllImport("user32.dll")]static extern short GetAsyncKeyState(int key);
         void ReleaseCancelledExternalDrag(){if(externalDockDrag&&(GetAsyncKeyState(System.Windows.Forms.SystemInformation.MouseButtonsSwapped?0x02:0x01)&0x8000)==0)ClearExternalDockDrag();}
         void ClearExternalDockDrag(){externalDockDrag=false;ClearDockMarkers();}
     }

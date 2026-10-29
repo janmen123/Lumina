@@ -1,7 +1,7 @@
 using System;using System.Linq;using System.Globalization;using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;using System.Windows.Input;using System.Windows.Media;using System.Windows.Media.Effects;using System.Windows.Shapes;
 namespace GlassBoard {
     public sealed partial class WidgetWindow {
-        TextBlock weekday,clockHours,clockMinutes;FrameworkElement weatherIcon;string musicLayoutSignature="";
+        TextBlock weekday,clockHours,clockMinutes;FrameworkElement weatherIcon;string musicLayoutSignature="";string clockKey="";
         WidgetStyle StyleFor(string kind){return M.C.Prefs.Widgets.Style(kind);}
         bool CompactWeatherOnly{get{return Kinds.Count==1&&Kinds[0]=="weather"&&StyleFor("weather").WeatherStyle==1;}}
         bool BareShell{get{return Kinds.Any(k=>StyleFor(k).Frameless);}}
@@ -40,7 +40,7 @@ namespace GlassBoard {
             body.MouseLeftButtonDown+=(a,e)=>{if(e.ClickCount!=1||M.C.Prefs.Widgets.Locked)return;e.Handled=true;try{DragMove();var area=DesktopWindowPolicy.WorkArea(this);Left=FeatureRules.Position(Left,area.Left,area.Width,Width);Top=FeatureRules.Position(Top,area.Top,area.Height,Height);var pos=M.C.Prefs.Widgets.Position(PanelId);pos.Left=Left;pos.Top=Top;M.C.Save();Backdrop(LightTheme);ApplyWidgetGlass();}catch(InvalidOperationException){}};parent.Children.Add(body);
         }
         static bool SetText(TextBlock text,string value){if(text==null||text.Text==value)return false;text.Text=value;return true;}
-        void ClockTick(){var s=StyleFor("clock");var now=DateTime.Now;var culture=CultureInfo.GetCultureInfo("en-US");SetText(clock,now.ToString(s.Hour24?"HH:mm":"hh:mm tt",culture));SetText(clockHours,now.ToString(s.Hour24?"HH":"hh"));SetText(clockMinutes,now.ToString("mm")+(s.Hour24||s.ClockStyle==13?"":" "+now.ToString("tt",culture)));if(s.ClockStyle>=5)AdvancedClockTick(now,s);else{SetText(date,s.ClockStyle==1?now.ToString("dd MMMM",culture):now.ToString("M月d日  dddd"));SetText(weekday,now.ToString("dddd",culture));}if(weekday!=null)weekday.Opacity=s.ClockStyle==1?.3:1;if(clockStatus!=null){SetText(clockStatus,ClockRules.Display(M.C.Prefs.Widgets,DateTime.UtcNow));clockStatus.ToolTip=clockStatus.Text;}}
+        void ClockTick(){var s=StyleFor("clock");var now=DateTime.Now;var key=now.ToString("yyyyMMddHHmm");bool running=M.C.Prefs.Widgets.TimerDueUtc.HasValue;if(!running&&key==clockKey)return;clockKey=key;var culture=CultureInfo.GetCultureInfo("en-US");SetText(clock,now.ToString(s.Hour24?"HH:mm":"hh:mm tt",culture));SetText(clockHours,now.ToString(s.Hour24?"HH":"hh"));SetText(clockMinutes,now.ToString("mm")+(s.Hour24||s.ClockStyle==13?"":" "+now.ToString("tt",culture)));if(s.ClockStyle>=5)AdvancedClockTick(now,s);else{SetText(date,s.ClockStyle==1?now.ToString("dd MMMM",culture):now.ToString("M月d日  dddd"));SetText(weekday,now.ToString("dddd",culture));}if(weekday!=null)weekday.Opacity=s.ClockStyle==1?.3:1;if(clockStatus!=null){SetText(clockStatus,ClockRules.Display(M.C.Prefs.Widgets,DateTime.UtcNow));clockStatus.ToolTip=clockStatus.Text;}}
         Button MusicGlyph(string icon,Action action,double size,bool primary){
             int style=StyleFor("music").MusicButtons;var b=Button("",(a,e)=>action(),style==4?size+12:size);b.Height=size;b.Margin=new Thickness(3);b.Tag="musicTransport";
             var border=new FrameworkElementFactory(typeof(Border));border.SetValue(Border.CornerRadiusProperty,new CornerRadius(style==3?9:style==4?size/2:style==0?size/2:0));

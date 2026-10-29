@@ -123,3 +123,11 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 键盘导航（已移除）：曾加入 ↑/↓ 高亮 + 回车启动 + Esc 清除，用户实测有问题且不需要该功能，已整段回退（focusPath 字段、PreviewKeyDown 处理、tile 高亮样式全部删除），搜索框恢复成只做文本过滤。
 - 备忘录：NoteItem 新增 Pinned 字段，列表按“置顶 → 更新时间”排序，标题前显示 📌；记事板新增搜索框（按标题/正文过滤，保持当前选中）；新增“置顶”按钮；导出改为 Markdown（# 标题 + 正文，UTF-8 带 BOM）。
 - 验证：拼音用独立 csc 编译的单元测试覆盖（抖音/微信/QQ/7-Zip 均通过，zz 不误命中）；UI 层拼音搜索未完成端到端验证（EnumWindows 找到的是未渲染的隐藏面板实例），备忘录增强同样只做了编译验证。
+14. D 批：Dock 悬停实时缩略图、时钟对齐、指针事件驱动（2026-10-30）
+- 图标缓存 LRU 早已存在，无需改动：src\MemoryResources.cs 的 BoundedCache 是标准 LRU（TryGet 提升、Put 淘汰最旧），图标缓存容量 192、自定义图标缓存 128。
+- 新增 src\ThumbnailPopup.cs：用 DwmRegisterThumbnail 把真实窗口画面画进一个小弹窗，Dock 图标悬停 420ms 后出现在图标上方，最多 3 个窗口纵向排列。因为 DWM 不会往 WS_EX_LAYERED 窗口里合成缩略图，宿主用普通 HwndSource（WS_POPUP + TOOLWINDOW|NOACTIVATE|TRANSPARENT|TOPMOST），圆角深色底 + 1px 描边。
+- 尺寸与坐标的两次返工：① HwndSourceParameters 的坐标/尺寸在本机不走 DIP 自动缩放，最初按 DIP 传值导致弹窗跑到屏幕中部偏上；改为按物理像素定位，并把 268×140 的基准尺寸乘 DPI 比例，弹窗最终 536×320 物理像素，正好浮在 Dock 上方。② 缩略图目标矩形最初用 DIP 尺寸，画面被横向拉伸、下方发黑；改为创建后 GetClientRect 取真实客户区、按物理像素划分格子，画面就完整贴合。
+- 接线在 src\DockInteractions.cs：BindPointerItem 里 MouseEnter→ScheduleThumbnails(元素, 名称)、MouseLeave→HideThumbnails；按下拖动、Dock 刷新、退出时都会先关掉弹窗。
+- 时钟改为按分钟更新：src\WidgetAppearance.cs 的 ClockTick 用 yyyyMMddHHmm 作为键，普通时钟只在分钟变化时重绘文字；倒计时进行中仍保持每秒刷新。
+- Dock 指针不再用 33ms 定时器轮询按键：新增 src\KeyWatch.cs（WH_KEYBOARD_LL 全局键盘钩子，只处理 Esc，Dispose 时解挂），按下 Dock 图标时挂上、松手即解，减少空闲开销；src\DockTasks.cs 里外部拖拽仍需要的 GetAsyncKeyState 保留。
+- 实测：悬停抖音图标，session.log 记录 `THUMB show entry=抖音 windows=1 available=True at 596,700`，截图确认弹窗位置正确、画面是实时内容（视频播放时画面同步变化）；卸载时无残留窗口。时钟与指针改动后 Dock 交互正常，error.log 未新增。

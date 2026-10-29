@@ -998,6 +998,7 @@ namespace GlassBoard {
         }
         public void Refresh(bool capture=true) {
             if(DockInputBusy)return;
+            HideThumbnails();
             double oldWidth=Width,oldLeft=Left;StopDockLayoutMotion();
             var o=C.Prefs.Dock;o.Normalize();LightTheme=C.Prefs.Light;MotionEnabled=o.OpenMotion;MotionLevel=o.MotionLevel;OpenStyle=o.OpenAnimationStyle;ConfigureGlass(o);Topmost=InteractionRules.DockTopmost(o,boardPinDragging);RefreshLayer();
             revealSerial++;BeginAnimation(TopProperty,null);renderedHidden=false;hidePolicy=new AutoHidePolicy();moveGrip.Visibility=Visibility.Visible;moveGrip.Cursor=C.Prefs.Placement.DockLocked?Cursors.Arrow:Cursors.SizeAll;moveGrip.ToolTip=C.Prefs.Placement.DockLocked?"右键 Dock → 允许自由拖动 Dock":"拖动顶部空白区域移动 Dock，松手保存";
