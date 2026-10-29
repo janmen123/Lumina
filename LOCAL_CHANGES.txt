@@ -94,3 +94,10 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 实测（真实屏幕点击，DPI 感知）：前台为 douyin 时点 Dock 抖音图标 → hint=67306 fg=67306 front=True iconic=False → WINDOW minimize handle=67306，第一次点击就最小化；点已最小化的 DeepSeek Harness 图标 → front=False iconic=True → 恢复并置前。
 - 事故与修复：一次合成点击被判定为拖拽，revision 1154 把抖音从第 4 位挪到第 7 位；已按 layout.json.previous(revision 1153) 的顺序写回并重启（启动后 SAVE revision 1155）。合成点击在 hover 动画期间不可靠，后续不要用连续合成点击验收 Dock。
 - 关于“白色条状物”：Shell_TrayWnd hwnd 196948 可见、rect 0,1998 3200x96；HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3 的 Settings 自动隐藏位为 1；本机 Windows NT 10.0.26200 的浮动任务栏背景是浅色圆角条。把光标移到屏幕最下缘让任务栏弹出后截图（y1860-2000）可见其浅色背景夹在 Dock 图标之间/下方。→ 白条是系统浮动任务栏被自动隐藏触发后露出的背景，与 GlassBoard 的绘制无关；GlassBoard 从未调用任务栏定位 API，配置里 TaskbarAutoHide/HideTaskbar/HideDesktopIcons 均为空。可选处理：把 Dock 静止位置抬离可见底边几个 DIP，或关闭任务栏自动隐藏。
+11. 地基加固：日志轮转、热键错误码、自测超时与隔离、诊断开关、git（2026-10-30）
+- git：D:\Software\Tools\Glassboard 初始化本地仓库（分支 main），.gitignore 排除 build-output、GlassBoard.exe、备份、日志、layout/notes/snapshots 等生成物；基线提交 235 文件、2.42 MB。
+- error.log 轮转：Store.Log 与新增的 Store.Log(context,ex) 在超过 1 MB 时把旧文件改名为 error.log.<ticks>，并只保留最近 5 份；session.log 轮转同样只保留 5 份。
+- 热键失败日志保留真实错误码：RegisterKey 改为 Store.Log("RegisterHotKey failed action=... key=...", new Win32Exception(code,"RegisterHotKey"))，输出行内含 win32=1409 这类数字（Win32Exception 的 HResult 恒为 E_FAIL，只看 HResult 无法定位）。实测用探针程序占住 7 组热键后启动，error.log 得到 7 行 win32=1409，且旧 1.21 MB 日志被轮转。
+- --self-test 不再卡死：SelfTest 新增看门狗（每项 60–180 秒），超时写 self-test-result.txt 的 TIMEOUT 行并 exit 2；每个检查用 Step() 包裹，单项失败只记录到 failures 列表并继续执行后续项，最后写 FAILED 列表或 PASS。
+- 诊断日志开关：Store.Diagnostics 默认关闭，session.log 只保留 SAVE/START/LOAD/ERROR/SESSION_END/RECOVER/SHUTDOWN/LAUNCH 标签；设置 → 通用 新增“记录诊断日志（排查问题时开启）”，开启时写 debug-log.on，Dock/窗口切换/组件等细节才落盘。
+- 实测：自测 6.8 秒完成并输出 3 条既有失败（Dock 指针重排、无框组件空白右键、勾选框中心点击），不再挂起；重启后 session.log 只剩 START/LOAD，诊断行被过滤。
