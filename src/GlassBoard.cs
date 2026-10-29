@@ -189,7 +189,7 @@ namespace GlassBoard {
         [DataMember] public bool UseScreenBounds=true;
         [DataMember] public int Alignment=1,Accent=0,MaxPinned=9,ComputerStyle=0;
         [DataMember] public bool ShowComputer=true,ShowLabels=false,ShowSeparator=true,AlwaysOnTop=false,MotionEnabled=true;
-        [DataMember] public bool AutoHide=false,ShowRunning=true;
+        [DataMember] public bool AutoHide=false,ShowRunning=true,ShowRunningSection=true;
         [DataMember] public bool Reflection=false,DragMotion=true;
         [DataMember] public double ReflectionOpacity=45,ReflectionLength=38,ReflectionAngle=0,ReflectionBlur=1.5,ReflectionGap=2,ReflectionFade=85;
         [DataMember] public bool SpringReveal=true;
@@ -208,7 +208,7 @@ namespace GlassBoard {
             IconSize=44;Spacing=6;Padding=16;Radius=28;OpacityPercent=72;Zoom=1.2;Offset=0;MotionLevel=1;OpeningAnimation=HoverAnimation=null;OpenAnimationStyle="fade";HoverAnimationStyle="zoom-lift";RespectFullscreen=true;
             VerticalPadding=4;UseScreenBounds=true;
             Alignment=1;Accent=0;MaxPinned=9;ComputerStyle=0;ShowComputer=true;ShowLabels=false;ShowSeparator=true;AlwaysOnTop=false;MotionEnabled=true;
-            ShowSettings=true;ItemOrder=new List<string>();RunningOrder=new List<string>();AutoHide=false;ShowRunning=true;SpringReveal=true;ShowShortcutOverlays=false;SharperIcons=false;HideDelay=900;EdgeRange=12;BlurRadius=18;EdgeStrength=1;Reflection=false;DragMotion=true;ReflectionOpacity=45;ReflectionLength=38;ReflectionAngle=0;ReflectionBlur=1.5;ReflectionGap=2;ReflectionFade=85;
+            ShowSettings=true;ItemOrder=new List<string>();RunningOrder=new List<string>();AutoHide=false;ShowRunning=true;ShowRunningSection=true;SpringReveal=true;ShowShortcutOverlays=false;SharperIcons=false;HideDelay=900;EdgeRange=12;BlurRadius=18;EdgeStrength=1;Reflection=false;DragMotion=true;ReflectionOpacity=45;ReflectionLength=38;ReflectionAngle=0;ReflectionBlur=1.5;ReflectionGap=2;ReflectionFade=85;
         }
         public DockOptions Copy() {var copy=(DockOptions)MemberwiseClone();copy.OpenAnimationStyle=InteractionRules.OpenStyle(OpenAnimationStyle);HoverAnimationStyle=InteractionRules.HoverStyle(HoverAnimationStyle);
             ItemOrder=(ItemOrder??new List<string>()).ToList();copy.RunningOrder=(RunningOrder??new List<string>()).ToList();copy.Material=(Material??new MaterialOptions()).Copy();return copy;}
@@ -767,6 +767,7 @@ namespace GlassBoard {
                 check(dockPage,"显示分隔线",draft.ShowSeparator,value=>{draft.ShowSeparator=value;live();});
                 check(dockPage,"Dock 保持在窗口最上方",draft.AlwaysOnTop,value=>{draft.AlwaysOnTop=value;live();});
                 check(dockPage,"显示软件运行状态",draft.ShowRunning,value=>{draft.ShowRunning=value;live();});
+                check(dockPage,"Dock 中显示正在运行但未固定的软件",draft.ShowRunningSection,value=>{draft.ShowRunningSection=value;live();});
                 check(dockPage,"Dock 自动隐藏，靠近所在屏幕底边唤出",draft.AutoHide,value=>{draft.AutoHide=value;live();});range(dockPage,"自动隐藏延迟",200,3000,draft.HideDelay,100," ms",value=>{draft.HideDelay=value;live();});range(dockPage,"底边触发范围",3,48,draft.EdgeRange,1," px",value=>{draft.EdgeRange=value;live();});
                 check(dockPage,"弹簧弹出效果（也可右键 Dock 切换）",draft.SpringReveal,value=>{draft.SpringReveal=value;live();});
                 check(dockPage,"锁定 Dock 位置",Prefs.Placement.DockLocked,value=>{Prefs.Placement.DockLocked=value;live();});
@@ -949,7 +950,7 @@ namespace GlassBoard {
             moveGrip=new Thumb{Width=42,Height=6,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,Margin=new Thickness(0,7,0,0),Cursor=Cursors.SizeAll,ToolTip="拖动 Dock；设置中可锁定位置"};Root.Children.Add(moveGrip);
             moveGrip.Template=InvisibleDockGrip();Closing+=(s,e)=>{if(!C.ShuttingDown){e.Cancel=true;Dispatcher.BeginInvoke(new Action(()=>C.Quit()));}};
             moveGrip.DragStarted+=(s,e)=>BeginDockMove();moveGrip.DragDelta+=(s,e)=>{if(!dragging)return;var area=DockPlacementArea(true);Left=FeatureRules.Position(Left+e.HorizontalChange,area.Left,area.Width,Width);Top=DockGeometryRules.Top(Top+e.VerticalChange,area,Height);};moveGrip.DragCompleted+=(s,e)=>FinishDockMove();
-            autoTimer.Tick+=(s,e)=>{RunningWindows.RememberForeground();UpdateAutoHide();};foregroundTimer.Tick+=(s,e)=>RunningWindows.RememberForeground();foregroundTimer.Start();runningTimer.Tick+=(s,e)=>{ReleaseCancelledExternalDrag();if(boardPinDragging)return;C.CheckGameMode();if(!C.Prefs.AutoGameMode){var slow=IdleState.Seconds()>=90?TimeSpan.FromSeconds(15):TimeSpan.FromSeconds(5);if(runningTimer.Interval!=slow)runningTimer.Interval=slow;}if(C.GlassSuppressed||(!IsVisible&&!C.Board.IsVisible))return;if((!C.Prefs.Dock.ShowRunning&&!taskWheel.Running)||(DateTime.UtcNow-lastRunningScan).TotalSeconds<(renderedHidden?20:5))return;lastRunningScan=DateTime.UtcNow;RunningWindows.Scan();RefreshTaskSnapshot();UpdateRunning();C.Board.UpdateRunning();};runningTimer.Start();
+            autoTimer.Tick+=(s,e)=>{RunningWindows.RememberForeground();UpdateAutoHide();};foregroundTimer.Tick+=(s,e)=>RunningWindows.RememberForeground();foregroundTimer.Start();runningTimer.Tick+=(s,e)=>{ReleaseCancelledExternalDrag();if(boardPinDragging)return;C.CheckGameMode();if(!C.Prefs.AutoGameMode){var slow=IdleState.Seconds()>=90?TimeSpan.FromSeconds(15):TimeSpan.FromSeconds(5);if(runningTimer.Interval!=slow)runningTimer.Interval=slow;}if(C.GlassSuppressed||(!IsVisible&&!C.Board.IsVisible))return;if((!C.Prefs.Dock.ShowRunning&&!taskWheel.Running&&!C.Prefs.Dock.ShowRunningSection)||(DateTime.UtcNow-lastRunningScan).TotalSeconds<(renderedHidden?20:5))return;lastRunningScan=DateTime.UtcNow;RunningWindows.Scan();RefreshTaskSnapshot();UpdateRunning();C.Board.UpdateRunning();};runningTimer.Start();
             SourceInitialized+=(s,e)=> {
                 source=HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);source.AddHook(Hook);
                 hotkeys=new HotkeyManager(RegisterKey,id=>Native.UnregisterHotKey(source.Handle,id));
@@ -986,7 +987,7 @@ namespace GlassBoard {
             if(o.ShowComputer)AddSystemButton(DockLayoutRules.Computer,DockButton("computer",null,()=> {C.Board.Hide();Native.Computer();},"此电脑"),()=>{C.Board.Hide();Native.Computer();});
             
             var area=DockPlacementArea();dockWorkingArea=area;dockScreenArea=DesktopWindowPolicy.WorkArea(this,false,true);var pinned=DockOrderRules.Ordered(C.Prefs);int displayCount=taskWheel.Running?taskGroups.Count:pinned.Count;int slots=o.VisiblePinned(area.Width-20,displayCount);
-            int shown=displayCount>slots?Math.Max(0,slots-1):slots;
+            int shown=displayCount>slots?Math.Max(0,slots-1):slots;int extrasShown=0;
             if(taskWheel.Running)BuildTaskButtons(shown,slots);else {
             foreach(var a in pinned.Take(shown)) {var b=DockButton(null,FeatureUi.Icon(a,C.Prefs.Dock.ShowShortcutOverlays,C.Prefs.Dock.SharperIcons),()=>C.LaunchDock(a),a.Name,a);b.ContextMenu=C.Menu(a,"Dock");AddDockControls(b.ContextMenu);Items.Children.Add(b);}
             if(pinned.Count>shown&&slots>0) {
@@ -994,12 +995,13 @@ namespace GlassBoard {
                 foreach(var a in pinned.Skip(shown)) {var item=new MenuItem{Header=a.Name};var entry=a;item.Click+=(s,e)=>{if(!DockDragSuppresses(item))C.LaunchDock(entry);};BindDockSource(item,entry,()=>menu.IsOpen=false);menu.Items.Add(item);}
                 AddDockControls(menu);more.ContextMenu=menu;more.Click+=(s,e)=>{menu.PlacementTarget=more;menu.Placement=PlacementMode.Top;menu.IsOpen=true;};Items.Children.Add(more);
             }
+            if(o.ShowRunningSection&&pinned.Count>0){RunningWindows.Scan();ReadTaskGroups();if(taskGroups.Count>0){var pinnedTargets=new HashSet<string>(pinned.SelectMany(a=>WindowActivationRules.Executables(a)),StringComparer.OrdinalIgnoreCase);var extras=taskGroups.Where(g=>!g.Key.StartsWith("window:",StringComparison.Ordinal)&&!g.Key.StartsWith("folder:",StringComparison.Ordinal)&&!pinnedTargets.Contains(g.Windows[0].Path??"")).ToList();double cell=o.IconSize+16+o.Spacing;int fixedSlots=1+(o.ShowSettings?1:0)+(o.ShowComputer?1:0)+(o.ShowPower?1:0)+(o.ShowNetwork?1:0)+(o.ShowRecycleBin?1:0);int fit=Math.Max(0,(int)Math.Floor((area.Width-20-28-o.HoverPadding()*2-(o.ShowSeparator?17:0))/cell)-fixedSlots);int room=Math.Max(0,fit-shown-1);if(extras.Count>room)extras=extras.Take(room).ToList();if(extras.Count>0){extrasShown=extras.Count;Items.Children.Add(new Border{Width=1,Height=o.IconSize*.7,Margin=new Thickness(6,0,6,0),Background=new SolidColorBrush(Color.FromArgb(65,220,220,230)),VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false});foreach(var group in extras){var selected=group;var button=DockButton(null,RunningWindows.Icon(group.Windows[0]),()=>OpenTask(selected,null),"正在运行 · "+group.Name+(group.Windows.Count>1?" · "+group.Windows.Count+" 个窗口":""));button.Tag=group;var grid=button.Content as Grid;if(grid!=null)grid.Children.Add(RunningBadge.Create());button.ContextMenu=TaskWindowMenu(group);Items.Children.Add(button);}}}}
             if(pinned.Count==0) Items.Children.Add(DockButton("+",null,()=>C.Toggle(true),"打开面板，可拖入软件固定"));
             }
             AddQuickButtons();
             if(o.ShowSettings)AddSystemButton(DockLayoutRules.Settings,DockButton("⚙",null,()=>C.Settings(),"DIY 设置"),()=>C.Settings());
             ArrangeDockItems();
-            Width=Math.Min(area.Width-20,o.WidthFor(displayCount==0?1:slots));
+            Width=Math.Min(area.Width-20,o.WidthFor(displayCount==0?1:slots+extrasShown));
             Height=DockGeometryRules.Height(o);
             double x=o.Alignment==0?area.Left+10:o.Alignment==2?area.Right-Width-10:area.Left+(area.Width-Width)/2;
             var placement=C.Prefs.Placement;
@@ -1023,7 +1025,7 @@ namespace GlassBoard {
             bool hide=hidePolicy.Update(DateTime.UtcNow,C.Prefs.Dock.AutoHide,over,edge,dragging||DockInputBusy||externalDockDrag||(taskMenu!=null&&taskMenu.IsOpen)||menu||C.UiBusy||C.Board.IsVisible,C.Prefs.Dock.HideDelay);
             if(hide==renderedHidden)return;renderedHidden=hide;double target=hide?bottom-20:shownTop;AnimateDockVisibility(hide,target);
         }
-        void UpdateRunning(){foreach(var button in Items.Children.OfType<Button>()){var entry=button.Tag as Entry;var grid=button.Content as Grid;if(entry==null||grid==null)continue;foreach(var dot in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="running"))dot.Visibility=C.Prefs.Dock.ShowRunning&&RunningWindows.IsRunning(entry)?Visibility.Visible:Visibility.Collapsed;}}
+        void UpdateRunning(){foreach(var button in Items.Children.OfType<Button>()){var grid=button.Content as Grid;if(grid==null)continue;var entry=button.Tag as Entry;if(entry!=null){int count=C.Prefs.Dock.ShowRunning?RunningWindows.Count(entry):0;foreach(var dot in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="running"))RunningBadge.Apply(dot,count);continue;}var group=button.Tag as TaskGroup;if(group!=null)foreach(var dot in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="running"))RunningBadge.Apply(dot,group.Windows.Count);}}
         static Color Accent(int index) {return new Color[]{Color.FromRgb(121,185,250),Color.FromRgb(183,149,245),Color.FromRgb(105,218,183),Color.FromRgb(242,193,104),Color.FromRgb(244,150,178),Color.FromRgb(194,203,217)}[index];}
         Button DockButton(string text,ImageSource icon,Action action,string tip,Entry entry=null) {
             var o=C.Prefs.Dock;double size=o.IconSize;
@@ -1047,7 +1049,7 @@ namespace GlassBoard {
             FrameworkElement mirror=DockReflection.Create(visual,o);
             var box=new StackPanel{VerticalAlignment=VerticalAlignment.Center};box.Children.Add(visual);if(mirror!=null)box.Children.Add(mirror);
             if(o.ShowLabels)box.Children.Add(new TextBlock{Text=text=="computer"?"此电脑":text=="▦"?"应用":text=="⚙"?"设置":text=="···"?"更多":tip,FontSize=10,Foreground=MutedBrush,TextAlignment=TextAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis,MaxWidth=size+12,Margin=new Thickness(0,4,0,0)});
-            var content=new Grid{IsHitTestVisible=false};content.Children.Add(box);if(entry!=null){b.Tag=entry;content.Children.Add(new Border{Tag="running",Width=5,Height=4,CornerRadius=new CornerRadius(2),Background=new SolidColorBrush(Color.FromRgb(135,205,255)),HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Bottom,Visibility=Visibility.Collapsed});}b.Content=content;
+            var content=new Grid{IsHitTestVisible=false};content.Children.Add(box);if(entry!=null){b.Tag=entry;content.Children.Add(RunningBadge.Create());}b.Content=content;
             var scale=new ScaleTransform(1,1);var lift=new TranslateTransform();var transforms=new TransformGroup();transforms.Children.Add(scale);transforms.Children.Add(lift);b.RenderTransform=transforms;b.RenderTransformOrigin=new Point(.5,.65);
             Action<bool> animate=hover=> {if(!C.Prefs.Dock.HoverMotion)return;var ease=new CubicEase{EasingMode=EasingMode.EaseOut};double target=hover&&InteractionRules.ZoomHover(o.HoverAnimationStyle)?Math.Min(1.6,1+(o.Zoom-1)*MotionLevel):1;
                 scale.BeginAnimation(ScaleTransform.ScaleXProperty,new DoubleAnimation(target,TimeSpan.FromMilliseconds(180)){EasingFunction=ease});scale.BeginAnimation(ScaleTransform.ScaleYProperty,new DoubleAnimation(target,TimeSpan.FromMilliseconds(180)){EasingFunction=ease});lift.BeginAnimation(TranslateTransform.YProperty,new DoubleAnimation(hover&&InteractionRules.LiftHover(o.HoverAnimationStyle)?-5*MotionLevel:0,TimeSpan.FromMilliseconds(180)){EasingFunction=ease});};
@@ -1191,7 +1193,7 @@ namespace GlassBoard {
             if(icon!=null)box.Children.Add(new Image{Source=icon,Width=C.Prefs.BoardIconSize,Height=C.Prefs.BoardIconSize,Margin=new Thickness(0,0,0,8)});
             else box.Children.Add(new TextBlock{Text="▣",Foreground=TextBrush,FontSize=C.Prefs.BoardIconSize*.84,Height=C.Prefs.BoardIconSize,HorizontalAlignment=HorizontalAlignment.Center,Margin=new Thickness(0,0,0,8)});
             box.Children.Add(new TextBlock{Text=a.Name,Foreground=TextBrush,FontSize=12,TextAlignment=TextAlignment.Center,TextTrimming=TextTrimming.CharacterEllipsis,MaxWidth=Math.Max(20,(Tiles.ActualWidth>0?Tiles.ActualWidth:Width-104)/columns-2*C.Prefs.BoardIconGap-10)});
-            container.Children.Add(new Border{Tag="running",Width=5,Height=5,CornerRadius=new CornerRadius(3),Background=new SolidColorBrush(Color.FromRgb(135,205,255)),VerticalAlignment=VerticalAlignment.Bottom,HorizontalAlignment=HorizontalAlignment.Center,Margin=new Thickness(0,0,0,1),ToolTip="正在运行，点击切回窗口",Visibility=Visibility.Collapsed});
+            container.Children.Add(RunningBadge.Create());
             if(editing) {
                 var check=new CheckBox{IsChecked=isSelected,IsHitTestVisible=false,Focusable=false,HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,Margin=new Thickness(2)};container.Children.Add(check);
             }
@@ -1230,7 +1232,7 @@ namespace GlassBoard {
         }
         int DocCount(string kind){string group=C.Prefs.DesktopDocsGroup;return C.Prefs.Apps.Count(a=>FeatureRules.InGroup(a,group)&&(kind=="全部"||DesktopAutoRules.DocKind(a.Path)==kind));}
         void ExternalDrop(object s,DragEventArgs e) {if(DraggedEntries(e.Data).Length>0){e.Handled=true;e.Effects=DragDropEffects.None;return;}if(e.Data.GetDataPresent(DataFormats.FileDrop)) {C.Add((string[])e.Data.GetData(DataFormats.FileDrop),true,currentGroup);ClearSearch();e.Handled=true;}}
-        public void UpdateRunning(){if(Tiles==null||!IsVisible)return;foreach(var tile in Tiles.Children.OfType<Border>()){var entry=tile.Tag as Entry;var grid=tile.Child as Grid;if(entry==null||grid==null)continue;foreach(var marker in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="running"))marker.Visibility=C.Prefs.Dock.ShowRunning&&RunningWindows.IsRunning(entry)?Visibility.Visible:Visibility.Collapsed;}}
+        public void UpdateRunning(){if(Tiles==null||!IsVisible)return;foreach(var tile in Tiles.Children.OfType<Border>()){var entry=tile.Tag as Entry;var grid=tile.Child as Grid;if(entry==null||grid==null)continue;int count=C.Prefs.Dock.ShowRunning?RunningWindows.Count(entry):0;foreach(var marker in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="running"))RunningBadge.Apply(marker,count);}}
     }
     public static class Program {
         [STAThread] public static int Main(string[] args) {

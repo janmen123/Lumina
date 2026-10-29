@@ -72,6 +72,7 @@ namespace GlassBoard {
         public static List<RunningWindow> For(Entry entry){if(entry==null)return new List<RunningWindow>();if(entry.IsFolder||Directory.Exists(entry.Path)){string folder=EntryPathRules.Normalize(entry.Path);return windows.Where(w=>!string.IsNullOrEmpty(w.FolderPath)&&string.Equals(w.FolderPath,folder,StringComparison.OrdinalIgnoreCase)).ToList();}Resolve(entry);var paths=WindowActivationRules.Executables(entry);return windows.Where(w=>paths.Contains(w.Path,StringComparer.OrdinalIgnoreCase)).ToList();}
         public static List<RunningWindow> Snapshot(){return windows.ToList();}
         public static bool IsRunning(Entry entry){return For(entry).Count>0;}
+        public static int Count(Entry entry){return entry==null?0:For(entry).Count;}
         [DllImport("user32.dll",SetLastError=true)]static extern bool PostMessage(IntPtr window,uint message,IntPtr w,IntPtr l);
         public static bool RequestClose(RunningWindow window){if(window==null||!IsWindow(window.Handle))return false;uint pid;GetWindowThreadProcessId(window.Handle,out pid);if(pid!=window.ProcessId)return false;return PostMessage(window.Handle,0x10,IntPtr.Zero,IntPtr.Zero);}
         [DllImport("user32.dll")]static extern bool ShowWindow(IntPtr window,int command);

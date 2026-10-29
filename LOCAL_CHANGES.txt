@@ -101,3 +101,10 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - --self-test 不再卡死：SelfTest 新增看门狗（每项 60–180 秒），超时写 self-test-result.txt 的 TIMEOUT 行并 exit 2；每个检查用 Step() 包裹，单项失败只记录到 failures 列表并继续执行后续项，最后写 FAILED 列表或 PASS。
 - 诊断日志开关：Store.Diagnostics 默认关闭，session.log 只保留 SAVE/START/LOAD/ERROR/SESSION_END/RECOVER/SHUTDOWN/LAUNCH 标签；设置 → 通用 新增“记录诊断日志（排查问题时开启）”，开启时写 debug-log.on，Dock/窗口切换/组件等细节才落盘。
 - 实测：自测 6.8 秒完成并输出 3 条既有失败（Dock 指针重排、无框组件空白右键、勾选框中心点击），不再挂起；重启后 session.log 只剩 START/LOAD，诊断行被过滤。
+12. Dock：多窗口数字角标 + “正在运行”分区（2026-10-30）
+- 新增 src\RunningBadge.cs：统一运行标记。1 个窗口时仍是 5×4 小圆点；多于 1 个时变成 13 高、最小宽 14 的胶囊徽标，显示窗口数（超过 9 显示 9+），深色文字压在 #87CDFF 底色上。
+- 角标接入面：Dock 图标、主面板图标、以及“正在运行”分区的图标；更新点是 DockWindow.UpdateRunning、BoardWindow.UpdateRunning、BoardPerformance.QueueRunningMarkers，计数来自新增的 RunningWindows.Count(entry)（走 Scan 缓存，开销很小）。
+- Dock 新增分区：固定图标之后插入一条细分隔线，再列出“正在运行但未固定”的软件；点击调用 OpenTask（前台窗口优先切换），右键是 TaskWindowMenu（窗口列表 + 关闭窗口），与滚轮“正在运行”模式共用同一套逻辑。数量按当前可用宽度裁剪，不会把 Dock 撑出屏幕。
+- 新增 DockOptions.ShowRunningSection（默认 true）；设置 → Dock 里多一项“Dock 中显示正在运行但未固定的软件”，可关闭。
+- 轮询守卫同步放宽：runningTimer 与 RefreshTaskSnapshot 在 ShowRunningSection 开启时也会扫描并重建，运行中的软件开关后 Dock 会自动增删该分区。
+- 实测：FlClash 未固定但在运行 → Dock 出现“正在运行 · FlClash”；启动两个 probe.exe 后显示“正在运行 · probe · 2 个窗口”，UIA 读到角标文本 "2"（10×22，位于图标底部）。固定图标的点击切换行为不受影响。

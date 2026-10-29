@@ -65,7 +65,7 @@ namespace GlassBoard {
         }
         string TaskSignature(){return string.Join("|",RunningWindows.Snapshot().OrderBy(w=>w.Handle.ToInt64()).Select(w=>w.Handle.ToInt64()+":"+w.Path+":"+w.Title));}
         void RefreshTaskSnapshot(){
-            if(!taskWheel.Running||DockInputBusy||externalDockDrag||dragging||C.Board.ModalBusy||(taskMenu!=null&&taskMenu.IsOpen)||(ContextMenu!=null&&ContextMenu.IsOpen)||Items.Children.OfType<Button>().Any(b=>b.IsMouseOver||(b.ContextMenu!=null&&b.ContextMenu.IsOpen)))return;
+            if((!taskWheel.Running&&!C.Prefs.Dock.ShowRunningSection)||DockInputBusy||externalDockDrag||dragging||C.Board.ModalBusy||(taskMenu!=null&&taskMenu.IsOpen)||(ContextMenu!=null&&ContextMenu.IsOpen)||Items.Children.OfType<Button>().Any(b=>b.IsMouseOver||(b.ContextMenu!=null&&b.ContextMenu.IsOpen)))return;
             if(taskSignature==TaskSignature())return;ReadTaskGroups();Refresh(false);
         }
         void BuildTaskButtons(int shown,int slots){
