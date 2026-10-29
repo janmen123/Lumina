@@ -15,8 +15,8 @@ namespace GlassBoard {
                 foreach(var key in controller.Prefs.Hotkeys)key.Enabled=false;controller.Dock.Show();controller.Dock.UpdateLayout();
                 var first=controller.Prefs.Apps[0];var last=controller.Prefs.Apps[3];if(!DockOrderRules.Move(controller.Prefs,first.Path,last.Path,false))throw new Exception("Dock 排序失败");controller.Dock.Refresh(false);
                 var panel=FindPanel(controller.Dock);var buttons=panel==null?new Button[0]:panel.Children.OfType<Button>().Where(b=>b.Tag is Entry).ToArray();var expected=DockOrderRules.Ordered(controller.Prefs).Take(buttons.Length).ToArray();
-                if(buttons.Length<1||!buttons.Select(b=>((Entry)b.Tag).Path).SequenceEqual(expected.Select(a=>a.Path))||buttons.Any(b=>b.Tag==null))throw new Exception("Dock 渲染顺序或排序入口错误");controller.Dock.CheckPointerReorder();controller.Dock.CheckTaskDock();controller.Dock.CheckMixedPointerReorder();
-            }finally{controller.ShuttingDown=true;controller.Dock.ReleaseHotkey();controller.Board.Close();controller.Dock.Close();}
+                Store.Trace("CHECK dock render ok buttons="+buttons.Length);if(buttons.Length<1||!buttons.Select(b=>((Entry)b.Tag).Path).SequenceEqual(expected.Select(a=>a.Path))||buttons.Any(b=>b.Tag==null))throw new Exception("Dock 渲染顺序或排序入口错误");Store.Trace("CHECK pointer reorder start");controller.Dock.CheckPointerReorder();Store.Trace("CHECK pointer reorder ok");controller.Dock.CheckTaskDock();controller.Dock.CheckMixedPointerReorder();
+            }finally{Store.Trace("CHECK dock cleanup");controller.ShuttingDown=true;controller.Dock.ReleaseHotkey();controller.Board.Close();controller.Dock.Close();}
         }
         static StackPanel FindPanel(DependencyObject parent){if(parent is StackPanel&&((StackPanel)parent).Orientation==Orientation.Horizontal&&((StackPanel)parent).Children.OfType<Button>().Any(b=>b.Tag is Entry))return (StackPanel)parent;for(int i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);i++){var result=FindPanel(System.Windows.Media.VisualTreeHelper.GetChild(parent,i));if(result!=null)return result;}return null;}
     }

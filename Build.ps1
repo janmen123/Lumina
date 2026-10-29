@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $framework = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319'
 if (-not (Test-Path (Join-Path $framework 'csc.exe'))) {
@@ -19,8 +19,6 @@ $arguments += '/link:verification\build-refs\Interop.UIAutomationClient.dll'
 $arguments += '/resource:assets\support\c1.dat,GlassBoard.Assets.c1.dat'
 $arguments += '/resource:assets\support\c2.dat,GlassBoard.Assets.c2.dat'
 $arguments += '/resource:assets\support\c3.dat,GlassBoard.Assets.c3.dat'
-$arguments += '/resource:src\MediaBridge.ps1,GlassBoard.MediaBridge.ps1'
-$arguments += '/resource:src\NativeMediaBridge.ps1,GlassBoard.NativeMediaBridge.ps1'
 $arguments += '/resource:src\SystemControl.ps1,GlassBoard.SystemControl.ps1'
 $arguments += @(Get-ChildItem -LiteralPath 'src' -Filter '*.cs' | ForEach-Object { $_.FullName })
 & $compiler @arguments

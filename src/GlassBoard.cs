@@ -282,7 +282,7 @@ namespace GlassBoard {
         static bool? diagnostics;
         static readonly string[] EssentialTags={"SAVE","START","LOAD","ERROR","SESSION_END","RECOVER","SHUTDOWN","LAUNCH"};
         static readonly string DiagnosticsMarker=System.IO.Path.Combine(Folder,"debug-log.on");
-        public static bool Diagnostics {get{if(!diagnostics.HasValue){bool on=false;try{on=File.Exists(DiagnosticsMarker);}catch{}diagnostics=on;}return diagnostics.Value;}set{diagnostics=value;try{if(value)File.WriteAllText(DiagnosticsMarker,"1");else if(File.Exists(DiagnosticsMarker))File.Delete(DiagnosticsMarker);}catch{}}}
+        public static bool Silent;public static bool Diagnostics {get{if(!diagnostics.HasValue){bool on=false;try{on=File.Exists(DiagnosticsMarker);}catch{}diagnostics=on;}return diagnostics.Value;}set{diagnostics=value;try{if(value)File.WriteAllText(DiagnosticsMarker,"1");else if(File.Exists(DiagnosticsMarker))File.Delete(DiagnosticsMarker);}catch{}}}
         static bool Essential(string message){var tag=(message??"").Trim();int space=tag.IndexOf(' ');if(space>0)tag=tag.Substring(0,space);return Array.IndexOf(EssentialTags,tag)>=0;}
         public static void Trace(string message){try{if(!Diagnostics&&!Essential(message))return;Directory.CreateDirectory(Folder);string path=System.IO.Path.Combine(Folder,"session.log");if(File.Exists(path)&&new FileInfo(path).Length>1024*1024)Rotate(path,5);File.AppendAllText(path,DateTime.Now.ToString("s")+" ["+System.Reflection.Assembly.GetExecutingAssembly().GetName().Version+"] "+message+Environment.NewLine);}catch{}}
         public static void Log(Exception ex) {
@@ -297,7 +297,7 @@ namespace GlassBoard {
         public const int RestoreMessage=0x8000+47;
         [DllImport("user32.dll",CharSet=CharSet.Unicode)] static extern IntPtr FindWindow(string cls,string title);
         [DllImport("user32.dll",SetLastError=true)] static extern bool PostMessage(IntPtr h,int message,IntPtr w,IntPtr l);
-        public static bool RequestRestore() {var h=FindWindow(null,"GlassBoard Dock");return h!=IntPtr.Zero&&PostMessage(h,RestoreMessage,IntPtr.Zero,IntPtr.Zero);}
+        public static bool RequestQuit(){var h=FindWindow(null,"GlassBoard Dock");return h!=IntPtr.Zero&&PostMessage(h,0x0010,IntPtr.Zero,IntPtr.Zero);} public static bool RequestRestore() {var h=FindWindow(null,"GlassBoard Dock");return h!=IntPtr.Zero&&PostMessage(h,RestoreMessage,IntPtr.Zero,IntPtr.Zero);}
         [DllImport("user32.dll",SetLastError=true)] public static extern bool RegisterHotKey(IntPtr h,int id,uint mods,uint key);
         [DllImport("user32.dll")] public static extern bool UnregisterHotKey(IntPtr h,int id);
         [DllImport("user32.dll",SetLastError=true)] public static extern bool SetWindowDisplayAffinity(IntPtr h,uint value);
@@ -597,7 +597,7 @@ namespace GlassBoard {
             menu.Items.Add("恢复任务栏与桌面图标   "+Shortcut(6),null,(s,e)=>ShellAction(3));
             menu.Items.Add("Windows 任务栏自动隐藏   "+Shortcut(7),null,(s,e)=>ToggleTaskbarAutoHide());
             menu.Items.Add("打开控制中心",null,(s,e)=>OpenControlCenter());menu.Items.Add("控制中心小球设置",null,(s,e)=>ControlCenterSettings(null));
-            menu.Items.Add("备忘录记事板",null,(s,e)=>ShowNotes());menu.Items.Add("组件布局",null,(s,e)=>ConfigureWidgets());menu.Items.Add("恢复并开启全部组件",null,(s,e)=>RecoverWidgets());foreach(string component in WidgetRules.Kinds){string kind=component;menu.Items.Add("开启组件 · "+WidgetRules.Names[Array.IndexOf(WidgetRules.Kinds,kind)],null,(s,e)=>SetWidgetEnabled(kind,true));}
+            menu.Items.Add("组件布局",null,(s,e)=>ConfigureWidgets());menu.Items.Add("恢复并开启全部组件",null,(s,e)=>RecoverWidgets());foreach(string component in WidgetRules.Kinds){string kind=component;menu.Items.Add("开启组件 · "+WidgetRules.Names[Array.IndexOf(WidgetRules.Kinds,kind)],null,(s,e)=>SetWidgetEnabled(kind,true));}
             menu.Items.Add("工作区管理",null,(s,e)=>ManageWorkspaces());foreach(var work in Prefs.Workspaces){var workspace=work;menu.Items.Add("打开工作区 · "+workspace.Name,null,(s,e)=>LaunchWorkspace(workspace));}
             menu.Items.Add("外观方案",null,(s,e)=>ManageSchemes());
             menu.Items.Add("打开配置文件夹",null,(s,e)=>Process.Start(new ProcessStartInfo(Store.Folder){UseShellExecute=true}));
@@ -620,7 +620,7 @@ namespace GlassBoard {
             catch(Exception ex) { Store.Log(ex); Store.Trace("LAUNCH toggle failed entry="+entry.Name+" error="+ex.Message); }
             if(handled) { Board.CollapseSmooth(); return; }
             try { Process.Start(new ProcessStartInfo(entry.Path){UseShellExecute=true}); Board.CollapseSmooth(); }
-            catch(Exception ex) { Store.Log(ex); MessageBox.Show("无法打开「"+entry.Name+"」。\n入口可能已移动或卸载。\n\n"+ex.Message,"GlassBoard"); }
+            catch(Exception ex) { Store.Log(ex); Store.Trace("LAUNCH start failed entry="+entry.Name+" error="+ex.Message); if(!Store.Silent)MessageBox.Show("无法打开「"+entry.Name+"」。\n入口可能已移动或卸载。\n\n"+ex.Message,"GlassBoard"); }
         }
         public void Add(IEnumerable<string> paths,bool manual=true,string targetGroup=null) {
             if(manual&&targetGroup==null&&Board.IsVisible)targetGroup=Board.CurrentGroup;
@@ -717,7 +717,7 @@ namespace GlassBoard {
                 Polish.Apply(w,false);var root=new Grid{Margin=new Thickness(24)};root.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});root.RowDefinitions.Add(new RowDefinition());root.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});w.Content=root;
                 var title=new StackPanel();title.Children.Add(new TextBlock{Text="把桌面，变成你的空间",FontSize=25,Margin=new Thickness(0,0,0,6)});title.Children.Add(new TextBlock{Text="GLASSBOARD  /  个性化、组件与桌面控制",Foreground=Brushes.LightGray,Margin=new Thickness(0,0,0,18)});root.Children.Add(title);
                 var tabs=new TabControl{Background=Brushes.Transparent,BorderThickness=new Thickness(0)};var settingsHost=new DockPanel();Grid.SetRow(settingsHost,1);root.Children.Add(settingsHost);settingsHost.Children.Add(tabs);
-                settingsTabs=tabs;
+                settingsTabs=tabs;InstallSettingsSearch(title,tabs);
                 Func<string,StackPanel> page=heading=>{var section=Polish.Section(heading,heading=="支持创作者"?"感谢每一份支持，让创作持续生长。":"调整会即时预览；关闭窗口保留外观与组件设置。",false);var panel=(StackPanel)section.Child;System.Windows.Documents.TextElement.SetForeground(panel,Brushes.White);var holder=new StackPanel{Margin=new Thickness(10,8,0,8)};holder.Children.Add(section);var tab=new TabItem{Header=heading,Content=new ScrollViewer{Content=holder,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled}};tabs.Items.Add(tab);return panel;};
                 var appearance=page("面板与主题");var dockPage=page("Dock DIY");var keysPage=page("快捷键与开关");var widgetsPage=page("桌面组件");var generalPage=page("通用");var creatorPage=page("支持创作者");bool creatorLoaded=false;Action loadCreator=()=>{if(creatorLoaded)return;BuildCreatorSupport(creatorPage,w);creatorLoaded=true;};tabs.SelectionChanged+=(ss,ee)=>{if(tabs.SelectedIndex==5)loadCreator();};var homePage=page("主页");BuildHomePage(homePage,w);var manualPage=page("说明书");BuildManual(manualPage);var motionPage=page("UI 动效");tabs.SelectedIndex=selectedPage<0?6:Math.Max(0,Math.Min(tabs.Items.Count-1,selectedPage));if(tabs.SelectedIndex==5)loadCreator();BuildSettingsNavigation(settingsHost,tabs);
                 var draft=Prefs.Dock.Copy();bool loading=false;
@@ -825,12 +825,12 @@ namespace GlassBoard {
                 keysPage.Children.Add(new TextBlock{Text="隐藏状态仅在本次运行中维持；正常退出恢复启动前状态。组合键占用不会阻止直接点击开关。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,12,0,0)});
                 widgetsPage.Children.Add(new TextBlock{Text="可选组件 · 默认关闭",FontSize=18});
                 widgetsPage.Children.Add(FeatureUi.Button("控制中心 · 开启小球",()=>OpenControlCenter()));widgetsPage.Children.Add(FeatureUi.Button("控制中心 · 小球设置",()=>ControlCenterSettings(w)));
-                widgetsPage.Children.Add(FeatureUi.Button("组件外观 DIY · 颜色 / 无框 / 时钟 / 音乐按钮",()=>CustomizeWidgets(null,w)));
+                widgetsPage.Children.Add(FeatureUi.Button("组件外观 DIY · 颜色 / 无框 / 时钟大小",()=>CustomizeWidgets(null,w)));
                 var routes=new Dictionary<string,ComboBox>();var widgetChecks=new Dictionary<string,ToggleButton>();bool routeSync=false;
                 Action syncRoutes=()=>{routeSync=true;foreach(var item in routes)item.Value.SelectedIndex=WidgetRules.Panel(Prefs.Widgets,item.Key);routeSync=false;};
                 var presetsRow=new WrapPanel{Margin=new Thickness(0,6,0,14)};widgetsPage.Children.Add(presetsRow);
-                presetsRow.Children.Add(FeatureUi.Button("全部融合",()=>{Prefs.Widgets.Fuse();syncRoutes();RefreshWidgets();Save();}));
-                presetsRow.Children.Add(FeatureUi.Button("全部分离",()=>{Prefs.Widgets.Separate();syncRoutes();RefreshWidgets();Save();}));
+                
+                
                 widgetsPage.Children.Add(new TextBlock{Text="组件选择同一个面板会融合，选择不同面板会分离。也可点击组件右上角 ••• 调整。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,0,0,12)});
                 foreach(string component in WidgetRules.Kinds){string kind=component;int index=Array.IndexOf(WidgetRules.Kinds,kind);var row=new Grid{Margin=new Thickness(0,4,0,9)};row.ColumnDefinitions.Add(new ColumnDefinition());row.ColumnDefinitions.Add(new ColumnDefinition{Width=new GridLength(132)});var controlsRow=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center};row.Children.Add(controlsRow);var enable=VisibilitySwitch();enable.IsChecked=WidgetRules.Enabled(Prefs.Widgets,kind);enable.ToolTip="开启 / 关闭"+WidgetRules.Names[index];controlsRow.Children.Add(enable);controlsRow.Children.Add(new TextBlock{Text=WidgetRules.Names[index],Margin=new Thickness(10,0,0,0),Foreground=Brushes.White,VerticalAlignment=VerticalAlignment.Center});widgetChecks[kind]=enable;enable.Click+=(s,e)=>{bool desired=enable.IsChecked==true;SetWidgetEnabled(kind,desired);};var route=new ComboBox{ItemsSource=new string[]{"面板 A","面板 B","面板 C","面板 D"},SelectedIndex=WidgetRules.Panel(Prefs.Widgets,kind),Height=34};Grid.SetColumn(route,1);row.Children.Add(route);routes[kind]=route;route.SelectionChanged+=(s,e)=>{if(routeSync||route.SelectedIndex<0)return;WidgetRules.Assign(Prefs.Widgets,kind,route.SelectedIndex);RefreshWidgets();Save();};widgetsPage.Children.Add(row);}
                 var islandRow=new Grid{Margin=new Thickness(0,4,0,9)};var islandControls=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center};islandRow.Children.Add(islandControls);var islandCheck=VisibilitySwitch();islandCheck.IsChecked=Prefs.Widgets.IslandEnabled;islandCheck.ToolTip="开启 / 关闭灵动岛";islandControls.Children.Add(islandCheck);islandControls.Children.Add(new TextBlock{Text="灵动岛",Margin=new Thickness(10,0,0,0),Foreground=Brushes.White,VerticalAlignment=VerticalAlignment.Center});islandCheck.Click+=(s,e)=>{Prefs.Widgets.IslandEnabled=islandCheck.IsChecked==true;RefreshWidgets();Save();};widgetsPage.Children.Add(islandRow);
@@ -844,12 +844,12 @@ namespace GlassBoard {
 
                 check(widgetsPage,"组件始终置顶",Prefs.Widgets.Topmost,value=>{Prefs.Widgets.Topmost=value;RefreshWidgets();});
                 check(widgetsPage,"锁定组件位置",Prefs.Widgets.Locked,value=>{Prefs.Widgets.Locked=value;RefreshWidgets();});
-                widgetsPage.Children.Add(new TextBlock{Text="天气城市（启用天气后联网查询）",Margin=new Thickness(0,14,0,8)});var city=new TextBox{Text=Prefs.Widgets.City,MinHeight=42,TextWrapping=TextWrapping.Wrap,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled,VerticalContentAlignment=VerticalAlignment.Center};widgetsPage.Children.Add(city);widgetsPage.Children.Add(FeatureUi.Button("应用天气城市",()=>{Prefs.Widgets.City=city.Text.Trim();Prefs.Widgets.Normalize();RefreshWidgets();Save();}));
-                combo(widgetsPage,"天气连接方式",new[]{"使用 Windows 系统代理（默认）","直接连接"},Prefs.Widgets.WeatherDirectConnection?1:0,value=>{Prefs.Widgets.WeatherDirectConnection=value==1;Save();RefreshWidgets();});
+                
+                
                 check(widgetsPage,"隐藏小组件右上角关闭和更多按钮",Prefs.Widgets.HideControls,value=>{Prefs.Widgets.HideControls=value;foreach(var position in Prefs.Widgets.Panels)position.HideControls=null;RefreshWidgets();Save();});
                 range(widgetsPage,"组件背景透明度（100% 全透明）",0,100,100-Prefs.Widgets.OpacityPercent,5,"%",value=>{Prefs.Widgets.OpacityPercent=100-value;foreach(var panel in Prefs.Widgets.Panels)panel.OpacityPercent=null;RefreshWidgets();Save();});
-                range(widgetsPage,"本地音乐音量",0,1,Prefs.Widgets.Volume,.05,"",value=>{Prefs.Widgets.Volume=value;RefreshWidgets();});
-                widgetsPage.Children.Add(new TextBlock{Text="音乐支持封面、系统媒体会话、持久播放列表、随机与循环。备忘录自动保存并提供文本导出；切换布局或外观方案保留文字。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,12,0,12)});
+                
+                
                 BuildMaterialEditor(widgetsPage,"小组件玻璃材质 DIY",Prefs.Widgets.Material,()=>{RefreshWidgets();Save();});
                 widgetsPage.Children.Add(FeatureUi.Button("重置全部组件位置",()=>{Prefs.Widgets.Panels.Clear();Prefs.Placement.WidgetLeft=Prefs.Placement.WidgetTop=null;RefreshWidgets();Save();}));
                 bool startup=false;string activeTiming=Prefs.StartupTiming;try{startup=StartupService.Enabled;if(startup)activeTiming=StartupService.Mode;}catch(Exception ex){Store.Log(ex);}
@@ -886,7 +886,7 @@ namespace GlassBoard {
         }
         public void Quit() {
             if(ShuttingDown)return;
-            try{if(settingsWindow!=null)settingsWindow.Close();Store.Save(Prefs);if(widgets!=null&&!widgets.Notes.Flush())throw new IOException("备忘录未能保存，请先导出备忘录或检查配置目录。");}
+            try{if(settingsWindow!=null)settingsWindow.Close();Store.Save(Prefs);}
             catch(Exception ex){Store.Log(ex);MessageBox.Show("退出前保存失败，软件仍保持运行，避免丢失当前内容。\n"+ex.Message,"GlassBoard");return;}
             ShuttingDown=true;SystemTheme.Changed-=SystemThemeChanged;SystemTheme.Stop();
             try{DesktopVisibility.RestoreOriginal();}catch(Exception ex){Store.Log(ex);}try{TaskbarAutoHide.Restore();}catch(Exception ex){Store.Log(ex);}
@@ -1042,7 +1042,7 @@ namespace GlassBoard {
             bool over=!renderedHidden&&pointer.X>=Left&&pointer.X<=Left+Width&&pointer.Y>=shownTop&&pointer.Y<=shownTop+Height;
             bool edge=pointer.X>=Left-12&&pointer.X<=Left+Width+12&&pointer.Y>=bottom-C.Prefs.Dock.EdgeRange;
             bool menu=(ContextMenu!=null&&ContextMenu.IsOpen)||Items.Children.OfType<Button>().Any(b=>b.ContextMenu!=null&&b.ContextMenu.IsOpen);
-            bool hide=hidePolicy.Update(DateTime.UtcNow,C.Prefs.Dock.AutoHide,over,edge,dragging||DockInputBusy||externalDockDrag||(taskMenu!=null&&taskMenu.IsOpen)||menu||C.UiBusy||C.Board.IsVisible,C.Prefs.Dock.HideDelay);
+            bool hide=hidePolicy.Update(DateTime.UtcNow,C.Prefs.Dock.AutoHide,over,edge,dragging||DockInputBusy||externalDockDrag||(thumbnails!=null&&thumbnails.PointerInside)||(taskMenu!=null&&taskMenu.IsOpen)||menu||C.UiBusy||C.Board.IsVisible,C.Prefs.Dock.HideDelay);
             if(hide==renderedHidden)return;renderedHidden=hide;double target=hide?bottom-20:shownTop;AnimateDockVisibility(hide,target);
         }
         void UpdateRunning(){foreach(var button in Items.Children.OfType<Button>()){var grid=button.Content as Grid;if(grid==null)continue;var entry=button.Tag as Entry;if(entry!=null){int count=C.Prefs.Dock.ShowRunning?RunningWindows.Count(entry):0;foreach(var dot in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="running"))RunningBadge.Apply(dot,count);continue;}var group=button.Tag as TaskGroup;if(group!=null)foreach(var dot in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="running"))RunningBadge.Apply(dot,group.Windows.Count);}}
@@ -1095,7 +1095,7 @@ namespace GlassBoard {
                 else if(!Search.IsKeyboardFocusWithin&&(Keyboard.Modifiers&ModifierKeys.Control)!=0&&(e.Key==Key.Z||e.Key==Key.Y)){if(e.Key==Key.Y||(Keyboard.Modifiers&ModifierKeys.Shift)!=0)C.RedoBoard();else C.UndoBoard();e.Handled=true;}
                 else if(editing&&!Search.IsKeyboardFocusWithin&&e.Key==Key.A&&(Keyboard.Modifiers&ModifierKeys.Control)!=0){SelectFiltered();e.Handled=true;}
                 else if(editing&&!Search.IsKeyboardFocusWithin&&e.Key==Key.Delete){C.RemoveMany(selected.ToArray());e.Handled=true;}
-                else if(e.Key==Key.PageDown){ChangePage(1);e.Handled=true;}else if(e.Key==Key.PageUp){ChangePage(-1);e.Handled=true;}
+                else if((e.Key==Key.Left||e.Key==Key.Right)&&!(Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase)&&Keyboard.Modifiers==ModifierKeys.None){ChangePage(e.Key==Key.Right?1:-1);e.Handled=true;}else if(e.Key==Key.PageDown){ChangePage(1);e.Handled=true;}else if(e.Key==Key.PageUp){ChangePage(-1);e.Handled=true;}
                 else if(e.Key==Key.Enter && Search.IsKeyboardFocusWithin&&!editing){var a=Filtered().FirstOrDefault();if(a!=null)C.Launch(a);e.Handled=true;}
             };
             Drop+=ExternalDrop;
@@ -1257,9 +1257,9 @@ namespace GlassBoard {
     }
     public static class Program {
         [STAThread] public static int Main(string[] args) {
-            if(args.Length>0 && args[0]=="--open-native-tray")return NativeTrayLauncher.Run();
-            if(args.Length>0 && args[0]=="--netease-ui-bridge")return NeteaseUiReader.Run();
-            if(args.Length>0 && args[0]=="--self-test") return SelfTest.Run();
+            if(args.Length>0 && args[0]=="--quit")return Native.RequestQuit()?0:1;if(args.Length>0 && args[0]=="--open-native-tray")return NativeTrayLauncher.Run();
+            
+            if(args.Length>0 && args[0]=="--self-test"){Store.Silent=true;return SelfTest.Run();}
             if(args.Length>1 && args[0]=="--toggle-check") return ToggleCheck(args);
             if(args.Length>0 && args[0]=="--restore-shell") {
                 try {if(Native.RequestRestore())return 0;try{TaskbarAutoHide.ShowAndClear();}catch(Exception ex){Store.Log(ex);}DesktopVisibility.ShowAll();MessageBox.Show("已执行任务栏和桌面图标恢复。","GlassBoard");return 0;}catch(Exception ex){MessageBox.Show(ex.Message,"GlassBoard");return 1;}

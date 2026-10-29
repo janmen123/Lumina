@@ -155,3 +155,13 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 动画：改为按时间计算的 200ms CubicEase（1-(1-t)^3）+ CompositionTarget.Rendering，每帧只 SetWindowPos，缩略图矩形变化小于 2px 不更新，消除卡顿。
 - 交互：鼠标可从图标移进气泡不消失（DockWindow.Refresh 只在指针不在气泡内时才隐藏）；悬停某张时放大 1.38 倍并把邻居推开；点击气泡把对应窗口提到前台并关闭预览。
 - 实测：Edge 四窗口悬停出现 4 个实时气泡，悬停放大、邻居让位、点击切换均正常。
+
+18) 2026-10-30 06:5x 移除天气 / 音乐 / 备忘录三个桌面组件（用户要求彻底删除）
+- 移出源码（备份在 backups\widgets-removed-20261030-0645\）：Widgets.cs、MediaServices.cs、NeteaseMusicHelper.cs、NeteaseUiReader.cs、LegacyMusicOptions.cs、WeatherPresentation.cs、WeatherTransport.cs、NoteFiles.cs，以及 MediaBridge.ps1 / NativeMediaBridge.ps1 两个内嵌脚本资源。
+- WidgetRules 只保留 clock：Kinds={"clock"}、Names={"时钟"}，Enabled/Panel/Assign/Enable 全部收窄；WidgetOptions 删掉 Weather/Music/Notes/Playlist/City/Volume/歌词/CompactMusic/WeatherDirectConnection 与 Separate()/Fuse()。
+- WidgetViews.cs 改成 clock-only（约 50 行）：WidgetManager 不再持有 NotesRepository / WeatherEngine / MusicEngine；WidgetWindow 只留 clock/date/clockStatus 与闹钟、AI 排查、分离/融合、外观 DIY 菜单。
+- IslandWindow.cs 重写为时钟胶囊（HH:mm + 星期），保留玻璃/纯黑/透明度/动效与拖动，不再显示媒体。
+- 设置页（组件与系统 → 桌面组件）只剩 时钟 / 灵动岛 / 灵动岛外观设置；删除天气城市输入、天气连接方式、本地音乐音量、音乐与备忘录说明、全部融合/全部分离预设、组件外观 DIY 中的天气/音乐选项。
+- 清理调用点：DesktopServices.cs 只留 LaunchInfoService；ProductCore.cs 删 MusicMetadataRecovery、备份校验不再要求 notes.json；PersonalizationCore/Ui/Checks、FeedbackChecks、BoardFileUi、ControllerFeatures、ProductExperience、GlassBoard 托盘菜单同步清理。
+- 自测修复：--self-test 下 Store.Silent=true，LaunchDock / Launch 启动失败不再弹 MessageBox（此前 Dock 行为检查会弹“无法打开「Dock0」”卡满 90 秒超时）；恢复为快速失败“后向前松手未提交”，自测 45 秒内跑完。
+- 构建与实测：Build.ps1 通过；重启后工作集 125 MB（删除前 164.6 MB，空载曾测到 87.8 MB）；桌面组件页只剩三项；session.log 正常 SAVE，error.log 无新增。

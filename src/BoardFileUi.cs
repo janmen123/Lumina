@@ -27,7 +27,7 @@ namespace GlassBoard {
             }catch(Exception ex){Store.Log(ex);MessageBox.Show(OwnerWindow,ex.Message,"新建失败");}finally{Board.ModalBusy=previous;}
         }
         public void SaveSession(){
-            try{Store.Save(Prefs);if(widgets!=null)widgets.Notes.Flush();Store.Trace("SESSION_END entries="+Prefs.Apps.Count);}catch(Exception ex){Store.Log(ex);}
+            try{Store.Save(Prefs);Store.Trace("SESSION_END entries="+Prefs.Apps.Count);}catch(Exception ex){Store.Log(ex);}
         }
     }
 }

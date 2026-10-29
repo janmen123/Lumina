@@ -4,13 +4,13 @@ namespace GlassBoard {
         [DataMember] public string Kind="clock",TextColor="",Font="";
         [DataMember] public double TextOpacity=100,ClockSize=48;
         [DataMember] public bool Frameless=false,TextShadow=false,ShowDate=true,Hour24=true;
-        [DataMember] public int ClockStyle=0,MusicButtons=0,WeatherStyle=0;
-        [DataMember] public bool WeatherShowPlace=false,WeatherShowDetails=false,ShowAmPm=true;
-        [OnDeserializing] void Defaults(StreamingContext c){Frameless=false;TextOpacity=100;ClockSize=48;ShowDate=Hour24=ShowAmPm=true;WeatherShowPlace=WeatherShowDetails=false;TextColor=Font="";}
-        public void Normalize(){TextColor=Color(TextColor);Font=(Font??"").Trim();if(Font.Length>120)Font="";TextOpacity=LayoutRules.Clamp(TextOpacity,0,100,100);ClockSize=LayoutRules.Clamp(ClockSize,28,100,48);ClockStyle=Math.Max(0,Math.Min(ClockCatalog.Names.Length-1,ClockStyle));MusicButtons=Math.Max(0,Math.Min(4,MusicButtons));WeatherStyle=Math.Max(0,Math.Min(1,WeatherStyle));}
+        [DataMember] public int ClockStyle=0;
+        [DataMember] public bool ShowAmPm=true;
+        [OnDeserializing] void Defaults(StreamingContext c){Frameless=false;TextOpacity=100;ClockSize=48;ShowDate=Hour24=true;ShowAmPm=false;TextColor=Font="";}
+        public void Normalize(){TextColor=Color(TextColor);Font=(Font??"").Trim();if(Font.Length>120)Font="";TextOpacity=LayoutRules.Clamp(TextOpacity,0,100,100);ClockSize=LayoutRules.Clamp(ClockSize,28,100,48);ClockStyle=Math.Max(0,Math.Min(ClockCatalog.Names.Length-1,ClockStyle));}
         public static string Color(string value){value=(value??"").Trim();if(!value.StartsWith("#")&&value.Length==6)value="#"+value;return Regex.IsMatch(value,@"^#[0-9a-fA-F]{6}$")?value.ToUpperInvariant():"";}
         public WidgetStyle Copy(){return (WidgetStyle)MemberwiseClone();}
-        public string Signature(){return Kind+"/"+TextColor+"/"+Font+"/"+TextOpacity+"/"+ClockSize+"/"+Frameless+"/"+TextShadow+"/"+ShowDate+"/"+Hour24+"/"+ClockStyle+"/"+MusicButtons+"/"+WeatherStyle+"/"+WeatherShowPlace+"/"+WeatherShowDetails+"/"+ShowAmPm;}
+        public string Signature(){return Kind+"/"+TextColor+"/"+Font+"/"+TextOpacity+"/"+ClockSize+"/"+Frameless+"/"+TextShadow+"/"+ShowDate+"/"+Hour24+"/"+ClockStyle+"/"+ShowAmPm;}
     }
     public partial class WidgetOptions {
         [DataMember] public List<WidgetStyle> Styles=new List<WidgetStyle>();

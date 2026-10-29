@@ -22,15 +22,13 @@ namespace GlassBoard {
                     var swatches=new WrapPanel{Margin=new Thickness(0,8,0,0)};editor.Children.Add(swatches);foreach(string c in new[]{"#FFFFFF","#161A22","#F3DBB3","#BBDFFF","#D8C5FF","#B8E4CE"}){string chosen=c;var b=new Button{Background=(Brush)new BrushConverter().ConvertFromString(c),Width=32,Height=28,Margin=new Thickness(3),ToolTip=c};b.Click+=(a,e)=>{s.TextColor=chosen;hex.Text=chosen;apply();};swatches.Children.Add(b);}
                     range("文字不透明度 %",0,100,s.TextOpacity,v=>s.TextOpacity=v);check("增强可读性 · 轻微文字阴影",s.TextShadow,v=>s.TextShadow=v);
                     check("无框模式 · 隐藏玻璃底板、边框、拖动条和角标",s.Frameless,v=>s.Frameless=v);
-                    label("无框时可拖动文字区域移动组件；音乐按钮、备忘录输入正常使用。右键可重新进入 DIY，锁定后可从总设置解锁。");
-                    var panel=Prefs.Widgets.Position(WidgetRules.Panel(Prefs.Widgets,k));bool compactWeather=k=="weather"&&s.WeatherStyle==1&&WidgetRules.Layout(Prefs.Widgets).ContainsKey(panel.Id)&&WidgetRules.Layout(Prefs.Widgets)[panel.Id].Count==1;range("所在面板宽度",compactWeather?96:240,1000,compactWeather?(panel.CompactWeatherWidth??panel.Width??240):(panel.Width??450),v=>{if(compactWeather)panel.CompactWeatherWidth=v;else panel.Width=v;});
+                    label("无框时可拖动文字区域移动组件。右键可重新进入 DIY，锁定后可从总设置解锁。");
+                    var panel=Prefs.Widgets.Position(WidgetRules.Panel(Prefs.Widgets,k));bool compactWeather=false;range("所在面板宽度",compactWeather?96:240,1000,compactWeather?(panel.CompactWeatherWidth??panel.Width??240):(panel.Width??450),v=>{if(compactWeather)panel.CompactWeatherWidth=v;else panel.Width=v;});
                     if(k=="clock"){
                         combo("时钟样式 · 共 14 款",ClockCatalog.Names,s.ClockStyle,v=>s.ClockStyle=v);editor.Children.Add(FeatureUi.Button("使用无框推荐效果",()=>{s.Frameless=true;s.TextShadow=true;if(s.TextColor=="")s.TextColor="#FFFFFF";apply();fill();}));
                         label("时钟字体 · 可选择或填写已安装字体；留空使用样式默认字体");var font=new TextBox{Text=s.Font,MinHeight=36};editor.Children.Add(font);var fontList=new ComboBox{ItemsSource=Fonts.SystemFontFamilies.Select(f=>f.Source).OrderBy(x=>x).ToList(),MinHeight=34,Margin=new Thickness(0,6,0,0)};fontList.SelectionChanged+=(a,e)=>{if(fontList.SelectedItem!=null)font.Text=fontList.SelectedItem.ToString();};editor.Children.Add(fontList);editor.Children.Add(FeatureUi.Button("应用字体",()=>{s.Font=font.Text.Trim();apply();}));
                         range("时间字号",28,100,s.ClockSize,v=>s.ClockSize=v);check("显示日期",s.ShowDate,v=>s.ShowDate=v);check("24 小时制",s.Hour24,v=>s.Hour24=v);check("显示上午／下午标签（纵向大字海报）",s.ShowAmPm,v=>s.ShowAmPm=v);
                     }
-                    if(k=="weather"){combo("天气样式",new[]{"经典天气","简洁温度"},s.WeatherStyle,v=>{s.WeatherStyle=v;fill();});check("显示地点（简洁温度）",s.WeatherShowPlace,v=>s.WeatherShowPlace=v);check("显示天气描述与风速（简洁温度）",s.WeatherShowDetails,v=>s.WeatherShowDetails=v);}
-                    if(k=="music")combo("播放按钮样式",new[]{"经典圆形","极简线性","实心图标","圆角方形","玻璃胶囊"},s.MusicButtons,v=>s.MusicButtons=v);
                     var actions=new WrapPanel{Margin=new Thickness(0,16,0,0)};editor.Children.Add(actions);
                     actions.Children.Add(FeatureUi.Button("配色应用到全部组件",()=>{foreach(string key in WidgetRules.Kinds){var target=Prefs.Widgets.Style(key);target.TextColor=s.TextColor;target.TextOpacity=s.TextOpacity;target.TextShadow=s.TextShadow;}apply();}));
                     actions.Children.Add(FeatureUi.Button("无框状态应用到全部",()=>{foreach(string key in WidgetRules.Kinds)Prefs.Widgets.Style(key).Frameless=s.Frameless;apply();}));

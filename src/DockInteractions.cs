@@ -17,7 +17,7 @@ namespace GlassBoard {
             catch(Exception ex){Store.Log(ex);Store.Trace("LAUNCH toggle failed entry="+entry.Name+" error="+ex.GetType().Name+" "+ex.Message);}
             if(handled){Board.CollapseSmooth();return;}
             try{System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(entry.Path){UseShellExecute=true});Board.CollapseSmooth();}
-            catch(Exception ex){MessageBox.Show("无法打开「"+entry.Name+"」。\n入口可能已移动或卸载。\n\n"+ex.Message,"GlassBoard");}
+            catch(Exception ex){Store.Trace("LAUNCH start failed entry="+entry.Name+" error="+ex.GetType().Name+" "+ex.Message);if(!Store.Silent)MessageBox.Show("无法打开「"+entry.Name+"」。\n入口可能已移动或卸载。\n\n"+ex.Message,"GlassBoard");}
         }
         public bool ReorderDock(string path,string target,bool before){var state=BeginBoardEdit();if(!Dock.MoveLayout(path,target,before))return false;EndBoardEdit(state,"调整 Dock 顺序");Dock.Refresh(false);Board.Render();return true;}
         public void StepDock(string path,int step){var state=BeginBoardEdit();if(!Dock.StepLayout(path,step))return;EndBoardEdit(state,"调整 Dock 顺序");Dock.Refresh(false);Board.Render();}
@@ -42,7 +42,7 @@ namespace GlassBoard {
         Border dockPointerPreview;TextBlock dockPointerLabel;
         bool DockInputBusy{get{return dockPointer!=null||dockIconDragging;}}
         bool DockDragSuppresses(FrameworkElement element){return element!=null&&(bool)element.GetValue(DragSuppressed);}
-        void BindDockSource(FrameworkElement element,Entry entry,Action beforeDrag=null){BindPointerItem(element,entry.Path,entry.Name,()=>C.LaunchDock(entry,pointerHint),beforeDrag);}
+        void BindDockSource(FrameworkElement element,Entry entry,Action beforeDrag=null){BindApplicationDrop(element,entry);BindPointerItem(element,entry.Path,entry.Name,()=>C.LaunchDock(entry,pointerHint),beforeDrag);}
         void BindPointerItem(FrameworkElement element,string key,string name,Action click,Action beforeDrag=null){
             element.ToolTip=name+" · 点击打开；按住拖动调整 Dock 位置";ToolTipService.SetIsEnabled(element,false);
             element.MouseEnter+=(s,e)=>ScheduleThumbnails(element,name);element.MouseLeave+=(s,e)=>HideThumbnailsSoon();
@@ -100,20 +100,20 @@ namespace GlassBoard {
             var element=thumbnailSource;var name=thumbnailName;
             if(element==null||!IsVisible||dockPointer!=null||!element.IsMouseOver)return;
             if(thumbnails!=null&&thumbnailName==name&&thumbnails.IsUsable)return;
-            var entry=C.Prefs.Apps.FirstOrDefault(a=>a.Name==name);if(entry==null)return;
-            var windows=RunningWindows.For(entry).Where(w=>w.Handle!=IntPtr.Zero).Take(4).ToList();if(windows.Count==0)return;
+            var entry=element.Tag as Entry??C.Prefs.Apps.FirstOrDefault(a=>a.Name==name);var task=element.Tag as TaskGroup;if(entry==null&&task==null)return;
+            RunningWindows.Scan();var windows=(task!=null?task.Windows:RunningWindows.For(entry)).Where(w=>w.Handle!=IntPtr.Zero).Take(5).ToList();if(windows.Count==0)return;
             try{
                 var dpi=VisualTreeHelper.GetDpi(this);double scale=dpi.DpiScaleX<=0?1:dpi.DpiScaleX;
                 DockCursor.POINT cursor;Point anchorDip;
                 // Sit right on the icon row: some themes keep the glass well above the icons.
                 // The dock keeps its glass above the icon row; sit the row of bubbles just on top
                 // of the icons themselves so it reads as belonging to the dock.
-                double baseY=Top+26;
-                if(DockCursor.TryGet(out cursor))anchorDip=new Point(cursor.X/scale,baseY);
+                var iconTop=element.PointToScreen(new Point(element.ActualWidth/2,0));double baseY=iconTop.Y/scale-4;
+                if(DockCursor.TryGet(out cursor))anchorDip=new Point(iconTop.X/scale,baseY);
                 else anchorDip=new Point(Left+ActualWidth/2,baseY);
                 var popup=new ThumbnailPopup(windows,anchorDip,scale);
                 thumbnails=popup;
-                popup.PointerOut+=HideThumbnailsSoon;
+                popup.PointerOut+=HideThumbnailsSoon;popup.DismissRequested+=HideThumbnails;
                 popup.Clicked+=target=>{try{RunningWindows.Focus(target);}catch(Exception ex){Store.Log(ex);}HideThumbnails();};
                 Store.Trace("THUMB show entry="+name+" windows="+windows.Count+" usable="+popup.IsUsable+" at "+anchorDip.X.ToString("0")+","+anchorDip.Y.ToString("0"));
                 if(!popup.IsUsable)HideThumbnails();
@@ -121,7 +121,7 @@ namespace GlassBoard {
         }
         void HideThumbnailsSoon(){
             if(thumbnails==null)return;
-            if(thumbnailHide==null){thumbnailHide=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(220)};thumbnailHide.Tick+=(s,e)=>{thumbnailHide.Stop();if(thumbnails!=null&&!thumbnails.PointerInside&&(thumbnailSource==null||!thumbnailSource.IsMouseOver))HideThumbnails();};}
+            if(thumbnailHide==null){thumbnailHide=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(420)};thumbnailHide.Tick+=(s,e)=>{thumbnailHide.Stop();if(thumbnails!=null&&!thumbnails.PointerInside&&(thumbnailSource==null||!thumbnailSource.IsMouseOver))HideThumbnails();};}
             thumbnailHide.Stop();thumbnailHide.Start();
         }
         internal void HideThumbnails(){

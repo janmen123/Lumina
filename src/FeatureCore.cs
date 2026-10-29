@@ -37,33 +37,22 @@ namespace GlassBoard {
         public static string Display(WidgetOptions o,DateTime utc){double seconds=Remaining(o,utc);if(seconds>0)return (o.TimerDueUtc.HasValue?"倒计时 ":"已暂停 ")+((int)(Math.Ceiling(seconds)/3600)).ToString("00")+":"+TimeSpan.FromSeconds(Math.Ceiling(seconds)).ToString(@"mm\:ss");var alarm=o.Alarms.Where(a=>a.Enabled).OrderBy(a=>a.DueLocal).FirstOrDefault();return alarm==null?"点击 ••• 设置闹钟和倒计时":"闹钟 "+alarm.DueLocal.ToString("M/d HH:mm")+" · "+alarm.Label;}
     }
     [DataContract] public partial class WidgetOptions {
-        [DataMember] public bool Clock=false,Weather=false,Music=false,Notes=false;
-        [DataMember] public int ClockPanel=0,WeatherPanel=0,MusicPanel=0,NotesPanel=0;
-        [DataMember] public bool CompactMusic=false,Topmost=false,Locked=false;
-        [DataMember] public string MusicMode="system";
-        [DataMember] public List<string> Playlist=new List<string>();
-        [DataMember] public int TrackIndex=0,RepeatMode=0;
-        [DataMember] public bool Shuffle=false;
-        [DataMember] public bool NativeMediaCompatibility=false;
-        [DataMember] public bool AutoNativeMediaCompatibility=true;
+        [DataMember] public bool Clock=false;
+        [DataMember] public int ClockPanel=0;
+        [DataMember] public bool Topmost=false,Locked=false;
         [DataMember] public List<WidgetPanelPosition> Panels=new List<WidgetPanelPosition>();
         [DataMember] public List<ClockAlarm> Alarms=new List<ClockAlarm>();
         [DataMember] public DateTime? TimerDueUtc;
         [DataMember] public double TimerPausedSeconds;
-        [DataMember] public string City="";
-        [DataMember] public bool WeatherDirectConnection=false;
-        [DataMember] public double Volume=.6,OpacityPercent=72;
+        [DataMember] public double OpacityPercent=72;
         [DataMember] public bool HideControls=false;
         [DataMember] public MaterialOptions Material=new MaterialOptions();
-        [OnDeserializing] void Defaults(StreamingContext context){LyricTranslation=true;AutoNativeMediaCompatibility=true;City="";Volume=.6;OpacityPercent=72;MusicMode="system";Playlist=new List<string>();Panels=new List<WidgetPanelPosition>();}
-        public void Normalize(){if(LyricLeft.HasValue&&(double.IsNaN(LyricLeft.Value)||double.IsInfinity(LyricLeft.Value)))LyricLeft=null;if(LyricTop.HasValue&&(double.IsNaN(LyricTop.Value)||double.IsInfinity(LyricTop.Value)))LyricTop=null;LyricOffset=Math.Max(-10000,Math.Min(10000,LyricOffset));NormalizeStyles();if(Material==null)Material=new MaterialOptions();Material.Normalize();Alarms=(Alarms??new List<ClockAlarm>()).Where(a=>a!=null).Take(50).ToList();foreach(var a in Alarms)a.Normalize();TimerPausedSeconds=LayoutRules.Clamp(TimerPausedSeconds,0,86400,0);City=(City??"").Trim();if(City.Length>100)City=City.Substring(0,100);Volume=LayoutRules.Clamp(Volume,0,1,.6);OpacityPercent=LayoutRules.Clamp(OpacityPercent,0,100,72);ClockPanel=Panel(ClockPanel);WeatherPanel=Panel(WeatherPanel);MusicPanel=Panel(MusicPanel);NotesPanel=Panel(NotesPanel);MusicMode=MusicMode=="local"?"local":"system";Playlist=(Playlist??new List<string>()).Where(p=>!string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();TrackIndex=Playlist.Count==0?0:Math.Max(0,Math.Min(Playlist.Count-1,TrackIndex));RepeatMode=Math.Max(0,Math.Min(2,RepeatMode));Panels=(Panels??new List<WidgetPanelPosition>()).Where(p=>p!=null&&p.Id>=0&&p.Id<4).GroupBy(p=>p.Id).Select(g=>g.First()).ToList();foreach(var p in Panels)p.Normalize();}
+        [OnDeserializing] void Defaults(StreamingContext context){OpacityPercent=72;Panels=new List<WidgetPanelPosition>();}
+        public void Normalize(){NormalizeStyles();if(Material==null)Material=new MaterialOptions();Material.Normalize();Alarms=(Alarms??new List<ClockAlarm>()).Where(a=>a!=null).Take(50).ToList();foreach(var a in Alarms)a.Normalize();TimerPausedSeconds=LayoutRules.Clamp(TimerPausedSeconds,0,86400,0);OpacityPercent=LayoutRules.Clamp(OpacityPercent,0,100,72);ClockPanel=Panel(ClockPanel);Panels=(Panels??new List<WidgetPanelPosition>()).Where(p=>p!=null&&p.Id>=0&&p.Id<4).GroupBy(p=>p.Id).Select(g=>g.First()).ToList();foreach(var p in Panels)p.Normalize();}
         static int Panel(int value){return Math.Max(0,Math.Min(3,value));}
-        public WidgetOptions Copy(){var c=(WidgetOptions)MemberwiseClone();c.Styles=(Styles??new List<WidgetStyle>()).Select(x=>x.Copy()).ToList();c.Material=(Material??new MaterialOptions()).Copy();c.Alarms=(Alarms??new List<ClockAlarm>()).Select(a=>a.Copy()).ToList();c.Playlist=new List<string>(Playlist??new List<string>());c.Panels=(Panels??new List<WidgetPanelPosition>()).Where(p=>p!=null).Select(p=>p.Copy()).ToList();return c;}
+        public WidgetOptions Copy(){var c=(WidgetOptions)MemberwiseClone();c.Styles=(Styles??new List<WidgetStyle>()).Select(x=>x.Copy()).ToList();c.Material=(Material??new MaterialOptions()).Copy();c.Alarms=(Alarms??new List<ClockAlarm>()).Select(a=>a.Copy()).ToList();c.Panels=(Panels??new List<WidgetPanelPosition>()).Where(p=>p!=null).Select(p=>p.Copy()).ToList();return c;}
         public WidgetPanelPosition Position(int id){var p=Panels.FirstOrDefault(x=>x.Id==id);if(p==null){p=new WidgetPanelPosition{Id=id};Panels.Add(p);}return p;}
-        public void Separate(){ClockPanel=0;WeatherPanel=1;MusicPanel=2;NotesPanel=3;}
-        public void Fuse(){ClockPanel=WeatherPanel=MusicPanel=NotesPanel=0;}
-    }
-    [DataContract] public class WidgetPanelPosition {
+    }    [DataContract] public class WidgetPanelPosition {
         [DataMember(EmitDefaultValue=false)] public bool? HideControls;
         [DataMember] public int Id;
         [DataMember] public double? Left,Top,Width,Height,OpacityPercent,CompactWeatherWidth;
@@ -80,12 +69,12 @@ namespace GlassBoard {
         public bool Remove(int id,T expected){T current;if(!items.TryGetValue(id,out current)||!object.ReferenceEquals(current,expected))return false;return items.Remove(id);}
     }
     public static class WidgetRules {
-        public static readonly string[] Kinds={"clock","weather","music","notes"};
-        public static readonly string[] Names={"时钟","天气","音乐","备忘录"};
-        public static bool Enabled(WidgetOptions o,string kind){return kind=="clock"?o.Clock:kind=="weather"?o.Weather:kind=="music"?o.Music:kind=="notes"&&o.Notes;}
-        public static int Panel(WidgetOptions o,string kind){return kind=="clock"?o.ClockPanel:kind=="weather"?o.WeatherPanel:kind=="music"?o.MusicPanel:o.NotesPanel;}
-        public static void Assign(WidgetOptions o,string kind,int panel){panel=Math.Max(0,Math.Min(3,panel));if(kind=="clock")o.ClockPanel=panel;else if(kind=="weather")o.WeatherPanel=panel;else if(kind=="music")o.MusicPanel=panel;else if(kind=="notes")o.NotesPanel=panel;}
-        public static void Enable(WidgetOptions o,string kind,bool value){if(kind=="clock")o.Clock=value;else if(kind=="weather")o.Weather=value;else if(kind=="music")o.Music=value;else if(kind=="notes")o.Notes=value;}
+        public static readonly string[] Kinds={"clock"};
+        public static readonly string[] Names={"时钟"};
+        public static bool Enabled(WidgetOptions o,string kind){return kind=="clock"&&o.Clock;}
+        public static int Panel(WidgetOptions o,string kind){return o.ClockPanel;}
+        public static void Assign(WidgetOptions o,string kind,int panel){panel=Math.Max(0,Math.Min(3,panel));o.ClockPanel=panel;}
+        public static void Enable(WidgetOptions o,string kind,bool value){if(kind=="clock")o.Clock=value;}
         public static Dictionary<int,List<string>> Layout(WidgetOptions o){return Kinds.Where(k=>Enabled(o,k)).GroupBy(k=>Panel(o,k)).ToDictionary(g=>g.Key,g=>g.ToList());}
         public static void Recover(WidgetOptions o){foreach(string kind in Kinds)Enable(o,kind,true);o.Normalize();}
         public static int FreePanel(WidgetOptions o,string kind){var used=new HashSet<int>(Kinds.Where(k=>k!=kind&&Enabled(o,k)).Select(k=>Panel(o,k)));return Enumerable.Range(0,4).First(p=>!used.Contains(p));}

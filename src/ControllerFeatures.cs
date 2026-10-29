@@ -2,7 +2,7 @@ using System;using System.Collections.Generic;using System.Linq;using System.IO;
 namespace GlassBoard {
     public partial class Controller {
         WidgetManager widgets;
-        public bool MusicVisible{get{return widgets!=null&&widgets.MusicVisible;}}
+
         public bool UiBusy{get{return settingsOpen||Board.ModalBusy;}}
         Window OwnerWindow{get{return Board.IsVisible?(Window)Board:Dock;}}
         public void RefreshWidgets(){RefreshControlCenter();if(widgets==null)widgets=new WidgetManager(this);widgets.Sync();}
@@ -13,7 +13,7 @@ namespace GlassBoard {
         public void CloseWidgets(){if(widgets!=null){widgets.Dispose();widgets=null;}}
         public void ConfigureWidgets(){Settings(3);}
         public void AddFolder(){bool previous=Board.ModalBusy;Board.ModalBusy=true;try{string folder=FeatureUi.PickFolder(OwnerWindow,"选择要放入玻璃板的文件夹（添加文件夹本身）");if(folder==null)return;Add(new[]{folder});Board.ClearSearch();Board.SetStatus("已添加文件夹入口 · 点击打开，右键可固定到 Dock");}finally{Board.ModalBusy=previous;}}
-        public void ShowNotes(){Prefs.Widgets.Notes=true;RefreshWidgets();Save();}
+
         public async void ToggleTaskbarAutoHide(bool? enabled=null){try{bool next=enabled??!TaskbarAutoHide.Enabled;if(next)DesktopVisibility.SetHidden(true,false);TaskbarAutoHide.Set(next);Board.SetStatus("已请求"+(next?"启用":"关闭")+" Windows 任务栏自动隐藏");await Task.Delay(250);if(Application.Current!=null&&!Application.Current.Dispatcher.HasShutdownStarted)Dock.Refresh();}catch(Exception ex){Store.Log(ex);MessageBox.Show(ex.Message,"Windows 任务栏自动隐藏");}}
         public void Customize(Entry entry){bool previous=Board.ModalBusy;Board.ModalBusy=true;try{var w=FeatureUi.Dialog("名称与图标",OwnerWindow,500,280);var stack=new StackPanel{Margin=new Thickness(22)};w.Content=stack;stack.Children.Add(new TextBlock{Text="显示名称",Margin=new Thickness(0,0,0,8)});var name=new TextBox{Text=entry.Name,MinHeight=38};stack.Children.Add(name);string icon=entry.IconPath;var info=new TextBlock{Text=string.IsNullOrWhiteSpace(icon)?"使用软件原图标":"已使用自定义图标",Margin=new Thickness(0,12,0,12)};stack.Children.Add(info);
             var row=new WrapPanel();stack.Children.Add(row);row.Children.Add(FeatureUi.Button("选择图标",()=>{var pick=new Microsoft.Win32.OpenFileDialog{Filter="图标图片|*.png;*.ico;*.jpg;*.jpeg;*.bmp"};if(pick.ShowDialog(w)==true){try{icon=FeatureUi.StoreIcon(pick.FileName);info.Text="已选择图标，点击保存应用";}catch(Exception ex){MessageBox.Show(w,ex.Message,"无法读取图标");}}}));row.Children.Add(FeatureUi.Button("恢复原图标",()=>{icon=null;info.Text="使用软件原图标";}));stack.Children.Add(FeatureUi.Button("保存",()=>{if(string.IsNullOrWhiteSpace(name.Text))return;var before=BeginBoardEdit();entry.Name=name.Text.Trim();entry.IconPath=icon;EndBoardEdit(before,"自定义名称与图标");Refresh();w.Close();}));w.ShowDialog();

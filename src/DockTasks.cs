@@ -32,7 +32,7 @@ namespace GlassBoard {
             PreviewDragEnter+=DockExternalOver;PreviewDragOver+=DockExternalOver;
             PreviewDragLeave+=(s,e)=>{Point p=e.GetPosition(this);if(!InsideDock(p))ClearExternalDockDrag();};
             PreviewDrop+=(s,e)=>{
-                if(DockInputBusy)return;var paths=DockPayload(e.Data);if(paths.Length==0){ClearExternalDockDrag();return;}
+                if(ApplicationDropAt(e)) {ClearExternalDockDrag();return;}if(DockInputBusy)return;var paths=DockPayload(e.Data);if(paths.Length==0){ClearExternalDockDrag();return;}
                 e.Handled=true;e.Effects=DragDropEffects.None;
                 try{var target=ExternalDockTarget(e.GetPosition(Items).X);ClearExternalDockDrag();var result=C.PinDockPaths(paths,target);e.Effects=result.Paths.Count>0?DragDropEffects.Copy:DragDropEffects.None;ShowTaskHint(result.Paths.Count>0?"已放入 Dock"+(result.Skipped>0?" · 已达固定上限":""):"无法固定此入口");}
                 catch(Exception ex){ClearExternalDockDrag();Store.Log(ex);ShowTaskHint("添加失败，请重试");}
@@ -64,7 +64,7 @@ namespace GlassBoard {
             }).ToList();taskSignature=TaskSignature();
         }
         string TaskSignature(){return string.Join("|",RunningWindows.Snapshot().OrderBy(w=>w.Handle.ToInt64()).Select(w=>w.Handle.ToInt64()+":"+w.Path+":"+w.Title));}
-        void RefreshTaskSnapshot(){
+        void RefreshTaskSnapshot(){if(thumbnails!=null)return;
             if((!taskWheel.Running&&!C.Prefs.Dock.ShowRunningSection)||DockInputBusy||externalDockDrag||dragging||C.Board.ModalBusy||(taskMenu!=null&&taskMenu.IsOpen)||(ContextMenu!=null&&ContextMenu.IsOpen)||Items.Children.OfType<Button>().Any(b=>b.IsMouseOver||(b.ContextMenu!=null&&b.ContextMenu.IsOpen)))return;
             if(taskSignature==TaskSignature())return;ReadTaskGroups();Refresh(false);
         }
@@ -96,7 +96,7 @@ namespace GlassBoard {
             return data.GetDataPresent(DataFormats.FileDrop)?data.GetData(DataFormats.FileDrop) as string[]??new string[0]:new string[0];
         }
         DockDropTarget ExternalDockTarget(double x){var buttons=Items.Children.OfType<Button>().Where(b=>ItemKey(b)!=null).ToList();return DockDropRules.OnGap(null,buttons.Select(ItemKey).ToArray(),buttons.Select(b=>b.TranslatePoint(new Point(b.ActualWidth/2,0),Items).X).ToArray(),x);}
-        void DockExternalOver(object sender,DragEventArgs e){
+        void DockExternalOver(object sender,DragEventArgs e){if(ApplicationDropAt(e)){ClearDockMarkers();return;}
             if(DockInputBusy||DockPayload(e.Data).Length==0){e.Effects=DragDropEffects.None;e.Handled=true;return;}
             e.Handled=true;e.Effects=DragDropEffects.Copy;
             if(!externalDockDrag){externalDockDrag=true;if(taskWheel.Running){taskWheel.Set(false);Refresh(false);UpdateLayout();}ShowTaskHint("松手固定到 Dock");}

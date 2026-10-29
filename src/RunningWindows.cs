@@ -9,7 +9,7 @@ using System.Windows;using System.Windows.Media;using System.Windows.Media.Imagi
 
 namespace GlassBoard {
     public sealed class RunningWindow {public IntPtr Handle;public uint ProcessId;public string Path,Title,FolderPath;}
-    public static class RunningWindows {
+    public static partial class RunningWindows {
         delegate bool Callback(IntPtr window,IntPtr value);
         [DllImport("user32.dll")] static extern bool EnumWindows(Callback callback,IntPtr value);
         [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr window);
@@ -69,7 +69,7 @@ namespace GlassBoard {
             if(targets.TryGet(path,out cached)&&cached.Stamp==stamp){entry.LaunchTarget=cached.Target;entry.LaunchArguments=cached.Arguments;return;}
             LaunchInfoService.Enrich(entry);targets.Put(path,new TargetInfo{Stamp=stamp,Target=entry.LaunchTarget,Arguments=entry.LaunchArguments});
         }
-        public static List<RunningWindow> For(Entry entry){if(entry==null)return new List<RunningWindow>();if(entry.IsFolder||Directory.Exists(entry.Path)){string folder=EntryPathRules.Normalize(entry.Path);return windows.Where(w=>!string.IsNullOrEmpty(w.FolderPath)&&string.Equals(w.FolderPath,folder,StringComparison.OrdinalIgnoreCase)).ToList();}Resolve(entry);var paths=WindowActivationRules.Executables(entry);return windows.Where(w=>paths.Contains(w.Path,StringComparer.OrdinalIgnoreCase)).ToList();}
+        public static List<RunningWindow> For(Entry entry){if(entry==null)return new List<RunningWindow>();if(entry.IsFolder||Directory.Exists(entry.Path)){string folder=EntryPathRules.Normalize(entry.Path);return windows.Where(w=>!string.IsNullOrEmpty(w.FolderPath)&&string.Equals(w.FolderPath,folder,StringComparison.OrdinalIgnoreCase)).ToList();}Resolve(entry);var paths=WindowActivationRules.Executables(entry);return MatchWindows(entry,paths);}
         public static List<RunningWindow> Snapshot(){return windows.ToList();}
         public static bool IsRunning(Entry entry){return For(entry).Count>0;}
         public static int Count(Entry entry){return entry==null?0:For(entry).Count;}
