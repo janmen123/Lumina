@@ -1072,7 +1072,7 @@ namespace GlassBoard {
             AddQuickButtons();
             if(o.ShowSettings)AddSystemButton(DockLayoutRules.Settings,DockButton("⚙",null,()=>C.Settings(),"DIY 设置"),()=>C.Settings());
             ArrangeDockItems();
-            Width=Math.Min(area.Width-20,o.WidthFor(displayCount==0?1:slots+extrasShown));
+            Width=Math.Min(area.Width-20,o.WidthFor(displayCount==0?1:slots+extrasShown)+(extrasShown>0&&o.ShowSeparator?17:0));
             Height=DockGeometryRules.Height(o);
             double x=o.Alignment==0?area.Left+10:o.Alignment==2?area.Right-Width-10:area.Left+(area.Width-Width)/2;
             var placement=C.Prefs.Placement;
