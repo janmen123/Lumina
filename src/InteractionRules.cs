@@ -11,6 +11,10 @@ namespace Lumina {
         public static bool ZoomHover(string value){return value=="zoom"||value=="zoom-lift";}
         public static bool LiftHover(string value){return value=="lift"||value=="zoom-lift";}
         public static bool DockTopmost(DockOptions options,bool dragging){return options.AlwaysOnTop||dragging;}
+        // 独占全屏（游戏、全屏视频）继续整条隐藏并停扫描；只是"铺满整屏"的普通窗口
+        // 则改成贴边收起、指针回到底边再弹出，既不挡内容又随时可点。
+        public static bool DockDucks(bool respectFullscreen,bool exclusiveFullscreen,bool immersive,bool dragging){return respectFullscreen&&!dragging&&!exclusiveFullscreen&&immersive;}
+        public static bool DockSpringOpen(bool autoHide,bool ducking){return autoHide||ducking;}
         public static string WirelessState(SystemSnapshot snapshot,string kind){
             if(snapshot==null)return "尚未读取";
             var radios=(snapshot.Radios??new System.Collections.Generic.List<RadioSnapshot>()).Where(r=>r.Kind==kind).ToList();

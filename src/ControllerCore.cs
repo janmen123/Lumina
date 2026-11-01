@@ -260,7 +260,7 @@ namespace Lumina {
                 var labels=check(dockPage,"显示图标名称",draft.ShowLabels,value=>{draft.ShowLabels=value;live();});
                 check(dockPage,"显示此电脑",draft.ShowComputer,value=>{draft.ShowComputer=value;live();});
                 check(dockPage,"显示回收站",draft.ShowRecycleBin,value=>{draft.ShowRecycleBin=value;live();});
-                check(dockPage,"全屏应用时让出显示层级",draft.RespectFullscreen,value=>{draft.RespectFullscreen=value;live();});
+                check(dockPage,"全屏或铺满整屏的应用时自动收起",draft.RespectFullscreen,value=>{draft.RespectFullscreen=value;live();});
                 check(dockPage,"显示设置图标",draft.ShowSettings,value=>{draft.ShowSettings=value;live();});
                 check(dockPage,"显示电源快捷菜单",draft.ShowPower,value=>{draft.ShowPower=value;live();});
                 check(dockPage,"Dock 保留控制中心快捷入口",draft.ShowNetwork,value=>{draft.ShowNetwork=value;live();});

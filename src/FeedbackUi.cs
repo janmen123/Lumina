@@ -65,7 +65,32 @@ namespace Lumina {
             return Active(IntPtr.Zero);
         }
         public static bool Active(IntPtr onMonitor) {
-            var window=GetForegroundWindow();
+            IntPtr window;
+            RECT rect;
+            MONITORINFO monitor;
+            if(!Measure(onMonitor,out window,out rect,out monitor))return false;
+            return WindowReliabilityRules.Fullscreen(IsWindowVisible(window),IsIconic(window),IsZoomed(window),(GetWindowLong(window,-16)&0x00C00000)!=0,Covers(rect,monitor));
+        }
+        // 前景窗口的底边压进了 Dock 那条带（bandTop 是物理像素下这条带的顶边）：
+        // 最大化的应用、贴边的长窗口都算。任务栏隐藏与否只影响工作区，不影响这条带，
+        // 所以这里不拿工作区当基准，否则任务栏一收起判据就失效。
+        public static bool Immersive(IntPtr onMonitor,double bandTop) {
+            IntPtr window;
+            RECT rect;
+            MONITORINFO monitor;
+            if(!Measure(onMonitor,out window,out rect,out monitor))return false;
+            bool reachesBand=rect.Bottom>=bandTop;
+            bool wide=(rect.Right-rect.Left)*2>=(monitor.Monitor.Right-monitor.Monitor.Left);
+            return WindowReliabilityRules.Immersive(IsWindowVisible(window),IsIconic(window),reachesBand,wide);
+        }
+        static bool Covers(RECT rect,MONITORINFO monitor) {
+            return rect.Left<=monitor.Monitor.Left&&rect.Top<=monitor.Monitor.Top&&rect.Right>=monitor.Monitor.Right&&rect.Bottom>=monitor.Monitor.Bottom;
+        }
+        // 只接受"别人的、不是桌面/任务栏的、同一显示器上的"前景窗口。
+        static bool Measure(IntPtr onMonitor,out IntPtr window,out RECT rect,out MONITORINFO monitor) {
+            rect=new RECT();
+            monitor=new MONITORINFO{Size=Marshal.SizeOf(typeof(MONITORINFO))};
+            window=GetForegroundWindow();
             if(window==IntPtr.Zero||(onMonitor!=IntPtr.Zero&&MonitorFromWindow(window,2)!=MonitorFromWindow(onMonitor,2)))return false;
             uint pid;
             GetWindowThreadProcessId(window,out pid);
@@ -76,14 +101,7 @@ namespace Lumina {
                 "Progman","WorkerW","Shell_TrayWnd","Shell_SecondaryTrayWnd"
             }
             .Contains(cls.ToString()))return false;
-            RECT rect;
-            var monitor=new MONITORINFO {
-                Size=Marshal.SizeOf(typeof(MONITORINFO))
-            }
-            ;
-            if(!GetWindowRect(window,out rect)||!GetMonitorInfo(MonitorFromWindow(window,2),ref monitor))return false;
-            bool covers=rect.Left<=monitor.Monitor.Left&&rect.Top<=monitor.Monitor.Top&&rect.Right>=monitor.Monitor.Right&&rect.Bottom>=monitor.Monitor.Bottom;
-            return WindowReliabilityRules.Fullscreen(IsWindowVisible(window),IsIconic(window),IsZoomed(window),(GetWindowLong(window,-16)&0x00C00000)!=0,covers);
+            return GetWindowRect(window,out rect)&&GetMonitorInfo(MonitorFromWindow(window,2),ref monitor);
         }
     }
     public partial class Controller {

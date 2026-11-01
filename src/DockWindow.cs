@@ -120,12 +120,29 @@ namespace Lumina {
             }
             var accent=Accent(o.Accent);Surface.BorderBrush=GlassPercent==0?(Brush)Brushes.Transparent:new LinearGradientBrush(Color.FromArgb((byte)Math.Min(255,160*EdgeStrength),accent.R,accent.G,accent.B),Color.FromArgb((byte)Math.Min(255,30*EdgeStrength),255,255,255),90);UpdateRunning();if(!capture)AnimateDockLayout(oldLeft,oldWidth);
         }
-        void UpdateAutoHide(){ReleaseCancelledExternalDrag();if(C.GlassSuppressed||source==null||!IsVisible)return;RefreshLayer();if(C.Prefs.Dock.RespectFullscreen&&FullscreenState.Active(source.Handle)&&!boardPinDragging){ForceHideForFullscreen();SetScanPause(ScanPauseReason.Fullscreen,true);return;}SetScanPause(ScanPauseReason.Fullscreen,false);IsHitTestVisible=true;var position=Forms.Cursor.Position;var pointer=source.CompositionTarget.TransformFromDevice.Transform(new Point(position.X,position.Y));double bottom=dockScreenArea.Bottom;
+        void UpdateAutoHide(){
+            ReleaseCancelledExternalDrag();
+            if(C.GlassSuppressed||source==null||!IsVisible)return;
+            RefreshLayer();
+            bool respect=C.Prefs.Dock.RespectFullscreen;
+            bool exclusive=respect&&FullscreenState.Active(source.Handle);
+            if(exclusive&&!boardPinDragging){ForceHideForFullscreen();SetScanPause(ScanPauseReason.Fullscreen,true);return;}
+            SetScanPause(ScanPauseReason.Fullscreen,false);
+            // 判据用 Dock 自己那条带的物理顶边：任务栏是否收起都不影响它。
+            double bandTop=shownTop*source.CompositionTarget.TransformToDevice.M11;
+            bool ducking=InteractionRules.DockDucks(respect,exclusive,respect&&FullscreenState.Immersive(source.Handle,bandTop),dragging||boardPinDragging);
+            KeepDuckTimer(ducking);
+            IsHitTestVisible=true;var position=Forms.Cursor.Position;var pointer=source.CompositionTarget.TransformFromDevice.Transform(new Point(position.X,position.Y));double bottom=dockScreenArea.Bottom;
             bool over=!renderedHidden&&pointer.X>=Left&&pointer.X<=Left+Width&&pointer.Y>=shownTop&&pointer.Y<=shownTop+Height;
             bool edge=pointer.X>=Left-12&&pointer.X<=Left+Width+12&&pointer.Y>=bottom-C.Prefs.Dock.EdgeRange;
             bool menu=(ContextMenu!=null&&ContextMenu.IsOpen)||Items.Children.OfType<Button>().Any(b=>b.ContextMenu!=null&&b.ContextMenu.IsOpen);
-            bool hide=hidePolicy.Update(DateTime.UtcNow,C.Prefs.Dock.AutoHide,over,edge,dragging||DockInputBusy||externalDockDrag||(thumbnails!=null&&thumbnails.PointerInside)||(taskMenu!=null&&taskMenu.IsOpen)||menu||C.UiBusy||C.Board.IsVisible,C.Prefs.Dock.HideDelay);
+            bool hide=hidePolicy.Update(DateTime.UtcNow,InteractionRules.DockSpringOpen(C.Prefs.Dock.AutoHide,ducking),over,edge,dragging||DockInputBusy||externalDockDrag||(thumbnails!=null&&thumbnails.PointerInside)||(taskMenu!=null&&taskMenu.IsOpen)||menu||C.UiBusy||C.Board.IsVisible,ducking?0:C.Prefs.Dock.HideDelay);
             if(hide==renderedHidden)return;renderedHidden=hide;double target=hide?bottom-20:shownTop;AnimateDockVisibility(hide,target);
+        }
+        // 贴边收起时需要比 300ms 前景轮询更快的响应，否则指针扫过底边弹不出来。
+        void KeepDuckTimer(bool ducking) {
+            bool wanted=C.Prefs.Dock.AutoHide||ducking;
+            if(wanted&&!autoTimer.IsEnabled)autoTimer.Start();else if(!wanted&&autoTimer.IsEnabled&&!C.Prefs.Dock.AutoHide)autoTimer.Stop();
         }
         void UpdateRunning(){foreach(var button in Items.Children.OfType<Button>()){var grid=button.Content as Grid;if(grid==null)continue;var entry=button.Tag as Entry;if(entry!=null){int count=C.Prefs.Dock.ShowRunning?RunningWindows.Count(entry):0;foreach(var dot in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="running"))RunningBadge.Apply(dot,count);continue;}var group=button.Tag as TaskGroup;if(group!=null)foreach(var dot in grid.Children.OfType<Border>().Where(b=>b.Tag as string=="running"))RunningBadge.Apply(dot,group.Windows.Count);}}
         static Color Accent(int index) {return new Color[]{Color.FromRgb(121,185,250),Color.FromRgb(183,149,245),Color.FromRgb(105,218,183),Color.FromRgb(242,193,104),Color.FromRgb(244,150,178),Color.FromRgb(194,203,217)}[index];}

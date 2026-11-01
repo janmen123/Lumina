@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -73,6 +73,19 @@ namespace Lumina {
             Check("Dock 合并保留应用",()=>DockLayoutRules.Common(prefs).Contains(@"C:\apps\b.exe"));
             Check("Dock 以主面板开头",()=>DockLayoutRules.Common(prefs)[0]==DockLayoutRules.Apps);
             Check("Dock 未固定应用不出现",()=>!DockLayoutRules.Common(prefs).Contains(@"C:\apps\c.exe"));
+            // 铺满整屏的普通窗口：不挡内容，但指针回到底边还能弹出
+            Check("独占全屏不算贴边收起",()=>!InteractionRules.DockDucks(true,true,true,false));
+            Check("铺满整屏要贴边收起",()=>InteractionRules.DockDucks(true,false,true,false));
+            Check("未开启让位时不收起",()=>!InteractionRules.DockDucks(false,false,true,false));
+            Check("只有最大化窗口不收起",()=>!InteractionRules.DockDucks(true,false,false,false));
+            Check("拖动 Dock 时不收起",()=>!InteractionRules.DockDucks(true,false,true,true));
+            Check("贴边收起后底边可唤醒",()=>InteractionRules.DockSpringOpen(false,true));
+            Check("不贴边时按自动隐藏设置",()=>InteractionRules.DockSpringOpen(false,false)==false&&InteractionRules.DockSpringOpen(true,false));
+            Check("最大化带标题栏不算独占全屏",()=>!WindowReliabilityRules.Fullscreen(true,false,true,true,true));
+            Check("底边压进 Dock 带的宽窗口要贴边收起",()=>WindowReliabilityRules.Immersive(true,false,true,true));
+            Check("最小化的窗口不算",()=>!WindowReliabilityRules.Immersive(true,true,true,true));
+            Check("窄窗口不算铺满",()=>!WindowReliabilityRules.Immersive(true,false,true,false));
+            Check("没压进 Dock 带的窗口不算",()=>!WindowReliabilityRules.Immersive(true,false,false,true));
             // 窗口激活规则
             Check("前台未最小化则最小化",()=>WindowActivationRules.MinimizeDock(true,false));
             Check("前台已最小化则恢复",()=>!WindowActivationRules.MinimizeDock(true,true));

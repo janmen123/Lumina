@@ -44,6 +44,14 @@ namespace Lumina {
             bool caption, bool coversMonitor) {
             return visible && !minimized && coversMonitor && !(maximized && caption);
         }
+
+        // 底边压进 Dock 那条带、并且至少有半屏宽的窗口：最大化的应用、贴边的长窗口。
+        // 这类窗口的底边正好落在 Dock 悬浮的那一条带上，Dock 会压在它的内容上。
+        // 它不该被当成游戏全屏去停扫描，但需要让开。
+        internal static bool Immersive(bool visible, bool minimized, bool reachesBand,
+            bool wide) {
+            return visible && !minimized && reachesBand && wide;
+        }
     }
 
     public static partial class WindowActivationRules {
