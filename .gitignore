@@ -9,7 +9,7 @@
 /backups/
 /*.zip
 
-# 运行日志与配置（真实数据在 %LOCALAPPDATA%\GlassBoard）
+# 运行日志与配置（真实数据在 %LOCALAPPDATA%\Lumina）
 *.log
 /*.log
 /toggle-check.txt
@@ -29,3 +29,8 @@ desktop.ini
 
 /Lumina.exe
 /Lumina.exe.config
+
+/work/
+/Lumina.Regression.exe
+/logic-test-result.txt
+/WindowsCheck-result.txt

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -35,7 +35,7 @@ namespace Lumina {
         public DockPointerResult Release(double x,double y,bool inside,DockDropTarget target,bool allowClick=true){if(!Active)return new DockPointerResult();if(double.IsNaN(x)||double.IsNaN(y)||double.IsInfinity(x)||double.IsInfinity(y)){Active=false;return new DockPointerResult{Dragged=Dragging};}Move(x,y);Active=false;return new DockPointerResult{Click=!Dragging&&allowClick,Dragged=Dragging,Target=Dragging&&inside?target:null};}
         public void Cancel(){Active=false;}
     }
-    public static class WindowActivationRules {
+    public static partial class WindowActivationRules {
         internal static long SelectDock(IEnumerable<long> windows,long foreground,long previous){
             var handles=windows.Where(h=>h!=0).Distinct().ToList();
             return handles.Contains(foreground)?foreground:handles.Contains(previous)?previous:handles.FirstOrDefault();

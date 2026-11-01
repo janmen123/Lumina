@@ -32,7 +32,7 @@ namespace Lumina {
     public partial class DockWindow {
         public override bool WantsTopmost{get{return C!=null&&InteractionRules.DockTopmost(C.Prefs.Dock,boardPinDragging);}}
         public override bool YieldToFullscreen{get{return C==null||C.Prefs.Dock.RespectFullscreen;}}
-        void ForceHideForFullscreen(){if(C.GlassSuppressed)return;bool first=!renderedHidden;renderedHidden=true;hidePolicy=new AutoHidePolicy();if(first){double target=dockScreenArea.Bottom-20;AnimateDockVisibility(true,target);}}
+        void ForceHideForFullscreen(){if(C.GlassSuppressed)return;IsHitTestVisible=false;HideThumbnails();bool first=!renderedHidden;renderedHidden=true;hidePolicy=new AutoHidePolicy();if(first){double target=dockScreenArea.Bottom-20;AnimateDockVisibility(true,target);}}
     }
     public sealed partial class WidgetWindow {public override bool WantsTopmost{get{return M!=null&&M.C.Prefs.Widgets.Topmost;}}}
 }

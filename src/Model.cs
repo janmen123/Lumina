@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -148,7 +148,7 @@ namespace Lumina {
         [OnDeserializing] void Defaults(StreamingContext context){AutoGrouping=true;BoardIconSize=48;BoardIconGap=5;BoardPageMotion=true;BoardPageStyle="slide";DesktopAutoSync=true;DesktopFolders=true;DesktopDocs=true;DesktopFolderGroup="文件夹";DesktopDocsGroup="文档";}
         public bool HotkeyMigrationConflict;
         public void Normalize() {
-            AutoCheckUpdates=false;UpdateDirectConnection=false;LastUpdateCheckUtc=0;if(BoardPageStyle!="fade"&&BoardPageStyle!="slide"&&BoardPageStyle!="scale")BoardPageStyle="slide";
+            KeepWindowSeconds=Math.Max(0,Math.Min(10,KeepWindowSeconds));AutoCheckUpdates=false;UpdateDirectConnection=false;LastUpdateCheckUtc=0;if(BoardPageStyle!="fade"&&BoardPageStyle!="slide"&&BoardPageStyle!="scale")BoardPageStyle="slide";
             if(BoardMaterial==null)BoardMaterial=new MaterialOptions();BoardMaterial.Normalize();
             if(LearnedGroups==null)LearnedGroups=new Dictionary<string,string>();if(RemovedIdentities==null)RemovedIdentities=new List<string>();
             if(Apps==null)Apps=new List<Entry>();

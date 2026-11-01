@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -25,8 +25,9 @@ using Forms = System.Windows.Forms;
 using Drawing = System.Drawing;
 
 [assembly: System.Reflection.AssemblyTitle("Lumina")]
-[assembly: System.Reflection.AssemblyVersion("0.2.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("0.2.0.0")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Lumina.Regression")]
+[assembly: System.Reflection.AssemblyVersion(Lumina.AppInfo.AssemblyVersion)]
+[assembly: System.Reflection.AssemblyFileVersion(Lumina.AppInfo.AssemblyVersion)]
 
 namespace Lumina {
     public static class LayoutRules {
@@ -45,21 +46,4 @@ namespace Lumina {
         public static double Clamp(double value,double min,double max,double fallback) {return double.IsNaN(value)||double.IsInfinity(value)?fallback:Math.Max(min,Math.Min(max,value));}
     }
 
-    public static partial class Store {
-        public static readonly string Folder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lumina");
-        public static readonly string FileName = System.IO.Path.Combine(Folder, "layout.json");
-        static bool? diagnostics;
-        static readonly string[] EssentialTags={"SAVE","START","LOAD","ERROR","SESSION_END","RECOVER","SHUTDOWN","LAUNCH"};
-        static readonly string DiagnosticsMarker=System.IO.Path.Combine(Folder,"debug-log.on");
-        public static bool Silent;public static bool Diagnostics {get{if(!diagnostics.HasValue){bool on=false;try{on=File.Exists(DiagnosticsMarker);}catch{}diagnostics=on;}return diagnostics.Value;}set{diagnostics=value;try{if(value)File.WriteAllText(DiagnosticsMarker,"1");else if(File.Exists(DiagnosticsMarker))File.Delete(DiagnosticsMarker);}catch{}}}
-        static bool Essential(string message){var tag=(message??"").Trim();int space=tag.IndexOf(' ');if(space>0)tag=tag.Substring(0,space);return Array.IndexOf(EssentialTags,tag)>=0;}
-        public static void Trace(string message){try{if(!Diagnostics&&!Essential(message))return;Directory.CreateDirectory(Folder);string path=System.IO.Path.Combine(Folder,"session.log");if(File.Exists(path)&&new FileInfo(path).Length>1024*1024)Rotate(path,5);File.AppendAllText(path,DateTime.Now.ToString("s")+" ["+System.Reflection.Assembly.GetExecutingAssembly().GetName().Version+"] "+message+Environment.NewLine);}catch{}}
-        public static void Log(Exception ex) {
-            try { Directory.CreateDirectory(Folder); string path=System.IO.Path.Combine(Folder,"error.log"); if(File.Exists(path)&&new FileInfo(path).Length>1024*1024)Rotate(path,5); File.AppendAllText(path,DateTime.Now.ToString("s")+" ["+System.Reflection.Assembly.GetExecutingAssembly().GetName().Version+"] "+ex+Environment.NewLine); } catch {}
-        }
-        public static void Log(string context,Exception ex) {
-            try { Directory.CreateDirectory(Folder); string path=System.IO.Path.Combine(Folder,"error.log"); if(File.Exists(path)&&new FileInfo(path).Length>1024*1024)Rotate(path,5); int code=ex is System.ComponentModel.Win32Exception?((System.ComponentModel.Win32Exception)ex).NativeErrorCode:0; File.AppendAllText(path,DateTime.Now.ToString("s")+" ["+System.Reflection.Assembly.GetExecutingAssembly().GetName().Version+"] "+context+" win32="+code+" "+ex+Environment.NewLine); } catch {}
-        }
-        static void Rotate(string path,int keep){File.Move(path,path+"."+DateTime.Now.Ticks);try{string pattern=System.IO.Path.GetFileName(path)+".*";foreach(string old in Directory.GetFiles(Folder,pattern).OrderByDescending(File.GetLastWriteTimeUtc).Skip(keep))File.Delete(old);}catch{}}
-    }
 }

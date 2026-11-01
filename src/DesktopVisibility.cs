@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -128,25 +128,71 @@ namespace Lumina {
                 }
             }catch(Exception ex){Store.Log(ex);maintenance.Stop();}
         }
-        public static void Recover() {
-            if(File.Exists(IconRecoveryFile)){string saved=File.ReadAllText(IconRecoveryFile).Trim();if(saved!="0"&&saved!="1")throw new InvalidDataException("桌面图标恢复记录无效");NativeSetIcons(saved=="1");File.Delete(IconRecoveryFile);}
-            if(!File.Exists(RecoveryFile))return;
-            using(var s=File.OpenRead(RecoveryFile)) {
-                var states=(List<ShellState>)new DataContractJsonSerializer(typeof(List<ShellState>)).ReadObject(s);
-                foreach(var state in states)if(MatchesSaved(state))ShowWindow(new IntPtr(state.Handle),state.Visible?8:0);
-            }
-            File.Delete(RecoveryFile);
+        static void RestoreStates(IEnumerable<ShellState> states) {
+            var steps = states.Where(MatchesSaved).Select(state => (Action)(() => {
+                var handle = new IntPtr(state.Handle);
+                ShowWindow(handle, state.Visible ? 8 : 0);
+                bool visible = (GetWindowLong(handle, -16) & 0x10000000) != 0;
+                if (visible != state.Visible) throw new IOException("Windows 尚未确认界面恢复：" + state.ClassName);
+            }));
+            RecoveryActions.RunAll(steps);
         }
+
+        public static void Recover() {
+            RecoveryActions.RunAll(new Action[] {
+                () => {
+                    if (!File.Exists(IconRecoveryFile)) return;
+                    string saved = File.ReadAllText(IconRecoveryFile).Trim();
+                    if (saved != "0" && saved != "1") throw new InvalidDataException("桌面图标恢复记录无效");
+                    NativeSetIcons(saved == "1");
+                    File.Delete(IconRecoveryFile);
+                },
+                () => {
+                    if (!File.Exists(RecoveryFile)) return;
+                    using (var stream = File.OpenRead(RecoveryFile)) {
+                        var states = (List<ShellState>)new DataContractJsonSerializer(typeof(List<ShellState>)).ReadObject(stream);
+                        if (states == null) throw new InvalidDataException("界面恢复记录无效");
+                        RestoreStates(states);
+                    }
+                    File.Delete(RecoveryFile);
+                }
+            });
+        }
+
         public static void RestoreOriginal() {
-            maintenance.Stop();taskbarHidden=null;iconsHidden=null;
-            if(originalIcons.HasValue){NativeSetIcons(originalIcons.Value);originalIcons=null;if(File.Exists(IconRecoveryFile))File.Delete(IconRecoveryFile);}
-            foreach(var state in original.Values)if(MatchesSaved(state))ShowWindow(new IntPtr(state.Handle),state.Visible?8:0);
-            original.Clear();if(File.Exists(RecoveryFile))File.Delete(RecoveryFile);
+            maintenance.Stop();
+            taskbarHidden = null;
+            iconsHidden = null;
+            RecoveryActions.RunAll(new Action[] {
+                () => {
+                    if (!originalIcons.HasValue) return;
+                    NativeSetIcons(originalIcons.Value);
+                    if (File.Exists(IconRecoveryFile)) File.Delete(IconRecoveryFile);
+                    originalIcons = null;
+                },
+                () => {
+                    RestoreStates(original.Values);
+                    if (File.Exists(RecoveryFile)) File.Delete(RecoveryFile);
+                    original.Clear();
+                    hiddenDeskGo.Clear();
+                }
+            });
         }
         public static void ShowAll() {
             maintenance.Stop();taskbarHidden=false;iconsHidden=false;
-            NativeSetIcons(false);originalIcons=null;if(File.Exists(IconRecoveryFile))File.Delete(IconRecoveryFile);
-            var handles=Taskbars().Concat(DesktopLists()).ToArray();foreach(var h in handles)ShowWindow(h,8);
+            RecoveryActions.RunAll(new Action[] {
+                () => {
+                    NativeSetIcons(false);
+                    if(File.Exists(IconRecoveryFile))File.Delete(IconRecoveryFile);
+                    originalIcons=null;
+                },
+                () => {
+                    var states=Taskbars().Concat(DesktopLists()).Select(h=>new ShellState {
+                        Handle=h.ToInt64(),ClassName=Class(h),Visible=true
+                    }).ToList();
+                    RestoreStates(states);
+                }
+            });
             original.Clear();if(File.Exists(RecoveryFile))File.Delete(RecoveryFile);
         }
     }

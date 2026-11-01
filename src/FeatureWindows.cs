@@ -9,7 +9,7 @@ namespace Lumina {
         static APPBARDATA Data(){var d=new APPBARDATA{Size=(uint)Marshal.SizeOf(typeof(APPBARDATA)),Window=FindWindow("Shell_TrayWnd",null)};if(d.Window==IntPtr.Zero)throw new InvalidOperationException("未找到 Windows 任务栏");return d;}
         static uint State(){var data=Data();return (uint)SHAppBarMessage(4,ref data).ToUInt64();}
         public static bool Enabled{get{return (State()&1)!=0;}}
-        static void Apply(uint state){var data=Data();data.Param=new IntPtr(state);SHAppBarMessage(10,ref data);}
+        static void Apply(uint state){var data=Data();data.Param=new IntPtr(state);SHAppBarMessage(10,ref data);if((State()&1)!=(state&1))throw new InvalidOperationException("Windows 尚未确认任务栏自动隐藏状态，恢复记录已保留。");}
         public static void Set(bool enabled){uint state=State();if(((state&1)!=0)==enabled)return;Directory.CreateDirectory(Store.Folder);if(!File.Exists(Journal))File.WriteAllText(Journal,state.ToString(System.Globalization.CultureInfo.InvariantCulture));Apply(FeatureRules.AutoHideState(state,enabled));}
         public static void Restore(){if(!File.Exists(Journal))return;uint original=uint.Parse(File.ReadAllText(Journal),System.Globalization.CultureInfo.InvariantCulture);Apply(FeatureRules.AutoHideState(State(),(original&1)!=0));File.Delete(Journal);}
         public static void ShowAndClear(){Apply(FeatureRules.AutoHideState(State(),false));if(File.Exists(Journal))File.Delete(Journal);}

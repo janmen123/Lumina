@@ -1,7 +1,12 @@
-﻿$ErrorActionPreference = 'Stop'
-$folder = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Lumina'
-$files = @('error.log','session.log','update.log','layout.json','layout.json.previous','layout.json.last-good','removed.json') | ForEach-Object { Join-Path $folder $_ } | Where-Object { Test-Path -LiteralPath $_ }
-if (-not $files) { throw 'No diagnostic files found. Run RecoverWidgets.cmd first.' }
-$destination = Join-Path ([Environment]::GetFolderPath('Desktop')) ('Lumina_Diagnostics_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.zip')
-Compress-Archive -LiteralPath $files -DestinationPath $destination
-Write-Host ('Saved: ' + $destination)
+﻿param([string]$Destination)
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $PSScriptRoot
+if (-not $Destination) {
+    $Destination = Join-Path ([Environment]::GetFolderPath('Desktop')) ('Lumina_Diagnostics_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.zip')
+}
+$Destination = [IO.Path]::GetFullPath($Destination)
+if (Test-Path -LiteralPath $Destination) { throw 'Destination already exists; choose another file.' }
+$process = Start-Process -FilePath (Join-Path $root 'Lumina.exe') -ArgumentList @('--export-diagnostics', ('"' + $Destination + '"')) -WindowStyle Hidden -PassThru -Wait
+if ($process.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $Destination)) { throw 'Diagnostic export failed.' }
+Write-Host ('Saved redacted diagnostics: ' + $Destination)
+Write-Host 'Layouts and notes are excluded. Review free-form error text before sharing.'

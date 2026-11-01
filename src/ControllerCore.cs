@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -354,7 +354,7 @@ namespace Lumina {
                 generalPage.Children.Add(new TextBlock{Text=AdminService.IsElevated()?"当前以管理员权限运行，可以直接读取提权程序的窗口路径、缩略图与图标。":"当前以普通权限运行：以管理员权限运行的程序，其缩略图、拖拽吸附与前台激活会受限。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,10)});
                 generalPage.Children.Add(FeatureUi.Button("以管理员身份重启 Lumina",()=>RestartElevated()));
                 check(generalPage,"记录诊断日志（排查问题时开启）",Store.Diagnostics,value=>{Store.Diagnostics=value;});
-                generalPage.Children.Add(new TextBlock{Text="关闭时 session.log 只记录启动、保存与错误；开启后会把 Dock 点击、窗口切换、组件刷新等细节写进 session.log。日志超过 1 MB 自动轮转，最多保留 5 份。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,10)});
+                generalPage.Children.Add(new TextBlock{Text="关闭时 session.log 只记录启动、保存与错误；开启后会把 Dock 点击、窗口切换、组件刷新等细节写进 session.log。写入前会遮盖常见文件路径、网址、邮箱和诊断标题字段；日志超过 1 MB 自动轮转，保留当前文件及最多 5 份历史。分享前仍请检查内容。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,10)});
                 BuildUpdateSettings(generalPage,w);generalPage.Children.Add(FeatureUi.Button("找回旧版入口与分组",()=>RecoverHistoricalEntries(w)));
                 generalPage.Children.Add(new TextBlock{Text="完整备份与恢复",FontSize=18,Margin=new Thickness(0,22,0,10)});generalPage.Children.Add(new TextBlock{Text="备份布局、分组、快捷键、组件、便签、外观方案与自定义图标。软件与音乐文件保留在原位置；开机启动按当前电脑设置保留。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray});var backups=new WrapPanel{Margin=new Thickness(0,12,0,6)};backups.Children.Add(FeatureUi.Button("导出完整备份",()=>ExportFullBackup()));backups.Children.Add(FeatureUi.Button("恢复完整备份",()=>{w.Close();Dock.Dispatcher.BeginInvoke(new Action(()=>RestoreFullBackup()));}));generalPage.Children.Add(backups);
                 var apply=new Button{Content="保存快捷键并完成",Height=42,Background=Polish.Color("#416AA9"),Foreground=Brushes.White,Margin=new Thickness(0,16,0,0)};Grid.SetRow(apply,2);root.Children.Add(apply);
@@ -384,7 +384,7 @@ namespace Lumina {
         public void ShellAction(int action,bool? hidden=null) {
             try {
                 string message;
-                if(action==1){bool next=hidden??!DesktopVisibility.DesiredHidden(true);if(next&&TaskbarAutoHide.Enabled)TaskbarAutoHide.Set(false);message=DesktopVisibility.SetHidden(true,next);}else if(action==2){bool next=hidden??!cleanDesktopActive;SetCleanDesktop(next);message=next?"已隐藏桌面图标和分区":"已恢复桌面图标和分区";}else {SetCleanDesktop(false);try{TaskbarAutoHide.ShowAndClear();}catch(Exception ex){Store.Log(ex);}DesktopVisibility.ShowAll();message="已执行任务栏与桌面图标恢复";}
+                if(action==1){bool next=hidden??!DesktopVisibility.DesiredHidden(true);if(next&&TaskbarAutoHide.Enabled)TaskbarAutoHide.Set(false);message=DesktopVisibility.SetHidden(true,next);}else if(action==2){bool next=hidden??!cleanDesktopActive;SetCleanDesktop(next);message=next?"已隐藏桌面图标和分区":"已恢复桌面图标和分区";}else {RecoveryActions.RunAll(new Action[]{()=>SetCleanDesktop(false),()=>TaskbarAutoHide.ShowAndClear(),()=>DesktopVisibility.ShowAll()});message="已执行任务栏与桌面图标恢复";}
                 Board.SetStatus(message);if(Tray!=null)Tray.ShowBalloonTip(1500,"Lumina",message,Forms.ToolTipIcon.Info);
             }catch(Exception ex){Store.Log(ex);MessageBox.Show("无法切换系统界面："+ex.Message,"Lumina");}
         }
@@ -392,7 +392,7 @@ namespace Lumina {
             if(ShuttingDown)return;
             try{if(settingsWindow!=null)settingsWindow.Close();Store.Save(Prefs);}
             catch(Exception ex){Store.Log(ex);MessageBox.Show("退出前保存失败，软件仍保持运行，避免丢失当前内容。\n"+ex.Message,"Lumina");return;}
-            ShuttingDown=true;SystemTheme.Changed-=SystemThemeChanged;SystemTheme.Stop();
+            ShuttingDown=true;StopDesktopAutoSync();RunningWindows.CancelKeepVisible();SystemTheme.Changed-=SystemThemeChanged;SystemTheme.Stop();
             try{DesktopVisibility.RestoreOriginal();}catch(Exception ex){Store.Log(ex);}try{TaskbarAutoHide.Restore();}catch(Exception ex){Store.Log(ex);}
             try{CloseControlCenter();CloseWidgets();}catch(Exception ex){Store.Log(ex);}if(Tray!=null){Tray.Visible=false;Tray.Dispose();}Dock.ReleaseHotkey();Application.Current.Shutdown();
         }

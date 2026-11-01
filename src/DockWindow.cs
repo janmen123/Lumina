@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -30,17 +30,23 @@ namespace Lumina {
         Controller C;StackPanel Items=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center};
         HwndSource source;HotkeyManager hotkeys;
         int fullscreenTicks;
+        readonly ScanPauseState scanPause = new ScanPauseState();
         DispatcherTimer autoTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(50)},runningTimer=new DispatcherTimer{Interval=TimeSpan.FromSeconds(5)},foregroundTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(300)};
         DateTime lastRunningScan=DateTime.MinValue;AutoHidePolicy hidePolicy=new AutoHidePolicy();bool renderedHidden;double shownTop;Rect dockWorkingArea,dockScreenArea;Thumb moveGrip;bool dragging;
         public double RestingTop {get{return shownTop;}}
-        public void ScanPaused(bool paused){if(paused){if(runningTimer.IsEnabled)runningTimer.Stop();return;}if(runningTimer.IsEnabled)return;runningTimer.Interval=TimeSpan.FromSeconds(5);runningTimer.Start();}
+        public void ScanPaused(bool paused){SetScanPause(ScanPauseReason.Game,paused);}
+        void SetScanPause(ScanPauseReason reason,bool paused){
+            scanPause.Set(reason,paused);
+            if(scanPause.Paused){runningTimer.Stop();return;}
+            if(!runningTimer.IsEnabled){lastRunningScan=DateTime.MinValue;runningTimer.Interval=TimeSpan.FromSeconds(5);runningTimer.Start();}
+        }
         public DockWindow(Controller c):base(29) {
             C=c;Title="Lumina Dock";Height=112;ShowActivated=false;Topmost=false;ContentGrid.Children.Add(Items);InitDockPointer();InitializeBackgroundMove();InitTaskDock();
             moveGrip=new Thumb{Width=42,Height=6,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,Margin=new Thickness(0,7,0,0),Cursor=Cursors.SizeAll,ToolTip="拖动 Dock；设置中可锁定位置"};Root.Children.Add(moveGrip);
             moveGrip.Template=InvisibleDockGrip();Closing+=(s,e)=>{if(!C.ShuttingDown){e.Cancel=true;Dispatcher.BeginInvoke(new Action(()=>C.Quit()));}};
             moveGrip.DragStarted+=(s,e)=>BeginDockMove();moveGrip.DragDelta+=(s,e)=>{if(!dragging)return;var area=DockPlacementArea(true);Left=FeatureRules.Position(Left+e.HorizontalChange,area.Left,area.Width,Width);Top=DockGeometryRules.Top(Top+e.VerticalChange,area,Height);};moveGrip.DragCompleted+=(s,e)=>FinishDockMove();
             autoTimer.Tick+=(s,e)=>{RunningWindows.RememberForeground();UpdateAutoHide();};
-            foregroundTimer.Tick+=(s,e)=>{RunningWindows.RememberForeground();if(C.Prefs.AutoGameMode)C.CheckGameMode();if(C.Prefs.Dock.RespectFullscreen&&!C.Prefs.Dock.AutoHide&&++fullscreenTicks>=3){fullscreenTicks=0;UpdateAutoHide();}};
+            foregroundTimer.Tick+=(s,e)=>{RunningWindows.RememberForeground();if(C.Prefs.AutoGameMode)C.CheckGameMode();if(!C.Prefs.Dock.AutoHide&&++fullscreenTicks>=3){fullscreenTicks=0;UpdateAutoHide();}};
             foregroundTimer.Start();runningTimer.Tick+=(s,e)=>{ReleaseCancelledExternalDrag();if(boardPinDragging)return;C.CheckGameMode();if(!C.Prefs.AutoGameMode){var slow=IdleState.Seconds()>=90?TimeSpan.FromSeconds(15):TimeSpan.FromSeconds(5);if(runningTimer.Interval!=slow)runningTimer.Interval=slow;}if(C.GlassSuppressed||(!IsVisible&&!C.Board.IsVisible))return;if((!C.Prefs.Dock.ShowRunning&&!taskWheel.Running&&!C.Prefs.Dock.ShowRunningSection)||(DateTime.UtcNow-lastRunningScan).TotalSeconds<(renderedHidden?20:5))return;lastRunningScan=DateTime.UtcNow;RunningWindows.Scan();RefreshTaskSnapshot();UpdateRunning();C.Board.UpdateRunning();};runningTimer.Start();
             SourceInitialized+=(s,e)=> {
                 source=HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);source.AddHook(Hook);
@@ -60,7 +66,7 @@ namespace Lumina {
         public string RetryHotkeys() {if(hotkeys==null)return "快捷键窗口尚未就绪。";hotkeys.Release();var failed=hotkeys.Start(C.Prefs.Hotkeys);return failed.Count==0?"已重新注册启用的快捷键。":"以下组合被占用，请改键或使用开关：\n"+string.Join("\n",failed);}
         public List<HotkeySetting> SuspendHotkeys(){var previous=hotkeys==null?new List<HotkeySetting>():hotkeys.Active.Select(k=>k.Copy()).ToList();if(hotkeys!=null)hotkeys.Release();return previous;}
         public void ResumeHotkeys(List<HotkeySetting> keys){if(hotkeys==null)return;hotkeys.Release();var failed=hotkeys.Start(keys);if(failed.Count>0)TrayWarning(string.Join("、",failed));}
-        public void ReleaseHotkey() {CancelDockPointer(false);autoTimer.Stop();runningTimer.Stop();foregroundTimer.Stop();taskHintTimer.Stop();if(hotkeys!=null)hotkeys.Release();Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
+        public void ReleaseHotkey() {RunningWindows.CancelKeepVisible();CancelDockPointer(false);autoTimer.Stop();runningTimer.Stop();foregroundTimer.Stop();taskHintTimer.Stop();if(hotkeys!=null)hotkeys.Release();Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
         IntPtr Hook(IntPtr h,int msg,IntPtr w,IntPtr l,ref bool handled) {
             // Preserve the application's foreground state until the icon action
             // decides whether to restore or minimize it; still deliver the click.
@@ -87,11 +93,10 @@ namespace Lumina {
                 foreach(var a in pinned.Skip(shown)) {var item=new MenuItem{Header=a.Name};var entry=a;item.Click+=(s,e)=>{if(!DockDragSuppresses(item))C.LaunchDock(entry);};BindDockSource(item,entry,()=>menu.IsOpen=false);menu.Items.Add(item);}
                 AddDockControls(menu);more.ContextMenu=menu;more.Click+=(s,e)=>{menu.PlacementTarget=more;menu.Placement=PlacementMode.Top;menu.IsOpen=true;};Items.Children.Add(more);
             }
-            if(o.ShowRunningSection&&pinned.Count>0){RunningWindows.Scan();ReadTaskGroups();if(taskGroups.Count>0){var pinnedWindows=new HashSet<IntPtr>(pinned.SelectMany(a=>RunningWindows.For(a)).Select(w=>w.Handle));// Anything already pinned never shows up twice: a pinned entry opening must not grow
-            // a second icon in the running row. Paths and image names cover windows whose
-            // folder or target resolution is still cached out.
-            var pinnedImages=new HashSet<string>(StringComparer.OrdinalIgnoreCase);foreach(var pinnedEntry in pinned)foreach(var image in WindowActivationRules.Executables(pinnedEntry)){if(!string.IsNullOrWhiteSpace(image))pinnedImages.Add(image);var imageName=System.IO.Path.GetFileName(image??"");if(!string.IsNullOrWhiteSpace(imageName))pinnedImages.Add(imageName);}var extras=taskGroups.Where(g=>{if(g.Key.StartsWith("window:",StringComparison.Ordinal))return false;if(pinnedImages.Contains(g.Key))return false;if(g.Key.StartsWith("name:",StringComparison.Ordinal)&&pinnedImages.Contains(g.Key.Substring(5)))return false;return !g.Windows.All(w=>pinnedWindows.Contains(w.Handle));}).ToList();
-            Store.Trace("DOCK groups="+taskGroups.Count+" pinned="+pinnedWindows.Count+" extras="+string.Join(" | ",extras.Select(g=>g.Key+"@"+g.Name+"#"+g.Windows.Count)));double cell=o.IconSize+16+o.Spacing;int fixedSlots=1+(o.ShowSettings?1:0)+(o.ShowComputer?1:0)+(o.ShowPower?1:0)+(o.ShowNetwork?1:0)+(o.ShowRecycleBin?1:0);int fit=Math.Max(0,(int)Math.Floor((area.Width-20-28-o.HoverPadding()*2-(o.ShowSeparator?17:0))/cell)-fixedSlots);int room=Math.Max(0,fit-shown-1);var overflow=new List<TaskGroup>();if(extras.Count>room){int keep=room>0?room-1:0;overflow=extras.Skip(keep).ToList();extras=extras.Take(keep).ToList();}if(extras.Count>0){extrasShown=extras.Count;Items.Children.Add(new Border{Width=1,Height=o.IconSize*.7,Margin=new Thickness(6,0,6,0),Background=new SolidColorBrush(Color.FromArgb(65,220,220,230)),VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false});foreach(var group in extras){var selected=group;var button=DockButton(null,TaskIcon(group),()=>OpenTask(selected,null),"正在运行 · "+group.Name+(group.Windows.Count>1?" · "+group.Windows.Count+" 个窗口":""));button.Tag=group;BindPointerItem(button,"running:"+group.Key,group.Name,()=>OpenTask(selected,button));var grid=button.Content as Grid;if(grid!=null)grid.Children.Add(RunningBadge.Create());button.ContextMenu=TaskWindowMenu(group);Items.Children.Add(button);}if(overflow.Count>0){extrasShown++;var moreRun=DockButton("···",null,()=>{},"更多正在运行的软件");var runMenu=MenuTheme.Create(C.Prefs.Light);foreach(var group in overflow){var selected=group;var item=new MenuItem{Header=group.Name+(group.Windows.Count>1?"（"+group.Windows.Count+"）":"")};foreach(var window in group.Windows)item.Items.Add(TaskWindowItem(window));runMenu.Items.Add(item);}AddDockControls(runMenu);moreRun.ContextMenu=runMenu;moreRun.Click+=(s,e)=>{runMenu.PlacementTarget=moreRun;runMenu.Placement=PlacementMode.Top;runMenu.IsOpen=true;};Items.Children.Add(moreRun);}}}}
+            if(o.ShowRunningSection&&!C.GlassSuppressed){RunningWindows.Scan();ReadTaskGroups();if(taskGroups.Count>0){var pinnedWindows=new HashSet<IntPtr>(pinned.SelectMany(a=>RunningWindows.For(a)).Select(w=>w.Handle));
+            var extras=taskGroups.Where(g=>!g.Windows.All(w=>pinnedWindows.Contains(w.Handle))).ToList();
+            Store.Trace("DOCK groups="+taskGroups.Count+" pinned="+pinnedWindows.Count+" extraGroups="+extras.Count);
+            double cell=o.IconSize+16+o.Spacing;int fixedSlots=1+(o.ShowSettings?1:0)+(o.ShowComputer?1:0)+(o.ShowPower?1:0)+(o.ShowNetwork?1:0)+(o.ShowRecycleBin?1:0);int fit=Math.Max(0,(int)Math.Floor((area.Width-20-28-o.HoverPadding()*2-(o.ShowSeparator?17:0))/cell)-fixedSlots);int room=Math.Max(0,fit-shown-1);var overflow=new List<TaskGroup>();if(extras.Count>room){int keep=room>0?room-1:0;overflow=extras.Skip(keep).ToList();extras=extras.Take(keep).ToList();}if(extras.Count>0||overflow.Count>0){extrasShown=extras.Count;Items.Children.Add(new Border{Width=1,Height=o.IconSize*.7,Margin=new Thickness(6,0,6,0),Background=new SolidColorBrush(Color.FromArgb(65,220,220,230)),VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false});foreach(var group in extras){var selected=group;var button=DockButton(null,TaskIcon(group),()=>OpenTask(selected,null),"正在运行 · "+group.Name+(group.Windows.Count>1?" · "+group.Windows.Count+" 个窗口":""));button.Tag=group;BindPointerItem(button,"running:"+group.Key,group.Name,()=>OpenTask(selected,button));var grid=button.Content as Grid;if(grid!=null)grid.Children.Add(RunningBadge.Create());button.ContextMenu=TaskWindowMenu(group);Items.Children.Add(button);}if(overflow.Count>0){extrasShown++;var moreRun=DockButton("···",null,()=>{},"更多正在运行的软件");var runMenu=MenuTheme.Create(C.Prefs.Light);foreach(var group in overflow){var selected=group;var item=new MenuItem{Header=group.Name+(group.Windows.Count>1?"（"+group.Windows.Count+"）":"")};foreach(var window in group.Windows)item.Items.Add(TaskWindowItem(window));runMenu.Items.Add(item);}AddDockControls(runMenu);moreRun.ContextMenu=runMenu;moreRun.Click+=(s,e)=>{runMenu.PlacementTarget=moreRun;runMenu.Placement=PlacementMode.Top;runMenu.IsOpen=true;};Items.Children.Add(moreRun);}}}}
             if(pinned.Count==0) Items.Children.Add(DockButton("+",null,()=>C.Toggle(true),"打开面板，可拖入软件固定"));
             }
             AddQuickButtons();
@@ -114,7 +119,7 @@ namespace Lumina {
             }
             var accent=Accent(o.Accent);Surface.BorderBrush=GlassPercent==0?(Brush)Brushes.Transparent:new LinearGradientBrush(Color.FromArgb((byte)Math.Min(255,160*EdgeStrength),accent.R,accent.G,accent.B),Color.FromArgb((byte)Math.Min(255,30*EdgeStrength),255,255,255),90);UpdateRunning();if(!capture)AnimateDockLayout(oldLeft,oldWidth);
         }
-        void UpdateAutoHide(){ReleaseCancelledExternalDrag();if(C.GlassSuppressed||source==null||!IsVisible)return;RefreshLayer();if(C.Prefs.Dock.RespectFullscreen&&FullscreenState.Active(source.Handle)&&!boardPinDragging){ForceHideForFullscreen();ScanPaused(true);return;}ScanPaused(false);var position=Forms.Cursor.Position;var pointer=source.CompositionTarget.TransformFromDevice.Transform(new Point(position.X,position.Y));double bottom=dockScreenArea.Bottom;
+        void UpdateAutoHide(){ReleaseCancelledExternalDrag();if(C.GlassSuppressed||source==null||!IsVisible)return;RefreshLayer();if(C.Prefs.Dock.RespectFullscreen&&FullscreenState.Active(source.Handle)&&!boardPinDragging){ForceHideForFullscreen();SetScanPause(ScanPauseReason.Fullscreen,true);return;}SetScanPause(ScanPauseReason.Fullscreen,false);IsHitTestVisible=true;var position=Forms.Cursor.Position;var pointer=source.CompositionTarget.TransformFromDevice.Transform(new Point(position.X,position.Y));double bottom=dockScreenArea.Bottom;
             bool over=!renderedHidden&&pointer.X>=Left&&pointer.X<=Left+Width&&pointer.Y>=shownTop&&pointer.Y<=shownTop+Height;
             bool edge=pointer.X>=Left-12&&pointer.X<=Left+Width+12&&pointer.Y>=bottom-C.Prefs.Dock.EdgeRange;
             bool menu=(ContextMenu!=null&&ContextMenu.IsOpen)||Items.Children.OfType<Button>().Any(b=>b.ContextMenu!=null&&b.ContextMenu.IsOpen);

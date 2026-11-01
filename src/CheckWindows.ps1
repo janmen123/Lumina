@@ -6,11 +6,13 @@ $lines.Add('Lumina v'+[Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $
 $lines.Add('OS: '+[Environment]::OSVersion)
 $lines.Add('64-bit OS: '+[Environment]::Is64BitOperatingSystem)
 foreach($screen in [Windows.Forms.Screen]::AllScreens){$lines.Add('Display: '+$screen.DeviceName+' Primary='+$screen.Primary+' Bounds='+$screen.Bounds+' WorkingArea='+$screen.WorkingArea)}
-$process=Start-Process -FilePath (Join-Path $root 'Lumina.exe') -ArgumentList '--self-test' -PassThru -Wait
+$process=Start-Process -FilePath (Join-Path $root 'Lumina.exe') -ArgumentList '--self-test' -WindowStyle Hidden -PassThru -Wait
 $lines.Add('WPF self-test exit code: '+$process.ExitCode)
 $result=Join-Path $root 'self-test-result.txt'
 if(Test-Path $result){$lines.Add((Get-Content -Raw -LiteralPath $result))}
-$lines.Add('Manual v0.9.23 acceptance still required: four opening styles and independent hover, foldable manual and Douyin QR, GitHub-only downloads, shutdown/reboot component persistence, app/folder window close, Recycle Bin, system tray compatibility, weather proxy/direct routes, Win+D (keyboard/taskbar corner/repeated toggle), Explorer restart, orb click/drag/outside click/Esc, real Wi-Fi/Bluetooth/audio/brightness, lightweight Windows PowerShell controls (no engine directory),  reopen widgets, restart layout, 100/125/150/200% scaling, multiple displays, drag/hover/undo, real player controls and cover, NVIDIA desktop recording and Instant Replay.')
+$lines.Add('Manual acceptance still required: third-party app focus/minimize, elevated apps, true fullscreen and multiple monitors, Explorer restart and shell recovery, 100/125/150/200% scaling, tray/orb interactions, real Wi-Fi/Bluetooth/audio/brightness, and long-running performance.')
 $destination=Join-Path $root 'WindowsCheck-result.txt'
 $lines | Set-Content -LiteralPath $destination -Encoding UTF8
 Write-Host ('Saved: '+$destination)
+
+if ($process.ExitCode -ne 0) { throw 'Windows self-test failed; see WindowsCheck-result.txt.' }
