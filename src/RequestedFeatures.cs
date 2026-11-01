@@ -1,7 +1,16 @@
 ﻿using System;using System.Linq;using System.Collections.Generic;using System.IO;using System.Diagnostics;using System.Windows;using System.Windows.Controls;using System.Windows.Input;using System.Windows.Media;
 namespace GlassBoard { internal static class SnapStyles{[System.Runtime.InteropServices.DllImport("user32.dll")]static extern int GetWindowLong(IntPtr h,int n);[System.Runtime.InteropServices.DllImport("user32.dll")]static extern int SetWindowLong(IntPtr h,int n,int v);internal static void MakePassive(IntPtr h){SetWindowLong(h,-20,GetWindowLong(h,-20)|0x20|0x08000000|0x80);}}
 public static partial class RunningWindows {
+internal static bool IsFileManager(Entry entry){
+if(entry==null||entry.IsFolder)return false;
+if(!string.IsNullOrEmpty(entry.LaunchArguments))return false;
+var target=(entry.LaunchTarget??"").Trim();
+if(target.Equals("文件资源管理器",StringComparison.OrdinalIgnoreCase))return true;
+if(string.Equals(Path.GetFileName(target),"explorer.exe",StringComparison.OrdinalIgnoreCase))return true;
+return string.Equals(Path.GetFileName(entry.Path??""),"File Explorer.lnk",StringComparison.OrdinalIgnoreCase);
+}
 static List<RunningWindow> MatchWindows(Entry entry,IEnumerable<string> paths){
+if(IsFileManager(entry)){var folders=windows.Where(w=>!string.IsNullOrWhiteSpace(w.FolderPath)).ToList();if(folders.Count>0)return folders;}
 var candidates=paths.Where(p=>!string.IsNullOrWhiteSpace(p)).ToArray();
 var exact=windows.Where(w=>candidates.Contains(w.Path,StringComparer.OrdinalIgnoreCase)||WindowActivationRules.HostedMatch(entry,w.Path,w.AppId)).ToList();if(exact.Count>0)return exact;
 var names=candidates.Select(Path.GetFileName).Where(n=>!string.IsNullOrEmpty(n)&&!new[]{"update.exe","launcher.exe","rundll32.exe","explorer.exe"}.Contains(n.ToLowerInvariant())).ToArray();
@@ -10,6 +19,7 @@ string key=(entry.Name??"").Trim();if(key.Equals("DSH",StringComparison.OrdinalI
 return windows.Where(w=>!string.IsNullOrEmpty(w.Path)&&!string.IsNullOrEmpty(w.Title)&&w.Title.IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0&&(Path.GetFileNameWithoutExtension(w.Path).IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0||candidates.Any(p=>string.Equals(Path.GetDirectoryName(p),Path.GetDirectoryName(w.Path),StringComparison.OrdinalIgnoreCase)))).ToList();}
 internal static bool WindowMatch(Entry entry,RunningWindow window){
 if(entry==null||window==null||entry.IsFolder)return false;
+if(IsFileManager(entry))return !string.IsNullOrWhiteSpace(window.FolderPath);
 var paths=WindowActivationRules.Executables(entry);
 if(paths.Any(p=>string.Equals(p,window.Path,StringComparison.OrdinalIgnoreCase)))return true;
 if(WindowActivationRules.HostedMatch(entry,window.Path,window.AppId))return true;
