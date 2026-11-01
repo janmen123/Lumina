@@ -1,4 +1,4 @@
-Lumina 本地修改版：分组拖动排序 + 去除大面板底部署名 + 去掉 Dock 悬停浮窗
+﻿Lumina 本地修改版：分组拖动排序 + 去除大面板底部署名 + 去掉 Dock 悬停浮窗
 
 使用：按住上方自建分组左右拖动。目标分组左半边表示插入其前方，右半边表示插入其后方；蓝色边线指示插入位置。
 松开后自动保存，取消拖动不改变顺序。Ctrl+Z 撤销、Ctrl+Y 重做（焦点不在文本输入框时）。
@@ -238,3 +238,9 @@ Lumina 本地修改版：分组拖动排序 + 去除大面板底部署名 + 去�
 - 设置窗口标题由“Lumina · 个性化与控制 v0.2.0 · 抖音 森霖Sama 制作”精简为“Lumina”。
 - 主页横幅副标题由“GLASSBOARD / 个性化、组件与桌面控制”改为“LUMINA / 个性化、组件与桌面控制”。
 - 说明书里关于设置分组的描述同步更新；构建通过，--self-test 全部 PASS。
+31) 2026-11-02 拆分 src/Lumina.cs：按类拆为 9 个文件，行为不变
+- 原 1135 行的 src/Lumina.cs 现在只剩 LayoutRules 与 Store（65 行）。
+- Controller 移到 src/ControllerCore.cs，Native 移到 src/NativeInterop.cs，Program/Main 移到 src/Program.cs。
+- GlassWindow、DesktopVisibility、DockWindow、BoardWindow、BatchAddWindow(含 AddCandidate) 各自独立成文件。
+- 拆分从 git 已提交版本按类边界机械切分，所有类与成员完整保留；总数 5923 行（含重复的 using 头）。
+- 构建通过（仅 CS0414 警告），--self-test 全部 PASS。
