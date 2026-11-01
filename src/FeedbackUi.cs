@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Diagnostics;
@@ -161,10 +161,12 @@ namespace Lumina {
             ApplyGameMode();
         }
         public void ApplyGameMode() {
-            bool suppress=GameModeRules.Suppressed(Prefs.GameMode,Prefs.AutoGameMode,Prefs.AutoGameMode&&FullscreenState.Active(),false);
+            bool game=GameDetection.ForegroundIsGame();
+            bool automatic=GameModeRules.AutoActive(Prefs.AutoGameMode,FullscreenState.Active(),game);
+            bool suppress=GameModeRules.Suppressed(Prefs.GameMode,Prefs.AutoGameMode,automatic,false);
             Dock.ScanPaused(suppress);
             if(suppress==glassSuppressed)return;
-            Store.Trace("GAME suppress="+suppress+" auto="+Prefs.AutoGameMode+" fullscreen="+FullscreenState.Active());
+            Store.Trace("GAME suppress="+suppress+" auto="+Prefs.AutoGameMode+" game="+game+" fullscreen="+FullscreenState.Active());
             glassSuppressed=suppress;
             ControlCenterVisibility(!suppress&&!CleanDesktopActive);
             if(suppress) {
@@ -193,7 +195,7 @@ namespace Lumina {
             manual.Checked+=(s,e)=>SetGameMode(true);
             manual.Unchecked+=(s,e)=>SetGameMode(false);
             var automatic=new CheckBox {
-                Content="检测全屏应用时自动进入（默认关闭）",IsChecked=Prefs.AutoGameMode,Margin=new Thickness(0,6,0,8)
+                Content="检测全屏或游戏时自动进入（默认关闭）",IsChecked=Prefs.AutoGameMode,Margin=new Thickness(0,6,0,8)
             }
             ;
             panel.Children.Add(automatic);

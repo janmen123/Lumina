@@ -1,4 +1,4 @@
-using System;using System.Collections.Generic;using System.Linq;using System.IO;using System.Runtime.Serialization;
+﻿using System;using System.Collections.Generic;using System.Linq;using System.IO;using System.Runtime.Serialization;
 namespace Lumina {
     public static class RemovalRules {
         public static string Identity(Entry entry){if(entry==null)return null;string target=WindowActivationRules.NormalizePath(entry.LaunchTarget);if(string.IsNullOrWhiteSpace(target))return "path|"+(WindowActivationRules.NormalizePath(entry.Path)??"");return "target|"+target+"|"+(entry.LaunchArguments??"").Trim();}
@@ -22,6 +22,7 @@ namespace Lumina {
         public static bool Supported(string path){return extensions.Contains(Path.GetExtension(path??""));}
     }
     public static class GameModeRules {
-        public static bool Suppressed(bool manual,bool automatic,bool fullscreen,bool desktop){return manual||(automatic&&fullscreen&&!desktop);}
+        public static bool AutoActive(bool automatic,bool fullscreen,bool game){return automatic&&(fullscreen||game);}
+        public static bool Suppressed(bool manual,bool automatic,bool active,bool desktop){return manual||(automatic&&active&&!desktop);}
     }
 }

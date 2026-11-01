@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -39,6 +39,14 @@ namespace Lumina {
             Check("自动+全屏抑制",()=>GameModeRules.Suppressed(false,true,true,false));
             Check("自动但未全屏不抑制",()=>!GameModeRules.Suppressed(false,true,false,false));
             Check("桌面可见时不全屏",()=>!GameModeRules.Suppressed(false,true,true,true));
+            Check("自动模式遇到游戏也抑制",()=>GameModeRules.AutoActive(true,false,true));
+            Check("自动模式没游戏没全屏不抑制",()=>!GameModeRules.AutoActive(true,false,false));
+            Check("自动模式关闭时不检测游戏",()=>!GameModeRules.AutoActive(false,false,true));
+            Check("Steam 库里的游戏算游戏",()=>GameDetection.IsGamePath(@"D:\Steam\steamapps\common\Counter-Strike Global Offensive\game\bin\win64\cs2.exe"));
+            Check("Epic 启动器不算游戏",()=>!GameDetection.IsGamePath(@"C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win64\EpicGamesLauncher.exe"));
+            Check("WeGame 库里的游戏算游戏",()=>GameDetection.IsGamePath(@"D:\WeGameApps\rail_apps\League of Legends\LeagueClient.exe"));
+            Check("普通程序不算游戏",()=>!GameDetection.IsGamePath(@"C:\Program Files\DeepSeek\Lumina\Lumina.exe"));
+            Check("空路径不算游戏",()=>!GameDetection.IsGamePath(null));
             // Dock 拖动阈值与点击判定
             var gesture=new DockPointerGesture("k",100,100,10,10);
             var click=gesture.Release(104,103,true,null);
