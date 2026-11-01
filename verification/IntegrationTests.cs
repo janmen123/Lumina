@@ -1,4 +1,4 @@
-using System;using System.Linq;using System.Reflection;using System.Collections;using System.Collections.Generic;using System.Windows;using System.Windows.Controls;using System.Windows.Interop;using System.Windows.Media;using System.Windows.Threading;using GlassBoard;
+using System;using System.Linq;using System.Reflection;using System.Collections;using System.Collections.Generic;using System.Windows;using System.Windows.Controls;using System.Windows.Interop;using System.Windows.Media;using System.Windows.Threading;using Lumina;
 class IntegrationTests {
 static void Pump(){var f=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,new Action(()=>f.Continue=false));Dispatcher.PushFrame(f);}
 static void Check(bool b,string s){if(!b)throw new Exception(s);Console.WriteLine("PASS "+s);}

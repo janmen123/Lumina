@@ -11,10 +11,10 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
-namespace GlassBoard {
+namespace Lumina {
     internal static class BoardDragData {
         internal static DataObject Create(string[] paths,string group){
-            var data=new DataObject();data.SetData("GlassBoard.Entry",paths[0]);data.SetData("GlassBoard.Entries",paths);data.SetData("GlassBoard.SourceGroup",group);
+            var data=new DataObject();data.SetData("Lumina.Entry",paths[0]);data.SetData("Lumina.Entries",paths);data.SetData("Lumina.SourceGroup",group);
             var files=new StringCollection();
             foreach(string path in paths.Distinct(StringComparer.OrdinalIgnoreCase)){
                 try{if(Path.IsPathRooted(path)&&(File.Exists(path)||Directory.Exists(path)))files.Add(Path.GetFullPath(path));}catch(ArgumentException){}catch(NotSupportedException){}

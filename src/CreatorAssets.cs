@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
-namespace GlassBoard {
+namespace Lumina {
     // Client-side protection raises the cost of swapping images; it cannot secure published source against recompilation.
     internal static class CreatorAssets {
         const string Key = "+w2G9GqN0Dp2dREGskd8qkOktn8hoPuUTF5BN3E70+o=";

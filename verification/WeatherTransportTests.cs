@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Text;using System.Net;using System.Net.Sockets;using System.Threading.Tasks;using System.IO.Compression;using GlassBoard;
+using System;using System.IO;using System.Text;using System.Net;using System.Net.Sockets;using System.Threading.Tasks;using System.IO.Compression;using Lumina;
 class WeatherTransportTests {
     static int checks;static void Check(bool value,string message){checks++;if(!value)throw new Exception(message);}
     static int Main(){

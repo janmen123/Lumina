@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Collections.Generic;using System.Windows;using System.Windows.Controls;using System.Windows.Media;using System.Windows.Media.Animation;
-namespace GlassBoard {
+namespace Lumina {
     public sealed partial class ControlCenterWindow {
         new Button Button(string label,RoutedEventHandler click,double width=80){
             var button=base.Button(label,click,width);button.Background=Polish.Color("#24FFFFFF");button.BorderBrush=Polish.Color("#30FFFFFF");button.Padding=new Thickness(8,4,8,4);

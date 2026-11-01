@@ -1,4 +1,4 @@
-using System;using System.Linq;using System.Collections.Generic;using System.IO;using System.Text;using System.Runtime.Serialization.Json;using System.IO.Compression;using GlassBoard;
+using System;using System.Linq;using System.Collections.Generic;using System.IO;using System.Text;using System.Runtime.Serialization.Json;using System.IO.Compression;using Lumina;
 public static class ExperienceTests {
  static void Check(bool value,string message){if(!value)throw new Exception(message);}
  static byte[] Json<T>(T value){using(var stream=new MemoryStream()){new DataContractJsonSerializer(typeof(T)).WriteObject(stream,value);return stream.ToArray();}}

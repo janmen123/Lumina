@@ -1,5 +1,5 @@
 using System;using System.Collections.Generic;using System.IO;using System.Text;using System.Security.Cryptography;using System.Windows.Media.Imaging;
-namespace GlassBoard {
+namespace Lumina {
     public sealed class BoundedCache<TKey,TValue> {
         sealed class Item {public TKey Key;public TValue Value;}
         readonly Dictionary<TKey,LinkedListNode<Item>> lookup;readonly LinkedList<Item> recent=new LinkedList<Item>();readonly int capacity;

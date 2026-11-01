@@ -1,8 +1,8 @@
 using System;
 using Microsoft.Win32;
 
-namespace GlassBoard {
-    // Reads the Windows 10/11 app theme and reports changes, so GlassBoard can
+namespace Lumina {
+    // Reads the Windows 10/11 app theme and reports changes, so Lumina can
     // follow the system light/dark setting instead of waiting for a manual toggle.
     public static class SystemTheme {
         const string Personalize=@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";

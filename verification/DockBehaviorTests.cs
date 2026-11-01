@@ -3,7 +3,7 @@ using System.Linq;
 using System.IO;
 using System.Text;
 using System.Runtime.Serialization.Json;
-using GlassBoard;
+using Lumina;
 
 public static class DockBehaviorTests {
     static void Check(bool value,string label){if(!value)throw new Exception(label);}

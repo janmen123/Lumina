@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 
-namespace GlassBoard {
+namespace Lumina {
     public static class DockOrderRules {
         public static List<Entry> Ordered(Preferences prefs){
             var pinned=prefs.Apps.Where(a=>a!=null&&a.Pinned&&!string.IsNullOrWhiteSpace(a.Path)).ToList();
@@ -68,7 +68,7 @@ namespace GlassBoard {
         }
     }
 }
-namespace GlassBoard {
+namespace Lumina {
     public static class DockRevealRules {
         public static double[] Stops(double current,double target,double intensity,double top){double bounce=System.Math.Min(12,System.Math.Abs(current-target)*.07)*System.Math.Max(.5,System.Math.Min(1.5,intensity));return new[]{current,System.Math.Max(top,target-bounce),target+bounce*.22,target};}
     }

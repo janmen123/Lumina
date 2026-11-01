@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace GlassBoard {
+namespace Lumina {
     // Watches a single key with a low-level hook instead of polling GetAsyncKeyState
     // from a timer: the hook runs only while it is installed and costs nothing when idle.
     public sealed class KeyWatch : IDisposable {

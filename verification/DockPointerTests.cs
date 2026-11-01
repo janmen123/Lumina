@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Linq;using System.Collections.Generic;using GlassBoard;
+using System;using System.IO;using System.Linq;using System.Collections.Generic;using Lumina;
 public static class DockPointerTests {
     static void Check(bool ok,string label){if(!ok)throw new Exception(label);}
     static Preferences Apps(int count){var p=new Preferences();for(int i=0;i<count;i++)p.Apps.Add(new Entry{Name="App"+i,Path="app"+i+".exe",Pinned=true,Group="创作"});p.Normalize();return p;}

@@ -6,7 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace GlassBoard {
+namespace Lumina {
     public static class GroupOrderRules {
         public static bool IsCustom(string name) {
             return !string.IsNullOrWhiteSpace(name) && name != "全部" && name != "未分组";
@@ -38,7 +38,7 @@ namespace GlassBoard {
     }
 
     public partial class BoardWindow {
-        const string GroupTabDragFormat = "GlassBoard.GroupTabOrder";
+        const string GroupTabDragFormat = "Lumina.GroupTabOrder";
         bool groupDragRunning;
         string groupDragCandidate;
         Point groupDragStart;

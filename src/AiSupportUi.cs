@@ -1,5 +1,5 @@
 using System;using System.Windows;using System.Windows.Controls;using System.Windows.Media;
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         public void ShowAiHelp(Window owner,string component,string details){
             bool previous=Board.ModalBusy;Board.ModalBusy=true;try{

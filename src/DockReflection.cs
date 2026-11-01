@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 
-namespace GlassBoard {
+namespace Lumina {
     internal static class DockReflection {
         internal static double Height(DockOptions o){return o.IconSize*o.ReflectionLength/100;}
         internal static double ExtraHeight(DockOptions o){return o.Reflection?Height(o)+o.ReflectionGap+o.ReflectionBlur*2:0;}

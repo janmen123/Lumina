@@ -7,7 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         public void LaunchDock(Entry entry){LaunchDock(entry,IntPtr.Zero);}
         public void LaunchDock(Entry entry,IntPtr hint){
@@ -17,7 +17,7 @@ namespace GlassBoard {
             catch(Exception ex){Store.Log(ex);Store.Trace("LAUNCH toggle failed entry="+entry.Name+" error="+ex.GetType().Name+" "+ex.Message);}
             if(handled){Board.CollapseSmooth();return;}
             try{System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(entry.Path){UseShellExecute=true});Board.CollapseSmooth();}
-            catch(Exception ex){Store.Trace("LAUNCH start failed entry="+entry.Name+" error="+ex.GetType().Name+" "+ex.Message);if(!Store.Silent)MessageBox.Show("无法打开「"+entry.Name+"」。\n入口可能已移动或卸载。\n\n"+ex.Message,"GlassBoard");}
+            catch(Exception ex){Store.Trace("LAUNCH start failed entry="+entry.Name+" error="+ex.GetType().Name+" "+ex.Message);if(!Store.Silent)MessageBox.Show("无法打开「"+entry.Name+"」。\n入口可能已移动或卸载。\n\n"+ex.Message,"Lumina");}
         }
         public bool ReorderDock(string path,string target,bool before){var state=BeginBoardEdit();if(!Dock.MoveLayout(path,target,before))return false;EndBoardEdit(state,"调整 Dock 顺序");Dock.Refresh(false);Board.Render();return true;}
         public void StepDock(string path,int step){var state=BeginBoardEdit();if(!Dock.StepLayout(path,step))return;EndBoardEdit(state,"调整 Dock 顺序");Dock.Refresh(false);Board.Render();}

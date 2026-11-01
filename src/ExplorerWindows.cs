@@ -1,5 +1,5 @@
 using System;using System.IO;using System.Collections.Generic;using System.Reflection;using System.Runtime.InteropServices;
-namespace GlassBoard {
+namespace Lumina {
     internal static class ExplorerWindows {
         static object Get(object target,string name){return target.GetType().InvokeMember(name,BindingFlags.GetProperty,null,target,null);}
         static object Call(object target,string name,params object[] args){return target.GetType().InvokeMember(name,BindingFlags.InvokeMethod,null,target,args);}

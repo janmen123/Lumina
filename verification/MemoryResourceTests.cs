@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Text;using System.Security.Cryptography;using GlassBoard;
+using System;using System.IO;using System.Text;using System.Security.Cryptography;using Lumina;
 class MemoryResourceTests {
     static void Check(bool value,string label){if(!value)throw new Exception(label);}
     static int Main(){

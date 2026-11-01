@@ -1,5 +1,5 @@
 using System;using System.Windows;using System.Windows.Threading;
-namespace GlassBoard {
+namespace Lumina {
     public partial class BoardWindow {
         readonly DispatcherTimer sizeRefresh=new DispatcherTimer(DispatcherPriority.Background){Interval=TimeSpan.FromMilliseconds(100)};
         bool resizingPanel,refreshingSize,iconsDirty=true;

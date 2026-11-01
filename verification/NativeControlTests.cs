@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Linq;using System.Text;using System.Collections.Generic;using System.Runtime.InteropServices;using System.Reflection;using System.Xml.Linq;using System.Runtime.Serialization.Json;using GlassBoard;
+using System;using System.IO;using System.Linq;using System.Text;using System.Collections.Generic;using System.Runtime.InteropServices;using System.Reflection;using System.Xml.Linq;using System.Runtime.Serialization.Json;using Lumina;
 class NativeControlTests {
     static int checks;static void Check(bool ok,string why){checks++;if(!ok)throw new Exception(why);}
     static int Main(){

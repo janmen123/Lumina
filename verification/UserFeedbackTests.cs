@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Linq;using System.Collections.Generic;using System.Runtime.Serialization.Json;using GlassBoard;
+using System;using System.IO;using System.Linq;using System.Collections.Generic;using System.Runtime.Serialization.Json;using Lumina;
 public static class UserFeedbackTests {
     static void Check(bool value,string message){if(!value)throw new Exception(message);}
     static T Json<T>(T value){using(var stream=new MemoryStream()){var serializer=new DataContractJsonSerializer(typeof(T));serializer.WriteObject(stream,value);stream.Position=0;return (T)serializer.ReadObject(stream);}}

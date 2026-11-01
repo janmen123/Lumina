@@ -1,5 +1,5 @@
 using System;using System.Globalization;using System.Windows;using System.Windows.Controls;using System.Windows.Media;using System.Windows.Shapes;
-namespace GlassBoard {
+namespace Lumina {
     public sealed partial class WidgetWindow {
         TextBlock posterDay,posterMonth,orbitLabel,clockPeriod;RotateTransform hourRotation,minuteRotation;Path orbitArc;string clockStamp="";
         void ResetAdvancedClock(){posterDay=posterMonth=orbitLabel=clockPeriod=null;hourRotation=minuteRotation=null;orbitArc=null;clockStamp="";}

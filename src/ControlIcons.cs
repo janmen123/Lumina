@@ -1,5 +1,5 @@
 using System;using System.Windows;using System.Windows.Controls;using System.Windows.Media;using System.Windows.Shapes;
-namespace GlassBoard {
+namespace Lumina {
     public static class ControlIcons {
         public static Viewbox Create(string kind,Brush ink,double size){
             var canvas=new Canvas{Width=24,Height=24,IsHitTestVisible=false};string data;

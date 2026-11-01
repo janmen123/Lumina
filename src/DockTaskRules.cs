@@ -1,5 +1,5 @@
 using System;using System.Collections.Generic;using System.Linq;
-namespace GlassBoard {
+namespace Lumina {
     // No native calls: these rules are shared by the UI and portable regression checks.
     public sealed class DockWheelState {
         public bool Running {get;private set;} long last=long.MinValue;int accumulated;

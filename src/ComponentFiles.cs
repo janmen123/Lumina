@@ -1,5 +1,5 @@
 using System;using System.IO;using System.Linq;using System.Collections.Generic;using System.Runtime.InteropServices;using System.Security.Cryptography;
-namespace GlassBoard {
+namespace Lumina {
     public sealed class ComponentFile {public string Name,Path,Status;public bool Valid,Blocked;}
     public static class ComponentFiles {
         static readonly string[] Names={"lib/NPSMLib.dll"};

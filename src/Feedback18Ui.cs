@@ -1,8 +1,8 @@
 using System;using System.IO;using System.Linq;using System.Windows;using System.Windows.Controls;using System.Windows.Interop;using System.Windows.Media;using System.Windows.Media.Imaging;
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         void BuildHomePage(StackPanel panel,Window owner){
-            panel.Children.Add(new TextBlock{Text="GlassBoard · 玻璃板",FontSize=26,FontWeight=FontWeights.SemiBold,Margin=new Thickness(0,12,0,8)});
+            panel.Children.Add(new TextBlock{Text="Lumina · 玻璃板",FontSize=26,FontWeight=FontWeights.SemiBold,Margin=new Thickness(0,12,0,8)});
             panel.Children.Add(new TextBlock{Text="v"+CurrentVersion.ToString(3)+"  /  "+CreatorIdentityProof.AuthorName,FontSize=16,Margin=new Thickness(0,0,0,18)});
             panel.Children.Add(FeatureUi.Button("GitHub 仓库 · 下载新版本",OpenRepository));
             panel.Children.Add(new TextBlock{Text="抖音主页与问题反馈",FontSize=20,Margin=new Thickness(0,22,0,10)});

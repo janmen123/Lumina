@@ -1,4 +1,4 @@
-GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 去掉 Dock 悬停浮窗
+Lumina 本地修改版：分组拖动排序 + 去除大面板底部署名 + 去掉 Dock 悬停浮窗
 
 使用：按住上方自建分组左右拖动。目标分组左半边表示插入其前方，右半边表示插入其后方；蓝色边线指示插入位置。
 松开后自动保存，取消拖动不改变顺序。Ctrl+Z 撤销、Ctrl+Y 重做（焦点不在文本输入框时）。
@@ -6,10 +6,10 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 
 代码基于原包 v0.2.0（上游说明基于 v0.9.23）。保留原许可证、作者支持页和第三方素材。
 本地变更：
-1. src/GlassBoard.cs 移除底部署名并接入分组排序；新增 src/GroupReorder.cs。
+1. src/Lumina.cs 移除底部署名并接入分组排序；新增 src/GroupReorder.cs。
 2. 去掉 Dock 图标悬停时的灰色提示浮窗（原“Microsoft Edge · 点击打开；按住拖动调整 Dock 位置”这类文字）：
    - src/DockInteractions.cs 在共用的悬停层创建函数里调用 ToolTipService.SetIsEnabled(element,false)，所有 Dock 元素（应用图标、分组、对话框卡片、固定按钮、边缘感应区、运行指示点等）生效；
-   - src/GlassBoard.cs（原设置 0 ms 初始延迟 / 10 秒显示时长的位置）改为 ToolTipService.SetIsEnabled(b,false)。
+   - src/Lumina.cs（原设置 0 ms 初始延迟 / 10 秒显示时长的位置）改为 ToolTipService.SetIsEnabled(b,false)。
    提示字符串本身保留（ShowLabels 改名、AddSystemButton 命名仍会读取它），只是永不显示浮窗；悬停放大/上抬动画与提示浮窗互不影响，仍可在“设置 → UI 动效”里单独开关。
    注意：Dock 顶部拖动条的 ToolTip（“拖动 Dock；在设置中可锁定位置”）按本次范围要求未改动。
 验证：.NET Framework 4.8 编译通过，419 项排列组合、配置序列化、撤销重做及内存中 WPF 拖放事件检查通过。
@@ -18,8 +18,8 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 
 3. 空闲开销调优（本轮新增，源码 src\IdleState.cs）：
    - 新增 src\IdleState.cs：包装 GetLastInputInfo，500 ms 缓存一次，供各处判断“用户是否真的在操作”；阈值 IDLE_AFTER=20 秒、复查 REIDLE_AFTER=5 秒。
-   - src\GlassBoard.cs：Dock 图标扫描 runningTimer 间隔 3 秒 → 5 秒；持续 60 秒无输入时降频到 15 秒，之后每次扫描若已空闲 ≥5 秒改排 15 秒，否则 5 秒。
-   - src\GlassBoard.cs：全屏游戏轮询 GamePollingIntervalMs 3000 → 5000 ms。
+   - src\Lumina.cs：Dock 图标扫描 runningTimer 间隔 3 秒 → 5 秒；持续 60 秒无输入时降频到 15 秒，之后每次扫描若已空闲 ≥5 秒改排 15 秒，否则 5 秒。
+   - src\Lumina.cs：全屏游戏轮询 GamePollingIntervalMs 3000 → 5000 ms。
    - src\RunningWindows.cs：图标文件夹缓存 AppPathMaxAge 3 秒 → 25 秒（窗口枚举仍每次执行）。
    实测（同一进程稳态 30 秒采样）：调优前单核 1.67–1.85%；调优后 1.41–1.72%（全机 24 线程约占 0.07%）。
    拆分：隐藏全部窗口后仍约 1%，来自 1 秒一次的时间组件刷新与 Dock 指针轮询；可见时另有约 0.4–0.7% 为窗口合成/重绘。
@@ -37,7 +37,7 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
    - 设置 → UI 动效新增两个开关：「Dock 图标倒影」「图标拖动动效（放大跟手、实时让位）」；即时预览、即时保存。
    - 倒影：Dock 图标下方绘制镜像（VisualBrush 取图标下 45%，垂直翻转），高度约图标 34%，自上而下 170→0 渐隐；Dock 玻璃高度随之增加。先做固定观感，强度/距离调节留待后续。
    - 拖动动效：从图标左键拖动即触发（无需长按）；被拖图标以浮动卡片跟随鼠标（独立置顶、点击穿透的窗口，可跨出面板，拖到 Dock/分组时仍可见），图标放大到 54px、圆角卡片+阴影+落位缩放；源图标变淡；经过其他图标时按格位实时让出空位（135ms 缓动），松开或取消后复原；落点仍是目标图标，顺序按原规则提交。
-   - 关键文件：src\BoardDragMotion.cs 新增；src\BoardExperience.cs 移除面板内预览、改为独立幽灵窗口并保留跨窗口拖动；src\GlassBoard.cs 的 DockButton 增加倒影、设置页加开关、DockOptions 增加 Reflection/DragMotion 字段。
+   - 关键文件：src\BoardDragMotion.cs 新增；src\BoardExperience.cs 移除面板内预览、改为独立幽灵窗口并保留跨窗口拖动；src\Lumina.cs 的 DockButton 增加倒影、设置页加开关、DockOptions 增加 Reflection/DragMotion 字段。
    验证：编译通过；模拟拖动截图确认幽灵卡片、源图标变淡、相邻图标实时左移；取消后复原且无重排；倒影截图确认多枚图标可见镜像。未做真实鼠标交互实测。
 6. Codex 拖动修复与倒影自定义（2026-10-30）
 - 按固定网格位置预览和提交排序，修复让位后空位无法放下；空白格取消，排序可撤销。
@@ -93,9 +93,9 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 新增诊断 trace：WINDOW decide handle/hint/fg/fgpid/fgtitle/front/iconic，配合 WINDOW pick 可一眼看出前台判定为何失败。
 - 实测（真实屏幕点击，DPI 感知）：前台为 douyin 时点 Dock 抖音图标 → hint=67306 fg=67306 front=True iconic=False → WINDOW minimize handle=67306，第一次点击就最小化；点已最小化的 DeepSeek Harness 图标 → front=False iconic=True → 恢复并置前。
 - 事故与修复：一次合成点击被判定为拖拽，revision 1154 把抖音从第 4 位挪到第 7 位；已按 layout.json.previous(revision 1153) 的顺序写回并重启（启动后 SAVE revision 1155）。合成点击在 hover 动画期间不可靠，后续不要用连续合成点击验收 Dock。
-- 关于“白色条状物”：Shell_TrayWnd hwnd 196948 可见、rect 0,1998 3200x96；HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3 的 Settings 自动隐藏位为 1；本机 Windows NT 10.0.26200 的浮动任务栏背景是浅色圆角条。把光标移到屏幕最下缘让任务栏弹出后截图（y1860-2000）可见其浅色背景夹在 Dock 图标之间/下方。→ 白条是系统浮动任务栏被自动隐藏触发后露出的背景，与 GlassBoard 的绘制无关；GlassBoard 从未调用任务栏定位 API，配置里 TaskbarAutoHide/HideTaskbar/HideDesktopIcons 均为空。可选处理：把 Dock 静止位置抬离可见底边几个 DIP，或关闭任务栏自动隐藏。
+- 关于“白色条状物”：Shell_TrayWnd hwnd 196948 可见、rect 0,1998 3200x96；HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3 的 Settings 自动隐藏位为 1；本机 Windows NT 10.0.26200 的浮动任务栏背景是浅色圆角条。把光标移到屏幕最下缘让任务栏弹出后截图（y1860-2000）可见其浅色背景夹在 Dock 图标之间/下方。→ 白条是系统浮动任务栏被自动隐藏触发后露出的背景，与 Lumina 的绘制无关；Lumina 从未调用任务栏定位 API，配置里 TaskbarAutoHide/HideTaskbar/HideDesktopIcons 均为空。可选处理：把 Dock 静止位置抬离可见底边几个 DIP，或关闭任务栏自动隐藏。
 11. 地基加固：日志轮转、热键错误码、自测超时与隔离、诊断开关、git（2026-10-30）
-- git：D:\Software\Tools\Glassboard 初始化本地仓库（分支 main），.gitignore 排除 build-output、GlassBoard.exe、备份、日志、layout/notes/snapshots 等生成物；基线提交 235 文件、2.42 MB。
+- git：D:\Software\Tools\Glassboard 初始化本地仓库（分支 main），.gitignore 排除 build-output、Lumina.exe、备份、日志、layout/notes/snapshots 等生成物；基线提交 235 文件、2.42 MB。
 - error.log 轮转：Store.Log 与新增的 Store.Log(context,ex) 在超过 1 MB 时把旧文件改名为 error.log.<ticks>，并只保留最近 5 份；session.log 轮转同样只保留 5 份。
 - 热键失败日志保留真实错误码：RegisterKey 改为 Store.Log("RegisterHotKey failed action=... key=...", new Win32Exception(code,"RegisterHotKey"))，输出行内含 win32=1409 这类数字（Win32Exception 的 HResult 恒为 E_FAIL，只看 HResult 无法定位）。实测用探针程序占住 7 组热键后启动，error.log 得到 7 行 win32=1409，且旧 1.21 MB 日志被轮转。
 - --self-test 不再卡死：SelfTest 新增看门狗（每项 60–180 秒），超时写 self-test-result.txt 的 TIMEOUT 行并 exit 2；每个检查用 Step() 包裹，单项失败只记录到 failures 列表并继续执行后续项，最后写 FAILED 列表或 PASS。
@@ -141,7 +141,7 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 
 16) Dock 悬停预览再改版：一排实时气泡（2026-10-30）
 - 上一版用 PrintWindow 截图塞进一张大卡片：Chromium 系窗口（Edge）经常整块抓成白板，而且斜向堆叠会互相遮住内容，观感差。
-- 改为每个窗口一个独立的小窗口（HwndSource，类名 GlassBoardCard，WS_POPUP + TOOLWINDOW|NOACTIVATE|TOPMOST），每个窗口里用 DwmRegisterThumbnail 注册该窗口的实时缩略图，亚克力底 + DwmSetWindowAttribute(33) 圆角 + 一圈淡描边，缩略图向内缩 8 DIP，看起来就是“实时画面镶在透明气泡里”。
+- 改为每个窗口一个独立的小窗口（HwndSource，类名 LuminaCard，WS_POPUP + TOOLWINDOW|NOACTIVATE|TOPMOST），每个窗口里用 DwmRegisterThumbnail 注册该窗口的实时缩略图，亚克力底 + DwmSetWindowAttribute(33) 圆角 + 一圈淡描边，缩略图向内缩 8 DIP，看起来就是“实时画面镶在透明气泡里”。
 - 布局：最多 4 个气泡横向排开，间隔 26 DIP 重叠；整体居中在图标上方、贴着 Dock 顶边。
 - 交互：用 GetCursorPos 轮询判断鼠标落在哪个气泡（NOACTIVATE 窗口的 WPF 鼠标事件不可靠），悬停的气泡放大到 1.38 倍并上移对齐底边，左右相邻气泡按 1.28 倍向两侧让开；移开恢复。点击气泡调用 RunningWindows.Focus 切到该窗口并关闭整排预览。
 - 位置锚点改用 DockWindow.Top，避免 Dock 图标 zoom 动画导致锚点漂移；同一个图标重复 MouseEnter 不再销毁重建（之前会闪烁）。
@@ -162,7 +162,7 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - WidgetViews.cs 改成 clock-only（约 50 行）：WidgetManager 不再持有 NotesRepository / WeatherEngine / MusicEngine；WidgetWindow 只留 clock/date/clockStatus 与闹钟、AI 排查、分离/融合、外观 DIY 菜单。
 - IslandWindow.cs 重写为时钟胶囊（HH:mm + 星期），保留玻璃/纯黑/透明度/动效与拖动，不再显示媒体。
 - 设置页（组件与系统 → 桌面组件）只剩 时钟 / 灵动岛 / 灵动岛外观设置；删除天气城市输入、天气连接方式、本地音乐音量、音乐与备忘录说明、全部融合/全部分离预设、组件外观 DIY 中的天气/音乐选项。
-- 清理调用点：DesktopServices.cs 只留 LaunchInfoService；ProductCore.cs 删 MusicMetadataRecovery、备份校验不再要求 notes.json；PersonalizationCore/Ui/Checks、FeedbackChecks、BoardFileUi、ControllerFeatures、ProductExperience、GlassBoard 托盘菜单同步清理。
+- 清理调用点：DesktopServices.cs 只留 LaunchInfoService；ProductCore.cs 删 MusicMetadataRecovery、备份校验不再要求 notes.json；PersonalizationCore/Ui/Checks、FeedbackChecks、BoardFileUi、ControllerFeatures、ProductExperience、Lumina 托盘菜单同步清理。
 - 自测修复：--self-test 下 Store.Silent=true，LaunchDock / Launch 启动失败不再弹 MessageBox（此前 Dock 行为检查会弹“无法打开「Dock0」”卡满 90 秒超时）；恢复为快速失败“后向前松手未提交”，自测 45 秒内跑完。
 - 构建与实测：Build.ps1 通过；重启后工作集 125 MB（删除前 164.6 MB，空载曾测到 87.8 MB）；桌面组件页只剩三项；session.log 正常 SAVE，error.log 无新增。
 19) 2026-10-30 修复隐藏桌面图标导致桌面鼠标失效
@@ -173,7 +173,7 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 修改前 exe、源码、布局、恢复记录：backups\desktop-icons-fix-20261030-194452。
 
 20) 2026-10-30 修复整洁桌面与腾讯桌面整理兼容
-- Ctrl+Alt+Home 切换整洁桌面：保留壁纸、任务栏和 Dock；调用 Windows 显隐原生图标，隐藏指定腾讯桌面整理桌面窗口，并暂时隐藏 GlassBoard 桌面组件和小球；再次按键恢复原状态。
+- Ctrl+Alt+Home 切换整洁桌面：保留壁纸、任务栏和 Dock；调用 Windows 显隐原生图标，隐藏指定腾讯桌面整理桌面窗口，并暂时隐藏 Lumina 桌面组件和小球；再次按键恢复原状态。
 - 只识别 DesktopMgr64 的 TXMiniSkin「桌面整理」窗口；恢复前核验窗口归属。写入现有 shell 恢复日志，程序退出或异常后下一次启动可恢复。
 - 不移动、删除分区或文件；用户实测隐藏、右键和恢复均正常。107 个入口、顺序和分组保持不变。若腾讯更新更改窗口实现可能需要调整兼容逻辑。
 - 备份：backups\clean-desktop-20261030-200833。
@@ -203,7 +203,7 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 25) 2026-11-02 资源管理器窗口按窗口类归并，修复运行区重复图标与二次点击不最小化
 - Scan 现在记录每个窗口的窗口类；新的 IsFolderWindow 同时按 FolderPath 和窗口类（CabinetWClass / ExploreWClass）判定资源管理器文件夹窗口。
 - 之前文件夹清单有 25 秒缓存，刚打开的窗口在缓存刷新前 FolderPath 为空，会被当成普通 explorer.exe 窗口：运行区因此多出一个图标，固定图标也匹配不到它、点击落到“启动新入口”分支（看起来像没反应、缩不回去）。改为按窗口类识别后，这两种现象同时消失。
-- 新增诊断日志 DOCK groups/pinned/extras（仅 %LOCALAPPDATA%\GlassBoard\debug-log.on 存在时写入），方便以后核对 Dock 与任务栏的差异。
+- 新增诊断日志 DOCK groups/pinned/extras（仅 %LOCALAPPDATA%\Lumina\debug-log.on 存在时写入），方便以后核对 Dock 与任务栏的差异。
 - 构建通过；--self-test 全部 PASS。
 
 26) 2026-11-02 Dock 常驻区与正在运行区之间增加分隔线
@@ -219,6 +219,15 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 全屏检测改由前台计时器驱动：即使关闭“Dock 自动隐藏”，“避开全屏”也会隐藏 Dock/悬浮面板并暂停正在运行窗口的扫描；退出全屏后恢复。
 - 修复自动游戏模式轮询方向相反：之前检测到游戏后反而从 5 秒加快到 350 毫秒；现在游戏中暂停扫描，只在检测到全屏时切换状态。
 - 新增设置项“提权或自动最小化的程序点击后保持窗口（秒，0 关闭）”：以管理员权限运行或恢复后会自动最小化的程序（例如 5E），在设定时间内被重新拉起；默认 3 秒，旧配置首次启动自动迁移（ConfigRevision=1）。
-- 新增“管理员权限”设置区：显示当前是否以管理员运行，并提供“以管理员身份重启 GlassBoard”（UAC 提权，新进程通过 --wait-for 接管旧进程退出）。
+- 新增“管理员权限”设置区：显示当前是否以管理员运行，并提供“以管理员身份重启 Lumina”（UAC 提权，新进程通过 --wait-for 接管旧进程退出）。
 - 游戏模式状态变化写入诊断日志（GAME suppress=…）。
+- 构建通过；--self-test 全部 PASS。
+
+29) 2026-11-02 更名 Lumina（源码/构建/标识/配置迁移）与工程结构优化
+- 产品更名为 Lumina：程序集名、命名空间、窗口标题、托盘文案、消息框、单实例互斥量、拖放数据格式、WiFi 配置名、临时目录、计划任务名、数据目录（%LOCALAPPDATA%\Lumina）、构建产物 Lumina.exe/图标/清单标识全部切换。
+- 旧数据自动迁移：首次启动若 %LOCALAPPDATA%\Lumina 不存在，会从 %LOCALAPPDATA%\GlassBoard 复制布局、日志与快照；layout.json 中指向 GlassBoard.exe/GlassBoard.lnk 的条目与 Dock 顺序键在加载后自动改写为 Lumina，旧快捷方式不再失效。
+- 作者签名素材的资源名保持 GlassBoard.Assets.* 与 GlassBoard.SystemControl.ps1 不变（签名载荷与哈希固定），保证素材校验通过。
+- 工程结构：自测框架拆到 src/SelfTest.cs，数据契约模型拆到 src/Model.cs，Lumina.cs 由 1431 行降至 1135 行；构建脚本同步图标与资源名。
+- 配置容错：读取 layout.json 时自动剥离 UTF-8 BOM 并记录 RECOVER 日志；保留 ConfigRevision 迁移，旧配置缺 KeepWindowSeconds 时补默认 3 秒。
+- 旧 GlassBoard 计划任务已删除（若曾开启开机自启，请在设置中重新开启，将以 Lumina 名称注册）。
 - 构建通过；--self-test 全部 PASS。

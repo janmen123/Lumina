@@ -1,5 +1,5 @@
 using System;using System.Runtime.InteropServices;
-namespace GlassBoard {
+namespace Lumina {
     // 空闲判定：用户离开时降低后台轮询频率，回来后的下一次轮询自动恢复。
     internal static class IdleState {
         [StructLayout(LayoutKind.Sequential)] struct LastInputInfo{public uint Size;public uint Time;}

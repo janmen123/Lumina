@@ -1,11 +1,14 @@
 using System;using System.IO;using System.Linq;using System.Collections.Generic;using System.Runtime.Serialization.Json;using System.IO.Compression;
-namespace GlassBoard {
+namespace Lumina {
     public static partial class Store {
         static readonly object saveLock=new object();
         static byte[] lastSaved;static string lastInventory;static DateTime lastSnapshot;static long latestRevision;
         public static string RecoveryMessage{get;private set;}
+        static readonly string LegacyFolder=System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"GlassBoard");
+        static Store(){MigrateLegacyFolder();}
+        static void MigrateLegacyFolder(){try{if(Directory.Exists(Folder)||!Directory.Exists(LegacyFolder))return;Directory.CreateDirectory(Folder);foreach(var dir in Directory.GetDirectories(LegacyFolder,"*",SearchOption.AllDirectories))Directory.CreateDirectory(dir.Replace(LegacyFolder,Folder));foreach(var file in Directory.GetFiles(LegacyFolder,"*",SearchOption.AllDirectories)){var target=file.Replace(LegacyFolder,Folder);var parent=Path.GetDirectoryName(target);if(!string.IsNullOrEmpty(parent))Directory.CreateDirectory(parent);File.Copy(file,target,false);}Trace("RECOVER migrated data folder from "+LegacyFolder);}catch(Exception ex){Log(ex);}}
         static byte[] Encode<T>(T value){using(var stream=new MemoryStream()){new DataContractJsonSerializer(typeof(T)).WriteObject(stream,value);return stream.ToArray();}}
-        public static Preferences ReadLayout(byte[] bytes){if(bytes==null||bytes.Length>8*1024*1024)throw new InvalidDataException("配置文件过大");using(var stream=new MemoryStream(bytes,false)){var p=(Preferences)new DataContractJsonSerializer(typeof(Preferences)).ReadObject(stream);if(p==null||p.Apps==null)throw new InvalidDataException("配置缺少入口清单");return p;}}
+        public static Preferences ReadLayout(byte[] bytes){if(bytes==null||bytes.Length>8*1024*1024)throw new InvalidDataException("配置文件过大");if(bytes.Length>=3&&bytes[0]==0xEF&&bytes[1]==0xBB&&bytes[2]==0xBF){var stripped=new byte[bytes.Length-3];Array.Copy(bytes,3,stripped,0,stripped.Length);bytes=stripped;Trace("RECOVER bom-stripped");}using(var stream=new MemoryStream(bytes,false)){var p=(Preferences)new DataContractJsonSerializer(typeof(Preferences)).ReadObject(stream);if(p==null||p.Apps==null)throw new InvalidDataException("配置缺少入口清单");return p;}}
         static void Atomic(string path,byte[] bytes,string backup=null){
             string temp=path+".write-"+Guid.NewGuid().ToString("N");
             try{using(var stream=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None)){stream.Write(bytes,0,bytes.Length);stream.Flush(true);}if(File.Exists(path))File.Replace(temp,path,backup);else File.Move(temp,path);}
@@ -24,7 +27,7 @@ namespace GlassBoard {
         public static Preferences Load(bool mergeJournal=true){lock(saveLock){
             Directory.CreateDirectory(Folder);RecoveryMessage=null;lastSaved=null;bool damaged=false;Preferences prefs=null;byte[] bytes=null;
             if(File.Exists(FileName))try{bytes=File.ReadAllBytes(FileName);prefs=ReadLayout(bytes);}catch(Exception ex){damaged=true;Log(ex);try{File.Copy(FileName,FileName+".backup-"+DateTime.UtcNow.ToString("yyyyMMddHHmmssfff"),false);}catch{}}
-            if(prefs==null){foreach(string candidate in RecoveryPaths())if(File.Exists(candidate))try{bytes=File.ReadAllBytes(candidate);prefs=ReadLayout(bytes);RecoveryMessage="已从安全副本恢复布局。可在设置 → 通用 → 找回旧版入口中检查历史条目。";break;}catch(Exception ex){damaged=true;Log(ex);}}
+            if(prefs==null){foreach(string candidate in RecoveryPaths())if(File.Exists(candidate))try{bytes=File.ReadAllBytes(candidate);prefs=ReadLayout(bytes);RecoveryMessage="已从安全副本恢复布局。可在设置 → 通用 → 找回旧版入口中检查历史条目。";Trace("RECOVER source="+candidate);break;}catch(Exception ex){damaged=true;Log(ex);}}
             if(prefs==null){if(damaged)throw new InvalidDataException("配置和安全副本均无法读取，原文件已保留。请使用完整备份恢复，避免覆盖原配置。配置目录："+Folder);prefs=new Preferences();}
             else if(prefs.FormatVersion<2)ArchiveUpgrade(bytes);
             latestRevision=Math.Max(latestRevision,prefs.SaveRevision);

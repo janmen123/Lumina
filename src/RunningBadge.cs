@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace GlassBoard {
+namespace Lumina {
     // A single running indicator used by the Dock and the board tiles: a dot for
     // one window, a small count badge when the app has several open windows.
     public static class RunningBadge {

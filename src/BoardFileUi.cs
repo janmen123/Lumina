@@ -1,5 +1,5 @@
 using System;using System.IO;using System.Windows;using System.Windows.Controls;using System.Windows.Input;using System.Windows.Media;
-namespace GlassBoard {
+namespace Lumina {
     public partial class BoardWindow {
         void BoardBlankMenu(object sender,MouseButtonEventArgs e){
             DependencyObject source=e.OriginalSource as DependencyObject;

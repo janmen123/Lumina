@@ -1,5 +1,5 @@
 using System;using System.Collections.Generic;using System.ComponentModel;using System.Runtime.InteropServices;
-namespace GlassBoard {
+namespace Lumina {
     public static class NativeBluetooth {
         [StructLayout(LayoutKind.Sequential)]struct FindRadio{public uint Size;}
         [StructLayout(LayoutKind.Sequential,CharSet=CharSet.Unicode)]struct RadioInfo{public uint Size;public ulong Address;[MarshalAs(UnmanagedType.ByValTStr,SizeConst=248)]public string Name;public uint Class;public ushort Subversion,Manufacturer;}

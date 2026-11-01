@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Windows;using System.Windows.Controls;using System.Windows.Media;
-namespace GlassBoard {
+namespace Lumina {
     public static class OrbSections {public static string Normalize(string value){return value=="tray"?"tray":"control";}}
     public sealed partial class ControlCenterWindow {
         string activeSection="control";Button controlSection,traySection,startSection;

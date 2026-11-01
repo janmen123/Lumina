@@ -1,5 +1,5 @@
 using System;using System.Windows;using System.Windows.Interop;using System.Runtime.InteropServices;
-namespace GlassBoard {
+namespace Lumina {
     public static class DesktopWindowPolicy {
         [DllImport("user32.dll",EntryPoint="GetWindowLongW",SetLastError=true)]static extern int GetWindowLong(IntPtr window,int index);
         [DllImport("user32.dll",EntryPoint="SetWindowLongW",SetLastError=true)]static extern int SetWindowLong(IntPtr window,int index,int value);

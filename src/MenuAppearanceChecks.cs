@@ -10,7 +10,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace GlassBoard {
+namespace Lumina {
     public static class MenuAppearanceChecks {
         static void Drain(){var frame=new DispatcherFrame();Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>frame.Continue=false));Dispatcher.PushFrame(frame);}
         public static void Run(){
@@ -30,7 +30,7 @@ namespace GlassBoard {
                 }finally{menu.IsOpen=false;owner.Close();}
             }
             using(var stream=new MemoryStream(Encoding.UTF8.GetBytes("{\"IconSize\":56,\"ShowRunning\":false}"))){var options=(DockOptions)new DataContractJsonSerializer(typeof(DockOptions)).ReadObject(stream);if(options.ShowShortcutOverlays||options.SharperIcons||options.IconSize!=56||options.ShowRunning)throw new Exception("旧配置角标默认值或原设置被改变");}
-            var folder=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"GlassBoard-icon-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);object shell=null,link=null;
+            var folder=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"Lumina-icon-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);object shell=null,link=null;
             try{
                 string path=System.IO.Path.Combine(folder,"中文 快捷方式.lnk");var type=Type.GetTypeFromProgID("WScript.Shell");shell=Activator.CreateInstance(type);link=type.InvokeMember("CreateShortcut",BindingFlags.InvokeMethod,null,shell,new object[]{path});var linkType=link.GetType();linkType.InvokeMember("TargetPath",BindingFlags.SetProperty,null,link,new object[]{Environment.GetFolderPath(Environment.SpecialFolder.System)+"\\notepad.exe"});linkType.InvokeMember("IconLocation",BindingFlags.SetProperty,null,link,new object[]{Environment.GetFolderPath(Environment.SpecialFolder.System)+"\\shell32.dll,3"});linkType.InvokeMember("Save",BindingFlags.InvokeMethod,null,link,null);
                 var original=File.ReadAllBytes(path);var plain=Native.Icon(path,false);var overlay=Native.Icon(path,true);if(plain==null||overlay==null||!object.ReferenceEquals(plain,Native.Icon(path))||object.ReferenceEquals(plain,overlay))throw new Exception("快捷方式角标开关或图标缓存失败");if(Convert.ToBase64String(original)!=Convert.ToBase64String(File.ReadAllBytes(path)))throw new Exception("读取图标改动了快捷方式");var sharp=Native.Icon(path,false,true) as System.Windows.Media.Imaging.BitmapSource;var sharpOverlay=Native.Icon(path,true,true);if(sharp==null||sharpOverlay==null||!sharp.IsFrozen||sharp.PixelWidth>128||sharp.PixelHeight>128||object.ReferenceEquals(sharp,plain))throw new Exception("高清图标尺寸、角标组合或缓存失败");Native.ClearIconCache();if(object.ReferenceEquals(plain,Native.Icon(path)))throw new Exception("关闭高清图标没有清除缓存");if(Native.Icon(folder)==null)throw new Exception("文件夹无角标图标失败");

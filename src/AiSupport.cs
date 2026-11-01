@@ -1,8 +1,8 @@
 using System;using System.Text;
-namespace GlassBoard {
+namespace Lumina {
     public static class AiSupport {
         public static string Build(string component,string details){
-            var text=new StringBuilder();text.AppendLine("请帮我排查 GlassBoard 的读取 / 检索失败，并给出可以执行的修复步骤。");
+            var text=new StringBuilder();text.AppendLine("请帮我排查 Lumina 的读取 / 检索失败，并给出可以执行的修复步骤。");
             text.AppendLine("版本：v"+typeof(AiSupport).Assembly.GetName().Version.ToString(3));text.AppendLine("组件："+(component??"未指定"));
             text.AppendLine("系统："+Environment.OSVersion+"；系统 "+(Environment.Is64BitOperatingSystem?"64":"32")+" 位；进程 "+(Environment.Is64BitProcess?"64":"32")+" 位");
             text.AppendLine("记录时间："+DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss zzz"));text.AppendLine("源码仓库：https://github.com/SENLIN-SAMA/win-.-");

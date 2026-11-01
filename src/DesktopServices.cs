@@ -1,5 +1,5 @@
 ﻿using System;using System.IO;using System.Text;using System.Linq;using System.Runtime.Serialization.Json;using System.Windows.Threading;using System.Threading.Tasks;using Microsoft.Win32;
-namespace GlassBoard {
+namespace Lumina {
     public static class LaunchInfoService {
         public static Entry Read(string path){var entry=new Entry{Name=EntryPathRules.Name(path),Path=EntryPathRules.Normalize(path),IsFolder=Directory.Exists(path)};Enrich(entry);return entry;}
         public static void Enrich(Entry entry){string target=entry.Path??"",arguments="";string ext=System.IO.Path.GetExtension(target).ToLowerInvariant();

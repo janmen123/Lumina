@@ -9,7 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using GlassBoard;
+using Lumina;
 
 public static class DockCompactTests {
     static int checks;
@@ -68,7 +68,7 @@ public static class DockCompactTests {
     }
 }
 
-namespace GlassBoard {
+namespace Lumina {
     public partial class DockWindow {
         internal void TestCompactDock(){
             bool handled=false;var result=Hook(IntPtr.Zero,0x21,IntPtr.Zero,IntPtr.Zero,ref handled);

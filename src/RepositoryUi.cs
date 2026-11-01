@@ -1,5 +1,5 @@
 using System;using System.Diagnostics;using System.Windows;using System.Windows.Controls;using System.Windows.Media;
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         public const string RepositoryUrl="https://github.com/SENLIN-SAMA/win-.-";
         static Version CurrentVersion{get{return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;}}

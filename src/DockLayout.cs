@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Collections.Generic;using System.Windows;using System.Windows.Controls;using System.Windows.Media;
-namespace GlassBoard {
+namespace Lumina {
     public partial class DockWindow {
         static readonly DependencyProperty LayoutKey=DependencyProperty.RegisterAttached("DockLayoutKey",typeof(string),typeof(DockWindow),new PropertyMetadata(null));
         static string ItemKey(Button b){return b.GetValue(LayoutKey) as string??(b.Tag is Entry?((Entry)b.Tag).Path:null);}

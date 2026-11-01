@@ -1,5 +1,5 @@
 using System;using System.Diagnostics;using System.Threading.Tasks;
-namespace GlassBoard {
+namespace Lumina {
  public static class BoundedProcess {
   public const int TimedOut=1460;
   public static async Task<int> RunAsync(ProcessStartInfo info,int timeoutMilliseconds){

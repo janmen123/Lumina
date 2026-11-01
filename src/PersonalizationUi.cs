@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Windows;using System.Windows.Controls;using System.Windows.Media;using System.Windows.Interop;
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         sealed class ColorOwner:System.Windows.Forms.IWin32Window {public IntPtr Handle{get;private set;}public ColorOwner(Window w){Handle=new WindowInteropHelper(w).Handle;}}
         public void CustomizeWidgets(string selected=null,Window owner=null){

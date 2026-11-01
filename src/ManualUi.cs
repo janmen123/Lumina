@@ -1,5 +1,5 @@
 using System;using System.Windows;using System.Windows.Controls;using System.Windows.Media;
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         void BuildManual(StackPanel panel){
             panel.Children.Add(new TextBlock{Text="玻璃板使用说明",FontSize=25,FontWeight=FontWeights.SemiBold,Margin=new Thickness(0,12,0,8)});
@@ -8,8 +8,8 @@ namespace GlassBoard {
             ManualItem(panel,"设置父子分类与翻页动效","设置左侧按外观与动效、组件与系统、帮助与反馈分组。进入外观与动效 → UI 动效，可分别设置展开、悬停及大玻璃板翻页；翻页支持轻柔淡入、水平滑入和微缩淡入，与展开动画独立。");
             ManualItem(panel,"统一桌面层开关","外观与动效 → 面板与主题 → 所有组件置于桌面层。开启后统一覆盖 Dock、大面板、小球和组件的置顶偏好；关闭后恢复各自设置。设置窗口与系统原生菜单正常弹出。Windows 实际层级及 Win+D 请按验收清单测试。");
             ManualItem(panel,"小球独立栏目与原生开始菜单","右键小球 → 小球设置，可分别显示控制中心、系统托盘与开始菜单入口；开始菜单调用 Windows 系统自带菜单。系统托盘入口直接打开 Windows 原生隐藏图标面板，在系统面板中单击、双击或右键原图标。");
-            ManualItem(panel,"第一次打开与完整解压","先将用户 ZIP 完整解压到固定位置，再运行 GlassBoard.exe 或 Start.cmd。不要在压缩包预览中直接运行，也不要只复制一个 EXE。便签和布局保存在当前 Windows 用户的配置目录，更新前可在通用中导出完整备份。新用户组件默认有框；老用户已有外观设置会保留。");
-            ManualItem(panel,"展开与收起大玻璃板","点击 Dock 的「应用」按钮，或双击系统托盘中的 GlassBoard 图标。默认 Ctrl+Alt+Space 展开 / 收起；按 Esc 收起。需要点击其他软件后自动收起，可在「面板与主题」开启相应选项。");
+            ManualItem(panel,"第一次打开与完整解压","先将用户 ZIP 完整解压到固定位置，再运行 Lumina.exe 或 Start.cmd。不要在压缩包预览中直接运行，也不要只复制一个 EXE。便签和布局保存在当前 Windows 用户的配置目录，更新前可在通用中导出完整备份。新用户组件默认有框；老用户已有外观设置会保留。");
+            ManualItem(panel,"展开与收起大玻璃板","点击 Dock 的「应用」按钮，或双击系统托盘中的 Lumina 图标。默认 Ctrl+Alt+Space 展开 / 收起；按 Esc 收起。需要点击其他软件后自动收起，可在「面板与主题」开启相应选项。");
             ManualItem(panel,"添加软件、文件和文件夹","把软件快捷方式、文件或文件夹拖入大面板，或使用添加按钮。导入开始菜单可以批量添加软件。普通入口右键支持打开位置、文件属性、改名称与图标。移除入口只影响玻璃板，原文件仍在磁盘上。");
             ManualItem(panel,"在大玻璃板中新建文件","在大面板空白处右键，或打开更多菜单 → 新建文件或文件夹。支持 TXT、Markdown、Word、Excel 和文件夹。选择保存位置后，入口会加入当前分组；在全部视图中新建则加入未分组。");
             ManualItem(panel,"分组、批量整理和删除分组","上方文件夹条可以切换分组。将图标拖到分组可整理；全部视图拖到分组会保留入口，组间拖动则移动该组归属。同一入口可以属于多个分组。删除分组保留软件入口并移到未分组，若仍属于其他组则保留其他归属。编辑模式支持批量选择，Ctrl+Z 撤销、Ctrl+Y 重做。");

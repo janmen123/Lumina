@@ -11,7 +11,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using GlassBoard;
+using Lumina;
 
 public static class DragReflectionTests {
     [System.Runtime.InteropServices.DllImport("shell32.dll",CharSet=System.Runtime.InteropServices.CharSet.Unicode)] static extern uint DragQueryFile(IntPtr h,uint index,StringBuilder path,uint length);
@@ -30,7 +30,7 @@ public static class DragReflectionTests {
             var format=new System.Runtime.InteropServices.ComTypes.FORMATETC{cfFormat=15,dwAspect=System.Runtime.InteropServices.ComTypes.DVASPECT.DVASPECT_CONTENT,lindex=-1,tymed=System.Runtime.InteropServices.ComTypes.TYMED.TYMED_HGLOBAL};
             System.Runtime.InteropServices.ComTypes.STGMEDIUM medium;((System.Runtime.InteropServices.ComTypes.IDataObject)data).GetData(ref format,out medium);
             try{var pathBuffer=new StringBuilder(32768);Check(DragQueryFile(medium.unionmember,uint.MaxValue,null,0)==2,"native Windows CF_HDROP contains both items");DragQueryFile(medium.unionmember,0,pathBuffer,32768);Check(pathBuffer.ToString()==file,"native shell receives exact Unicode file path");}finally{ReleaseStgMedium(ref medium);}
-            Check(((string[])data.GetData("GlassBoard.Entries")).Length==3,"internal payload retained");
+            Check(((string[])data.GetData("Lumina.Entries")).Length==3,"internal payload retained");
             Check(BoardDragData.Allowed(data)==DragDropEffects.Copy,"outbound files copy only");
             var virtualData=BoardDragData.Create(new[]{"shell:AppsFolder\\test"},"全部");
             Check(!virtualData.GetDataPresent(DataFormats.FileDrop),"virtual shell items not exported as disk files");
@@ -62,7 +62,7 @@ public static class DragReflectionTests {
         Check(bitmap.PixelWidth==650,"presets render successfully");
     }
 }
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         public void TestReflectionEditor(){
             var w=new Window{Width=620,Height=760,Background=new SolidColorBrush(Color.FromRgb(28,30,38))};

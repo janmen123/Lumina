@@ -1,4 +1,4 @@
-using System;using System.IO;using System.IO.Compression;using System.Linq;using System.Text;using System.Collections.Generic;using System.Runtime.Serialization.Json;using GlassBoard;
+using System;using System.IO;using System.IO.Compression;using System.Linq;using System.Text;using System.Collections.Generic;using System.Runtime.Serialization.Json;using Lumina;
 public static class Feedback16Tests {
     static int checks;static void Check(bool ok,string message){checks++;if(!ok)throw new Exception(message);}
     static byte[] Json<T>(T value){using(var m=new MemoryStream()){new DataContractJsonSerializer(typeof(T)).WriteObject(m,value);return m.ToArray();}}

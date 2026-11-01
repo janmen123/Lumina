@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace GlassBoard {
+namespace Lumina {
     internal static class DockGeometryRules {
         internal const double ShadowMargin=14;
         internal static double ButtonHeight(DockOptions o){return o.IconSize+16+DockReflection.ExtraHeight(o)+(o.ShowLabels?18:0);}

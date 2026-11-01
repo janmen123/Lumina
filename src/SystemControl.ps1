@@ -1,4 +1,4 @@
-﻿# GlassBoard control center only. Uses Windows PowerShell, WinRT and host native
+﻿# Lumina control center only. Uses Windows PowerShell, WinRT and host native
 # helpers. No media sessions, lyrics engine, downloaded runtime or network client.
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
@@ -54,15 +54,15 @@ function Read-Radios {
 }
 function Read-State {
     $state=@{Audio=$null;Brightness=$null;Radios=@();Errors=@()}
-    try{$state.Audio=[GlassBoard.NativeAudio]::State()}catch{$state.Errors+=('音频：'+$_.Exception.GetBaseException().Message)}
-    try{$state.Brightness=[GlassBoard.NativeBrightness]::Read()}catch{$state.Errors+=('亮度：'+$_.Exception.GetBaseException().Message)}
+    try{$state.Audio=[Lumina.NativeAudio]::State()}catch{$state.Errors+=('音频：'+$_.Exception.GetBaseException().Message)}
+    try{$state.Brightness=[Lumina.NativeBrightness]::Read()}catch{$state.Errors+=('亮度：'+$_.Exception.GetBaseException().Message)}
     try{$state.Radios=@(Read-Radios | ForEach-Object {@{Kind=$_.Kind.ToString();Name=$_.Name;Enabled=$_.State.ToString() -eq 'On';Available=$_.State.ToString() -ne 'Disabled'}})}catch{$state.Errors+=('无线：'+$_.Exception.GetBaseException().Message)}
     # Native fallbacks also distinguish missing hardware from WinRT/architecture failures.
     if(@($state.Radios | Where-Object {$_.Kind -eq 'WiFi'}).Count -eq 0){
-        try{$state.Radios+=@([GlassBoard.NativeWireless]::Radios())}catch{$state.Errors+=('Wi-Fi：'+$_.Exception.GetBaseException().Message)}
+        try{$state.Radios+=@([Lumina.NativeWireless]::Radios())}catch{$state.Errors+=('Wi-Fi：'+$_.Exception.GetBaseException().Message)}
     }
     if(@($state.Radios | Where-Object {$_.Kind -eq 'Bluetooth'}).Count -eq 0){
-        try{$state.Radios+=@([GlassBoard.NativeBluetooth]::Radios())}catch{$state.Errors+=('蓝牙：'+$_.Exception.GetBaseException().Message)}
+        try{$state.Radios+=@([Lumina.NativeBluetooth]::Radios())}catch{$state.Errors+=('蓝牙：'+$_.Exception.GetBaseException().Message)}
     }
     return @{System=$state}
 }
@@ -71,7 +71,7 @@ function Set-Radio($kind,$enabled) {
     $radios=@()
     try{Initialize-Controls;$radios=@(Read-Radios | Where-Object {$_.Kind.ToString() -eq $kind})}catch{if($kind -ne 'WiFi'){throw}}
     if($radios.Count -eq 0){
-        if($kind -eq 'WiFi'){[GlassBoard.NativeWireless]::SetRadio([bool]$enabled);return}
+        if($kind -eq 'WiFi'){[Lumina.NativeWireless]::SetRadio([bool]$enabled);return}
         throw '蓝牙开关未由系统接口提供，请打开 Windows 蓝牙设置。'
     }
     $access=Await-Control ($script:radioType::RequestAccessAsync()) $script:radioAccessType
@@ -93,10 +93,10 @@ function Dispatch-Control($request) {
     switch($request.Action){
         'state' {return Read-State}
         'radio' {Set-Radio $request.Text $request.Enabled;return @{}}
-        'networks' {return @{Networks=@([GlassBoard.NativeWireless]::Networks($request.Enabled))}}
-        'connect' {[GlassBoard.NativeWireless]::Connect($request.Adapter,$request.Text,$request.Profile,$request.Password,$request.Auth,$request.Cipher);return @{}}
-        'disconnect' {[GlassBoard.NativeWireless]::Disconnect($request.Adapter);return @{}}
-        'bluetooth' {try{return Read-Bluetooth}catch{$reason=$_.Exception.GetBaseException().Message;return @{Devices=@([GlassBoard.NativeBluetooth]::Devices());Warning=('已使用兼容列表；部分低功耗设备请在系统设置中查看。'+$reason)}}}
+        'networks' {return @{Networks=@([Lumina.NativeWireless]::Networks($request.Enabled))}}
+        'connect' {[Lumina.NativeWireless]::Connect($request.Adapter,$request.Text,$request.Profile,$request.Password,$request.Auth,$request.Cipher);return @{}}
+        'disconnect' {[Lumina.NativeWireless]::Disconnect($request.Adapter);return @{}}
+        'bluetooth' {try{return Read-Bluetooth}catch{$reason=$_.Exception.GetBaseException().Message;return @{Devices=@([Lumina.NativeBluetooth]::Devices());Warning=('已使用兼容列表；部分低功耗设备请在系统设置中查看。'+$reason)}}}
         'unpair' {
             Initialize-Bluetooth
             $device=Await-Control ($script:deviceType::CreateFromIdAsync($request.Key)) $script:deviceType
@@ -104,10 +104,10 @@ function Dispatch-Control($request) {
             if($result.Status.ToString() -ne 'Unpaired' -and $result.Status.ToString() -ne 'AlreadyUnpaired'){throw ('取消配对未完成：'+$result.Status)}
             return @{}
         }
-        'volume' {[GlassBoard.NativeAudio]::Set([double]$request.Value,$null);return @{}}
-        'mute' {[GlassBoard.NativeAudio]::Set($null,[bool]$request.Enabled);return @{}}
-        'output' {[GlassBoard.NativeAudio]::Output($request.Key);return @{}}
-        'brightness' {[GlassBoard.NativeBrightness]::Set([double]$request.Value);return @{}}
+        'volume' {[Lumina.NativeAudio]::Set([double]$request.Value,$null);return @{}}
+        'mute' {[Lumina.NativeAudio]::Set($null,[bool]$request.Enabled);return @{}}
+        'output' {[Lumina.NativeAudio]::Output($request.Key);return @{}}
+        'brightness' {[Lumina.NativeBrightness]::Set([double]$request.Value);return @{}}
         default {throw 'Unknown control action'}
     }
 }

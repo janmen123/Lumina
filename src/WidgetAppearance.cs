@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Globalization;using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;using System.Windows.Input;using System.Windows.Media;using System.Windows.Media.Effects;using System.Windows.Shapes;
-namespace GlassBoard {
+namespace Lumina {
     public sealed partial class WidgetWindow {
         TextBlock weekday,clockHours,clockMinutes;string clockKey="";
         WidgetStyle StyleFor(string kind){return M.C.Prefs.Widgets.Style(kind);}

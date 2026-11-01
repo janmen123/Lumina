@@ -26,3 +26,6 @@
 *.suo
 Thumbs.db
 desktop.ini
+
+/Lumina.exe
+/Lumina.exe.config

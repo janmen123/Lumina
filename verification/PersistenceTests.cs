@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Linq;using System.Text;using System.Collections.Generic;using System.Runtime.Serialization.Json;using GlassBoard;
+using System;using System.IO;using System.Linq;using System.Text;using System.Collections.Generic;using System.Runtime.Serialization.Json;using Lumina;
 public static class PersistenceTests {
     static void Check(bool value,string label){if(!value)throw new Exception(label);}
     static byte[] Json<T>(T value){using(var stream=new MemoryStream()){new DataContractJsonSerializer(typeof(T)).WriteObject(stream,value);return stream.ToArray();}}

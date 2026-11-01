@@ -1,5 +1,5 @@
 using System;
-namespace GlassBoard {
+namespace Lumina {
     public static class SettingsPlacementRules {
         // Prefer the larger free area above or below the Dock, including when its glass is temporarily hidden.
         public static double[] Vertical(double workTop,double workHeight,double dockTop,double dockHeight,double preferredHeight){

@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Runtime.InteropServices;using System.Threading;using System.Windows.Automation;
-namespace GlassBoard {
+namespace Lumina {
  public static class NativeTrayLauncher {
   static readonly string[] OverflowClasses={"NotifyIconOverflowWindow","TopLevelWindowForOverflowXamlIsland"};
   [DllImport("user32.dll",CharSet=CharSet.Unicode)]static extern IntPtr FindWindow(string cls,string title);

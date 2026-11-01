@@ -1,5 +1,5 @@
 using System;using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;using System.Windows.Data;using System.Windows.Media;using System.Windows.Media.Effects;using System.Windows.Input;
-namespace GlassBoard {
+namespace Lumina {
     public static class Polish {
         static readonly BoundedCache<string,Brush> brushes=new BoundedCache<string,Brush>(96,StringComparer.OrdinalIgnoreCase);
         static readonly System.Collections.Generic.Dictionary<bool,System.Collections.Generic.Dictionary<object,Style>> themes=new System.Collections.Generic.Dictionary<bool,System.Collections.Generic.Dictionary<object,Style>>();

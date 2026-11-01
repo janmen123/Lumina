@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-namespace GlassBoard {
+namespace Lumina {
     public static class InteractionRules {
         public static readonly string[] OpenStyles={"fade","rise","zoom","slide"};
         public static readonly string[] OpenNames={"轻柔淡入 · 推荐","轻抬淡入","微缩淡入","侧滑淡入"};

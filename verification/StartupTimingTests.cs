@@ -1,8 +1,8 @@
-using System;using System.IO;using System.Text;using System.Xml;using System.Runtime.Serialization.Json;using GlassBoard;using System.Reflection;using System.Runtime.InteropServices;
+using System;using System.IO;using System.Text;using System.Xml;using System.Runtime.Serialization.Json;using Lumina;using System.Reflection;using System.Runtime.InteropServices;
 class StartupTimingTests {
     static int checks;static void Check(bool value,string text){checks++;if(!value)throw new Exception(text);}
     static int Main(){
-        string path=Path.Combine(Path.GetTempPath(),"工具 & 我的桌面","GlassBoard.exe"),sid="S-1-5-21-123-456-789-1001";
+        string path=Path.Combine(Path.GetTempPath(),"工具 & 我的桌面","Lumina.exe"),sid="S-1-5-21-123-456-789-1001";
         foreach(string mode in new[]{"priority","delayed"}){
             string xml=StartupRules.TaskXml(path,sid,mode);var doc=new XmlDocument{XmlResolver=null};doc.LoadXml(xml);Check(doc.DocumentElement.NamespaceURI=="http://schemas.microsoft.com/windows/2004/02/mit/task","valid task namespace");
             Check(doc.GetElementsByTagName("Command")[0].InnerText==path,"Unicode and XML characters round-trip");Check(doc.GetElementsByTagName("WorkingDirectory")[0].InnerText==Path.GetDirectoryName(path),"working directory distinct from executable");Check(doc.GetElementsByTagName("Arguments")[0].InnerText=="--startup","startup arguments explicit");Check(doc.GetElementsByTagName("UserId")[0].InnerText==sid&&doc.GetElementsByTagName("RunLevel")[0].InnerText=="LeastPrivilege","current-user task without elevation");Check(doc.GetElementsByTagName("DisallowStartIfOnBatteries")[0].InnerText=="false"&&doc.GetElementsByTagName("ExecutionTimeLimit")[0].InnerText=="PT0S","portable laptop startup and no timed termination");Check(StartupRules.TaskMode(xml)==mode,"actual task delay determines mode");Check(StartupRules.TaskCommand(xml)==StartupRules.Command(path),"task command readback");Check(doc.GetElementsByTagName("Delay")[0].InnerText==(mode=="delayed"?"PT60S":"PT0S"),"distinct immediate and delayed triggers");

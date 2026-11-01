@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Collections.Generic;using System.Windows;using System.Windows.Controls;
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         void RecoverHistoricalEntries(Window owner){bool previous=Board.ModalBusy;Board.ModalBusy=true;try{
             var candidates=EntryRecoveryRules.Candidates(Prefs,Store.HistoricalEntries());if(candidates.Count==0){MessageBox.Show(owner,"历史配置中没有找到缺失入口。若旧版已多次覆盖配置，仍可能需要从你保留的完整备份中恢复。","找回旧版入口");return;}

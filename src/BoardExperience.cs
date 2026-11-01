@@ -1,5 +1,5 @@
 using System;using System.Runtime.InteropServices;using System.Linq;using System.Windows;using System.Windows.Controls;using System.Windows.Media;using System.Windows.Input;using System.Windows.Threading;
-namespace GlassBoard {
+namespace Lumina {
     public partial class BoardWindow {
         Border dragPreview;Image dragPreviewIcon;TextBlock dragPreviewText;bool activeDrag;string hoverGroup,folderSignature="";readonly DispatcherTimer hoverTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(700)};
         [DllImport("user32.dll")] static extern short GetAsyncKeyState(int key);
@@ -13,7 +13,7 @@ namespace GlassBoard {
         void StopGroupHover(string name){if(name==null||hoverGroup==name){hoverGroup=null;hoverTimer.Stop();}}
         void EndDragPreview(){activeDrag=false;dragWatch.Stop();hoverTimer.Stop();hoverGroup=null;dragPreview.Visibility=Visibility.Collapsed;dragPreviewText.Text="";dragPreviewIcon.Source=null;folderSignature="";EndDragGhostMotion();ResetBoardDragShifts();dragShiftTargets.Clear();}
         void StartEntryDrag(FrameworkElement tile,Entry entry){var paths=editing&&selected.Contains(entry.Path)?selected.ToArray():new[]{entry.Path};var payload=BoardDragData.Create(paths,currentGroup);dragPreviewText.Text=paths.Length==1?entry.Name:entry.Name+" 等 "+paths.Length+" 个";try{dragPreviewIcon.Source=FeatureUi.Icon(entry,C.Prefs.Dock.ShowShortcutOverlays,C.Prefs.Dock.SharperIcons);}catch{dragPreviewIcon.Source=null;}bool previous=ModalBusy;ModalBusy=true;activeDrag=true;C.Dock.BeginBoardPinDrag();entryDragRunning=true;try{dragPreview.Visibility=Visibility.Visible;MoveDragGhost(new Point());DragDrop.DoDragDrop(tile,payload,BoardDragData.Allowed(payload));}finally{entryDragRunning=false;C.Dock.EndBoardPinDrag();EndDragPreview();ModalBusy=previous;Render();}}
-        DragDropEffects GroupDragEffect(IDataObject data,string name){if(name=="全部")return DragDropEffects.None;if(data.GetDataPresent(DataFormats.FileDrop))return DragDropEffects.Copy;if(DraggedEntries(data).Length>0)return data.GetDataPresent("GlassBoard.SourceGroup")&&(string)data.GetData("GlassBoard.SourceGroup")=="全部"?DragDropEffects.Copy:DragDropEffects.Move;return data.GetDataPresent(DataFormats.FileDrop)?DragDropEffects.Copy:DragDropEffects.None;}
+        DragDropEffects GroupDragEffect(IDataObject data,string name){if(name=="全部")return DragDropEffects.None;if(data.GetDataPresent(DataFormats.FileDrop))return DragDropEffects.Copy;if(DraggedEntries(data).Length>0)return data.GetDataPresent("Lumina.SourceGroup")&&(string)data.GetData("Lumina.SourceGroup")=="全部"?DragDropEffects.Copy:DragDropEffects.Move;return data.GetDataPresent(DataFormats.FileDrop)?DragDropEffects.Copy:DragDropEffects.None;}
         public void ApplyDisplayOptions(){if(C.Prefs.BoardHideGroups)currentGroup="全部";if(C.Prefs.BoardHideSearch&&Search!=null)Search.Clear();if(IsVisible){BuildForSize();QueueSizeRefresh();}}
         ContextMenu CreateMoreMenu(){
             var menu=MenuTheme.Create(C.Prefs.Light);

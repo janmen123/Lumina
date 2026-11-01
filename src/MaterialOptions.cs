@@ -1,5 +1,5 @@
 using System;using System.Runtime.Serialization;
-namespace GlassBoard {
+namespace Lumina {
     [DataContract] public class MaterialOptions {
         [DataMember] public int Kind;
         [DataMember] public string Tint="";

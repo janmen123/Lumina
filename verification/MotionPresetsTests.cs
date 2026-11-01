@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Text;using System.Runtime.Serialization.Json;using GlassBoard;
+using System;using System.IO;using System.Text;using System.Runtime.Serialization.Json;using Lumina;
 class MotionPresetsTests {
  static int checks;static void Check(bool b,string message){checks++;if(!b)throw new Exception(message);}
  static T Read<T>(string json){using(var s=new MemoryStream(Encoding.UTF8.GetBytes(json)))return (T)new DataContractJsonSerializer(typeof(T)).ReadObject(s);}

@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Runtime.Serialization;using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;using System.Windows.Input;using System.Windows.Media;using System.Windows.Media.Animation;using System.Windows.Threading;using System.Diagnostics;
-namespace GlassBoard {
+namespace Lumina {
     [DataContract]public sealed class ControlCenterOptions {
         [DataMember]public bool Enabled=true,Locked,Topmost,Motion=true;
         [DataMember]public bool ShowControl=true,ShowTray=true,ShowStart=true;
@@ -38,7 +38,7 @@ namespace GlassBoard {
     public sealed class ControlOrbWindow:GlassWindow {
         public override bool WantsTopmost{get{return C!=null&&C.Prefs.ControlCenter.Topmost;}}
         readonly Controller C;ControlCenterWindow panel;bool moved,panelWasOpen;Point down;
-        public ControlOrbWindow(Controller c):base(999){C=c;Title="GlassBoard 桌面小球";ShowActivated=false;Root.Margin=new Thickness(14);ContentGrid.Cursor=Cursors.Hand;ContentGrid.Background=Brushes.Transparent;
+        public ControlOrbWindow(Controller c):base(999){C=c;Title="Lumina 桌面小球";ShowActivated=false;Root.Margin=new Thickness(14);ContentGrid.Cursor=Cursors.Hand;ContentGrid.Background=Brushes.Transparent;
             ContentGrid.ToolTip="桌面小球 · 控制中心 / 系统托盘；单击展开，拖动移动";
             ContentGrid.MouseLeftButtonDown+=(s,e)=>{down=e.GetPosition(this);moved=false;panelWasOpen=panel!=null&&panel.IsVisible;};
             ContentGrid.MouseMove+=(s,e)=>{if(e.LeftButton!=MouseButtonState.Pressed||C.Prefs.ControlCenter.Locked||moved)return;var p=e.GetPosition(this);if(Math.Abs(p.X-down.X)+Math.Abs(p.Y-down.Y)<8)return;moved=true;HidePanel();try{DragMove();var area=DesktopWindowPolicy.WorkArea(this,true);Left=FeatureRules.Position(Left,area.Left,area.Width,Width);Top=FeatureRules.Position(Top,area.Top,area.Height,Height);C.Prefs.ControlCenter.Left=Left;C.Prefs.ControlCenter.Top=Top;C.Save();}catch(InvalidOperationException){}};
@@ -56,7 +56,7 @@ namespace GlassBoard {
         readonly Controller C;readonly ControlOrbWindow orb;readonly StackPanel body=new StackPanel();readonly TextBlock status=new TextBlock();readonly DispatcherTimer timer=new DispatcherTimer{Interval=TimeSpan.FromSeconds(3)};
         SystemSnapshot snapshot;bool reading,command,modal,stopped,collapsing;string page="home";Slider volume,brightness;Button mute;bool updating;DateTime lastVolume=DateTime.MinValue,lastBrightness=DateTime.MinValue;
         readonly DispatcherTimer volumeDelay=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(300)},brightnessDelay=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(350)};
-        public ControlCenterWindow(Controller c,ControlOrbWindow anchor):base(26){C=c;orb=anchor;Title="GlassBoard 桌面小球";Width=402;Height=520;Topmost=true;ShowActivated=true;Root.Margin=new Thickness(14);ContentGrid.Margin=new Thickness(22);var root=new DockPanel();ContentGrid.Children.Add(root);
+        public ControlCenterWindow(Controller c,ControlOrbWindow anchor):base(26){C=c;orb=anchor;Title="Lumina 桌面小球";Width=402;Height=520;Topmost=true;ShowActivated=true;Root.Margin=new Thickness(14);ContentGrid.Margin=new Thickness(22);var root=new DockPanel();ContentGrid.Children.Add(root);
             var header=new Grid{Margin=new Thickness(0,0,0,16)};header.Children.Add(new TextBlock{Text="桌面小球",FontSize=20,FontWeight=FontWeights.SemiBold,Foreground=Brushes.White,VerticalAlignment=VerticalAlignment.Center});var close=Button("",(s,e)=>Collapse(),36);close.Content=PanelIcon("close",.7);close.ToolTip="收起控制中心";close.HorizontalAlignment=HorizontalAlignment.Right;header.Children.Add(close);DockPanel.SetDock(header,Dock.Top);root.Children.Add(header);
             BuildSectionNavigation(root);
             var footer=new WrapPanel{HorizontalAlignment=HorizontalAlignment.Center,Margin=new Thickness(0,12,0,0)};

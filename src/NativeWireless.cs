@@ -1,5 +1,5 @@
 using System;using System.IO;using System.Linq;using System.Collections.Generic;using System.Runtime.InteropServices;using System.Text;using System.Xml.Linq;
-namespace GlassBoard {
+namespace Lumina {
     // The same Windows WLAN calls previously used by the large bridge, hosted
     // in .NET Framework. No redistributable runtime or third-party WLAN library.
     public static class NativeWireless {
@@ -47,7 +47,7 @@ namespace GlassBoard {
             return new XElement(ns+"WLANProfile",new XElement(ns+"name",profile),new XElement(ns+"SSIDConfig",new XElement(ns+"SSID",new XElement(ns+"hex",BitConverter.ToString(Encoding.UTF8.GetBytes(ssid)).Replace("-","")),new XElement(ns+"name",ssid))),new XElement(ns+"connectionType","ESS"),new XElement(ns+"connectionMode","manual"),new XElement(ns+"MSM",security)).ToString();
         }
         public static void Connect(string adapter,string ssid,string profile,string password,int auth,int cipher){using(var handle=new Handle()){
-            var id=Guid.Parse(adapter);if(string.IsNullOrWhiteSpace(profile)){profile="GlassBoard-"+Guid.NewGuid().ToString("N");string xml=ProfileXml(ssid,profile,password,auth,cipher);uint reason;Check(WlanSetProfile(handle.Value,ref id,2,xml,null,false,IntPtr.Zero,out reason));}
+            var id=Guid.Parse(adapter);if(string.IsNullOrWhiteSpace(profile)){profile="Lumina-"+Guid.NewGuid().ToString("N");string xml=ProfileXml(ssid,profile,password,auth,cipher);uint reason;Check(WlanSetProfile(handle.Value,ref id,2,xml,null,false,IntPtr.Zero,out reason));}
             var connection=new Connection{Mode=0,Profile=profile,Bss=1};Check(WlanConnect(handle.Value,ref id,ref connection,IntPtr.Zero));
         }}
     }

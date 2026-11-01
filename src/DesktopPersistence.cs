@@ -6,7 +6,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
-namespace GlassBoard {
+namespace Lumina {
     // Keep screen-coordinate WPF windows top-level. Reparenting layered windows
     // into Explorer changes DPI/coordinates and breaks drag and drop.
     public static class DesktopPersistence {

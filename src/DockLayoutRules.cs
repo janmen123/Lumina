@@ -1,5 +1,5 @@
 using System;using System.Collections.Generic;using System.Linq;
-namespace GlassBoard {
+namespace Lumina {
     public static class DockLayoutRules {
         public const string Apps="glassboard://dock/apps",Computer="glassboard://dock/computer",Power="glassboard://dock/power",Network="glassboard://dock/network",Settings="glassboard://dock/settings",RecycleBin="glassboard://dock/recyclebin";
         public static readonly string[] SystemKeys={Apps,Computer,Power,Network,Settings,RecycleBin};

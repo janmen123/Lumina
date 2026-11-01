@@ -1,4 +1,4 @@
-using System;using GlassBoard;
+using System;using Lumina;
 class SettingsPlacementTests {
     static void Check(bool value,string label){if(!value)throw new Exception(label);}
     static void Case(double top,double height,double dockTop,double dockHeight){var p=SettingsPlacementRules.Vertical(top,height,dockTop,dockHeight,790);Check(p[0]>=top&&p[0]+p[1]<=top+height&&p[1]>0,"settings stays in work area");Check(p[0]+p[1]<=dockTop||p[0]>=dockTop+dockHeight,"settings leaves the Dock unobstructed");}

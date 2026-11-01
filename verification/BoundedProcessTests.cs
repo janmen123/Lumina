@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Diagnostics;using System.Threading;using GlassBoard;
+using System;using System.IO;using System.Diagnostics;using System.Threading;using Lumina;
 class BoundedProcessTests {
  static string host;static int checks;static void Check(bool ok,string message){checks++;if(!ok)throw new Exception(message);}
  static ProcessStartInfo Self(string args){return new ProcessStartInfo(host,"\""+typeof(BoundedProcessTests).Assembly.Location+"\" "+args){UseShellExecute=false,CreateNoWindow=true};}

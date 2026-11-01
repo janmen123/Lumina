@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Runtime.Serialization.Json;
-using GlassBoard;
+using Lumina;
 
 public static class AppearanceOptionsTests {
     static void Check(bool value,string label){if(!value)throw new Exception(label);}

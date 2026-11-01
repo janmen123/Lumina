@@ -1,5 +1,5 @@
 using System;using System.IO;using System.Reflection;using System.Text;using System.Security.Cryptography;
-namespace GlassBoard {
+namespace Lumina {
  internal static class CreatorIdentityProof {
   internal const string AuthorName="森霖Sama",DouyinId="Senlin_Sama";
   internal const string Payload64="YXV0aG9yPeajrumcllNhbWEKZG91eWluPVNlbmxpbl9TYW1hCkdsYXNzQm9hcmQuQXNzZXRzLmMxLmRhdHw2MmM1MTU5NjA4ZGYwNjA2NTYzYmJiOGIyMjZmODU2NjVhYWNkMmVjNDc4MGNmZjA5Y2E5NGE0ZTU5ODQ1OGU5CkdsYXNzQm9hcmQuQXNzZXRzLmMyLmRhdHw2NzUyOTc2YzQyMTY5NGNiNmQ1ZDNhNjdiZTMzNTVkYTFkYTdmNDdhNDg1OTMyNGVmYjA2Y2Q0Mjk1YzI2ZWQ4CkdsYXNzQm9hcmQuQXNzZXRzLmMzLmRhdHw5YTRmMmQxYzZhMjdkOTY0ZGY1MjA2ZDlhYzlmMTA5NmRhYmVhZDc0ODVhODcyYzU2ZjI1N2ZhY2YzYzFkOTYxCg==";

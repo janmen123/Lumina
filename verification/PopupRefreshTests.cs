@@ -7,7 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using GlassBoard;
+using Lumina;
 
 public static class PopupRefreshTests {
     static int checks;
@@ -67,7 +67,7 @@ public static class PopupRefreshTests {
         finally{c.ShuttingDown=true;c.Board.Close();c.Dock.Close();}
     }
 }
-namespace GlassBoard {
+namespace Lumina {
     public partial class BoardWindow {
         public void TestRenderingLifecycle(){
             StartDragRendering();StartDragRendering();PopupRefreshTests.Check(dragRenderingSubscribed,"render subscription is active and idempotent");

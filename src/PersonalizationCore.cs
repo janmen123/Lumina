@@ -1,5 +1,5 @@
 using System;using System.Collections.Generic;using System.Linq;using System.Runtime.Serialization;using System.Text.RegularExpressions;
-namespace GlassBoard {
+namespace Lumina {
     [DataContract] public class WidgetStyle {
         [DataMember] public string Kind="clock",TextColor="",Font="";
         [DataMember] public double TextOpacity=100,ClockSize=48;

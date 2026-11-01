@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GlassBoard {
+namespace Lumina {
     // Keeps a small most-recently-used list so the board can offer a "recent first"
     // order without touching the user's manual arrangement.
     public static class RecentRules {

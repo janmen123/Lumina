@@ -24,11 +24,11 @@ using System.Windows.Threading;
 using Forms = System.Windows.Forms;
 using Drawing = System.Drawing;
 
-[assembly: System.Reflection.AssemblyTitle("GlassBoard")]
+[assembly: System.Reflection.AssemblyTitle("Lumina")]
 [assembly: System.Reflection.AssemblyVersion("0.2.0.0")]
 [assembly: System.Reflection.AssemblyFileVersion("0.2.0.0")]
 
-namespace GlassBoard {
+namespace Lumina {
     public static class LayoutRules {
         public static int Pages(int count,int capacity) {
             if(count<0 || capacity<1)throw new ArgumentOutOfRangeException();
@@ -44,242 +44,9 @@ namespace GlassBoard {
         public static bool AllowImport(string path,IEnumerable<string> removed,bool manual) {return manual||!removed.Any(p=>string.Equals(p,path,StringComparison.OrdinalIgnoreCase));}
         public static double Clamp(double value,double min,double max,double fallback) {return double.IsNaN(value)||double.IsInfinity(value)?fallback:Math.Max(min,Math.Min(max,value));}
     }
-    [DataContract] public class HotkeySetting {
-        [DataMember] public int ActionId;
-        [DataMember] public uint Modifiers;
-        [DataMember] public uint Key;
-        [DataMember] public bool Enabled;
-        public HotkeySetting Copy() {return new HotkeySetting{ActionId=ActionId,Modifiers=Modifiers,Key=Key,Enabled=Enabled};}
-    }
-    public static class HotkeyRules {
-        public static readonly string[] Actions={"展开 / 收起面板","隐藏 / 显示任务栏","隐藏 / 显示桌面图标","添加软件","外观设置","恢复任务栏与图标","Windows 任务栏自动隐藏"};
-        public static readonly uint[] ModifierValues={3,6,5,7,2,1,4};
-        public static readonly string[] ModifierNames={"Ctrl + Alt","Ctrl + Shift","Alt + Shift","Ctrl + Alt + Shift","Ctrl","Alt","Shift"};
-        public static List<HotkeySetting> Defaults() {
-            uint[] keys={0x20,0x54,0x44,0x41,0x53,0x52,0x48};return keys.Select((k,i)=>new HotkeySetting{ActionId=i+1,Modifiers=3,Key=k,Enabled=true}).ToList();
-        }
-        public static Dictionary<string,uint> Keys() {
-            var keys=new Dictionary<string,uint>();keys["Space"]=0x20;
-            for(uint i=65;i<=90;i++)keys[((char)i).ToString()]=i;
-            for(uint i=48;i<=57;i++)keys[((char)i).ToString()]=i;
-            for(uint i=1;i<=12;i++)keys["F"+i]=0x6F+i;
-            keys["Enter"]=0x0D;keys["Tab"]=0x09;keys["Home"]=0x24;keys["End"]=0x23;keys["PageUp"]=0x21;keys["PageDown"]=0x22;keys["Insert"]=0x2D;keys["Delete"]=0x2E;return keys;
-        }
-        public static string Label(HotkeySetting key) {
-            if(key==null||!key.Enabled)return "已关闭";
-            int index=Array.IndexOf(ModifierValues,key.Modifiers);string name=Keys().FirstOrDefault(p=>p.Value==key.Key).Key??("VK "+key.Key);
-            return (index>=0?ModifierNames[index]:"?")+" + "+name;
-        }
-        public static string Validate(List<HotkeySetting> keys) {
-            if(keys==null||keys.Count!=Actions.Length||keys.Select(k=>k==null?0:k.ActionId).Distinct().Count()!=Actions.Length||keys.Any(k=>k==null||k.ActionId<1||k.ActionId>Actions.Length))return "快捷键配置必须包含全部七项功能。";
-            if(keys.Any(k=>!ModifierValues.Contains(k.Modifiers)||!Keys().ContainsValue(k.Key)))return "请选择有效的组合键和按键。";
-            var duplicates=keys.Where(k=>k.Enabled).GroupBy(k=>k.Modifiers+":"+k.Key).FirstOrDefault(g=>g.Count()>1);
-            if(duplicates!=null)return "快捷键重复："+string.Join("、",duplicates.Select(k=>Actions[k.ActionId-1]))+"。请换一个组合。";
-            return null;
-        }
-        public static List<HotkeySetting> Normalize(List<HotkeySetting> keys) {
-            var result=Defaults();
-            if(keys!=null)foreach(var k in keys.Where(k=>k!=null&&k.ActionId>=1&&k.ActionId<=Actions.Length&&ModifierValues.Contains(k.Modifiers)&&Keys().ContainsValue(k.Key)))result[k.ActionId-1]=k.Copy();
-            // Keep old user bindings when the new default collides; disable only the added binding.
-            if(Validate(result)!=null&&keys!=null&&keys.All(k=>k==null||k.ActionId!=7))result[6].Enabled=false;
-            return Validate(result)==null?result:Defaults();
-        }
-        public static bool Same(List<HotkeySetting> first,List<HotkeySetting> second) {
-            if(first==null||second==null||first.Count!=second.Count)return false;
-            return first.All(a=>second.Any(b=>a.ActionId==b.ActionId&&a.Modifiers==b.Modifiers&&a.Key==b.Key&&a.Enabled==b.Enabled));
-        }
-    }
-    public class HotkeyManager {
-        readonly Func<HotkeySetting,bool> register;readonly Action<int> unregister;
-        public List<HotkeySetting> Active=new List<HotkeySetting>();
-        public HotkeyManager(Func<HotkeySetting,bool> registerKey,Action<int> unregisterKey) {register=registerKey;unregister=unregisterKey;}
-        public List<string> Start(IEnumerable<HotkeySetting> keys) {
-            var failed=new List<string>();foreach(var k in keys.Where(k=>k.Enabled)) {
-                if(register(k))Active.Add(k.Copy());else failed.Add(HotkeyRules.Actions[k.ActionId-1]+"（"+HotkeyRules.Label(k)+"）");
-            }return failed;
-        }
-        public void Release() {foreach(var k in Active)unregister(k.ActionId);Active.Clear();}
-        public bool TryApply(List<HotkeySetting> candidate,out string error) {
-            error=HotkeyRules.Validate(candidate);if(error!=null)return false;
-            var previous=Active.Select(k=>k.Copy()).ToList();Release();
-            var failed=Start(candidate);
-            if(failed.Count==0)return true;
-            Release();var rollbackFailed=Start(previous);
-            error="无法注册："+string.Join("、",failed)+"。可能被其他软件或 Windows 占用，原设置未改动。";
-            if(rollbackFailed.Count>0)error+="\n原快捷键恢复失败："+string.Join("、",rollbackFailed)+"。对应操作可从托盘执行。";
-            return false;
-        }
-    }
-    [DataContract] public class Entry {
-        [DataMember] public string Name;
-        [DataMember] public string Path;
-        [DataMember] public bool Pinned;
-        [DataMember(EmitDefaultValue=false)] public bool IsFolder;
-        [DataMember(EmitDefaultValue=false)] public string Group;
-        [DataMember(EmitDefaultValue=false)] public List<string> ExtraGroups;
-        [DataMember(EmitDefaultValue=false)] public string IconPath;
-        [DataMember(EmitDefaultValue=false)] public string LaunchTarget,LaunchArguments,ProductInfo,WindowTarget;
-        [DataMember(EmitDefaultValue=false)] public bool DesktopAuto;
-    }
-    [DataContract] public class Preferences {
-        [DataMember] public List<Entry> Apps = new List<Entry>();
-        [DataMember(EmitDefaultValue=false)] public List<string> DockOrder=new List<string>();
-        [DataMember] public int FormatVersion;
-        [DataMember(EmitDefaultValue=false)] public long SaveRevision;
-        [DataMember] public bool Light = false;
-        [DataMember] public bool ThemeFollowSystem = false;
-        [DataMember] public bool BoardSortRecent = false;
-        [DataMember(EmitDefaultValue=false)] public List<string> RecentUse = new List<string>();
-        [DataMember] public bool ReducedMotionBaselineApplied;
-        [DataMember] public double DockGap = 12;
-        [DataMember] public bool Imported = false;
-        [DataMember] public int PanelSize = 1;
-        [DataMember] public double BoardIconSize=48,BoardIconGap=5;
-        [DataMember(EmitDefaultValue=false)] public double? OpacityPercent = 72;
-        [DataMember(EmitDefaultValue=false)] public List<string> Removed = new List<string>();
-        [DataMember(EmitDefaultValue=false)] public List<HotkeySetting> Hotkeys = HotkeyRules.Defaults();
-        [DataMember(EmitDefaultValue=false)] public DockOptions Dock = new DockOptions();
-        [DataMember(EmitDefaultValue=false)] public List<string> Groups=new List<string>{"创作","办公","游戏"};
-        [DataMember(EmitDefaultValue=false)] public List<Workspace> Workspaces=new List<Workspace>();
-        [DataMember(EmitDefaultValue=false)] public PlacementOptions Placement=new PlacementOptions();
-        [DataMember(EmitDefaultValue=false)] public WidgetOptions Widgets=new WidgetOptions();
-        [DataMember] public ControlCenterOptions ControlCenter=new ControlCenterOptions();
-        [DataMember] public bool AutoGrouping=true;
-        [DataMember] public bool AutoCheckUpdates=false;
-        [DataMember] public string StartupTiming="priority";
-        [DataMember] public bool UpdateDirectConnection=false;
-        [DataMember] public bool BoardDismissOnDeactivate=false;
-        [DataMember] public bool BoardAlwaysOnTop=false;
-        [DataMember] public bool AllDesktopLayer=false,BoardPageMotion=true;
-        [DataMember] public string BoardPageStyle="slide";
-        [DataMember] public bool BoardHideSearch,BoardHideGroups,BoardHideFolders;
-        [DataMember] public bool GameMode=false,AutoGameMode=false;
-        [DataMember] public int KeepWindowSeconds=3;
-        [DataMember] public int ConfigRevision;
-        [DataMember] public MaterialOptions BoardMaterial=new MaterialOptions();
-        [DataMember(EmitDefaultValue=false)] public List<string> RemovedIdentities=new List<string>();
-        [DataMember] public long LastUpdateCheckUtc;
-        [DataMember] public Dictionary<string,string> LearnedGroups=new Dictionary<string,string>();
-        [DataMember] public bool DesktopAutoSync=true,DesktopFolders=true,DesktopDocs=true;
-        [DataMember] public string DesktopFolderGroup="文件夹",DesktopDocsGroup="文档";
-        [DataMember] public bool DesktopAutoRevealed;
-        [OnDeserializing] void Defaults(StreamingContext context){AutoGrouping=true;BoardIconSize=48;BoardIconGap=5;BoardPageMotion=true;BoardPageStyle="slide";DesktopAutoSync=true;DesktopFolders=true;DesktopDocs=true;DesktopFolderGroup="文件夹";DesktopDocsGroup="文档";}
-        public bool HotkeyMigrationConflict;
-        public void Normalize() {
-            AutoCheckUpdates=false;UpdateDirectConnection=false;LastUpdateCheckUtc=0;if(BoardPageStyle!="fade"&&BoardPageStyle!="slide"&&BoardPageStyle!="scale")BoardPageStyle="slide";
-            if(BoardMaterial==null)BoardMaterial=new MaterialOptions();BoardMaterial.Normalize();
-            if(LearnedGroups==null)LearnedGroups=new Dictionary<string,string>();if(RemovedIdentities==null)RemovedIdentities=new List<string>();
-            if(Apps==null)Apps=new List<Entry>();
-            Apps=Apps.Where(a=>a!=null&&!string.IsNullOrWhiteSpace(a.Path)).ToList();
-            foreach(var a in Apps){if(string.IsNullOrWhiteSpace(a.Name))a.Name=System.IO.Path.GetFileNameWithoutExtension(a.Path);FeatureRules.NormalizeMemberships(a);}
-            Apps=EntryRules.NormalizeEntries(Apps);RemovalRules.ReconcileActive(this);DockOrderRules.Normalize(this);
-            BoardIconSize=LayoutRules.Clamp(BoardIconSize,28,80,48);BoardIconGap=LayoutRules.Clamp(BoardIconGap,0,20,5);
-            DockGap=LayoutRules.Clamp(DockGap,0,160,12);PanelSize=Math.Max(0,Math.Min(2,PanelSize));
-            OpacityPercent=LayoutRules.GlassOpacity(OpacityPercent??72);if(Removed==null)Removed=new List<string>();
-            bool oldKeys=Hotkeys!=null&&Hotkeys.All(k=>k==null||k.ActionId!=7);Hotkeys=HotkeyRules.Normalize(Hotkeys);HotkeyMigrationConflict=oldKeys&&!Hotkeys[6].Enabled;
-            if(Dock==null)Dock=new DockOptions{OpacityPercent=OpacityPercent.Value};Dock.Normalize();DockLayoutRules.SyncApps(this);
-            Groups=FeatureRules.Groups(Groups,Apps);
-            if(string.IsNullOrWhiteSpace(DesktopFolderGroup))DesktopFolderGroup=DesktopAutoRules.DefaultFolderGroup;
-            if(string.IsNullOrWhiteSpace(DesktopDocsGroup))DesktopDocsGroup=DesktopAutoRules.DefaultDocsGroup;
-            if(DesktopFolders&&!Groups.Any(g=>string.Equals((g??"").Trim(),DesktopFolderGroup,StringComparison.OrdinalIgnoreCase)))Groups.Insert(0,DesktopFolderGroup);
-            if(DesktopDocs&&!string.Equals(DesktopDocsGroup,DesktopFolderGroup,StringComparison.OrdinalIgnoreCase)&&!Groups.Any(g=>string.Equals((g??"").Trim(),DesktopDocsGroup,StringComparison.OrdinalIgnoreCase)))Groups.Insert(0,DesktopDocsGroup);
-            if(DesktopAutoSync&&(DesktopFolders||DesktopDocs)&&!DesktopAutoRevealed){DesktopAutoRevealed=true;if(BoardHideGroups)BoardHideGroups=false;}
-            if(Workspaces==null)Workspaces=new List<Workspace>();
-            Workspaces=Workspaces.Where(x=>x!=null&&!string.IsNullOrWhiteSpace(x.Name)).ToList();foreach(var work in Workspaces)work.Normalize();
-            StartupTiming=StartupRules.Mode(StartupTiming);
-            if(ControlCenter==null){ControlCenter=new ControlCenterOptions();Dock.ShowNetwork=false;}ControlCenter.Normalize();
-            if(Placement==null)Placement=new PlacementOptions();Placement.Normalize();if(Widgets==null)Widgets=new WidgetOptions();Widgets.Normalize();
-        }
-    }
-    [DataContract] public class DockOptions {
-        [DataMember] public double IconSize=44,Spacing=6,Padding=16,Radius=28,OpacityPercent=72,Zoom=1.2,Offset=0,MotionLevel=1;
-        [DataMember] public double VerticalPadding=4;
-        [DataMember] public bool UseScreenBounds=true;
-        [DataMember] public int Alignment=1,Accent=0,MaxPinned=9,ComputerStyle=0;
-        [DataMember] public bool ShowComputer=true,ShowLabels=false,ShowSeparator=true,AlwaysOnTop=false,MotionEnabled=true;
-        [DataMember] public bool AutoHide=false,ShowRunning=true,ShowRunningSection=true;
-        [DataMember] public bool Reflection=false,DragMotion=true;
-        [DataMember] public double ReflectionOpacity=45,ReflectionLength=38,ReflectionAngle=0,ReflectionBlur=1.5,ReflectionGap=2,ReflectionFade=85;
-        [DataMember] public bool SpringReveal=true;
-        [DataMember] public bool? OpeningAnimation=true,HoverAnimation=true;
-        [DataMember] public string OpenAnimationStyle="fade",HoverAnimationStyle="zoom-lift";
-        [DataMember] public bool ShowRecycleBin=false,RespectFullscreen=true;
-        public bool OpenMotion{get{return OpeningAnimation??MotionEnabled;}}
-        public bool HoverMotion{get{return HoverAnimation??MotionEnabled;}}
-        [DataMember] public bool ShowPower=false,ShowNetwork=false;
-        [DataMember] public bool ShowSettings=true;
-        [DataMember] public List<string> ItemOrder=new List<string>(),RunningOrder=new List<string>();
-        [DataMember] public bool ShowShortcutOverlays=false,SharperIcons=false;
-        [DataMember] public MaterialOptions Material=new MaterialOptions();
-        [DataMember] public double HideDelay=900,EdgeRange=12,BlurRadius=18,EdgeStrength=1;
-        [OnDeserializing] void Defaults(StreamingContext context) {
-            IconSize=44;Spacing=6;Padding=16;Radius=28;OpacityPercent=72;Zoom=1.2;Offset=0;MotionLevel=1;OpeningAnimation=HoverAnimation=null;OpenAnimationStyle="fade";HoverAnimationStyle="zoom-lift";RespectFullscreen=true;
-            VerticalPadding=4;UseScreenBounds=true;
-            Alignment=1;Accent=0;MaxPinned=9;ComputerStyle=0;ShowComputer=true;ShowLabels=false;ShowSeparator=true;AlwaysOnTop=false;MotionEnabled=true;
-            ShowSettings=true;ItemOrder=new List<string>();RunningOrder=new List<string>();AutoHide=false;ShowRunning=true;ShowRunningSection=true;SpringReveal=true;ShowShortcutOverlays=false;SharperIcons=false;HideDelay=900;EdgeRange=12;BlurRadius=18;EdgeStrength=1;Reflection=false;DragMotion=true;ReflectionOpacity=45;ReflectionLength=38;ReflectionAngle=0;ReflectionBlur=1.5;ReflectionGap=2;ReflectionFade=85;
-        }
-        public DockOptions Copy() {var copy=(DockOptions)MemberwiseClone();copy.OpenAnimationStyle=InteractionRules.OpenStyle(OpenAnimationStyle);HoverAnimationStyle=InteractionRules.HoverStyle(HoverAnimationStyle);
-            ItemOrder=(ItemOrder??new List<string>()).ToList();copy.RunningOrder=(RunningOrder??new List<string>()).ToList();copy.Material=(Material??new MaterialOptions()).Copy();return copy;}
-        public void Normalize() {
-            OpenAnimationStyle=InteractionRules.OpenStyle(OpenAnimationStyle);HoverAnimationStyle=InteractionRules.HoverStyle(HoverAnimationStyle);
-            ItemOrder=(ItemOrder??new List<string>()).Where(x=>!string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Take(30).ToList();RunningOrder=(RunningOrder??new List<string>()).Where(x=>!string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).Take(200).ToList();if(Material==null)Material=new MaterialOptions();Material.Normalize();
-            IconSize=LayoutRules.Clamp(IconSize,32,64,44);Spacing=LayoutRules.Clamp(Spacing,0,20,6);Padding=LayoutRules.Clamp(Padding,8,28,16);
-            VerticalPadding=LayoutRules.Clamp(VerticalPadding,0,28,4);
-            Radius=LayoutRules.Clamp(Radius,0,48,28);OpacityPercent=LayoutRules.GlassOpacity(OpacityPercent);Zoom=LayoutRules.Clamp(Zoom,1,1.6,1.2);Offset=LayoutRules.Clamp(Offset,-500,500,0);
-            MotionLevel=LayoutRules.Clamp(MotionLevel,.5,1.5,1);ReflectionOpacity=LayoutRules.Clamp(ReflectionOpacity,0,100,45);ReflectionLength=LayoutRules.Clamp(ReflectionLength,15,75,38);ReflectionAngle=LayoutRules.Clamp(ReflectionAngle,-40,40,0);ReflectionBlur=LayoutRules.Clamp(ReflectionBlur,0,6,1.5);ReflectionGap=LayoutRules.Clamp(ReflectionGap,0,12,2);ReflectionFade=LayoutRules.Clamp(ReflectionFade,20,100,85);
-            HideDelay=LayoutRules.Clamp(HideDelay,200,3000,900);EdgeRange=LayoutRules.Clamp(EdgeRange,3,48,12);BlurRadius=LayoutRules.Clamp(BlurRadius,0,40,18);EdgeStrength=LayoutRules.Clamp(EdgeStrength,.2,2,1);
-            Alignment=Math.Max(0,Math.Min(2,Alignment));Accent=Math.Max(0,Math.Min(5,Accent));MaxPinned=Math.Max(3,Math.Min(20,MaxPinned));ComputerStyle=Math.Max(0,Math.Min(1,ComputerStyle));
-        }
-        public int VisiblePinned(double availableWidth,int count) {
-            int fixedSlots=1+(ShowSettings?1:0)+(ShowComputer?1:0)+(ShowPower?1:0)+(ShowNetwork?1:0)+(ShowRecycleBin?1:0);double cell=IconSize+16+Spacing;
-            int fit=Math.Max(0,(int)Math.Floor((availableWidth-28-HoverPadding()*2-(ShowSeparator?17:0))/cell)-fixedSlots);
-            return Math.Min(count,Math.Min(MaxPinned,fit));
-        }
-        public double HoverPadding() {return Math.Max(Math.Max(Padding,DockReflection.SidePadding(this)),(IconSize+16)*(Math.Min(1.6,1+(Zoom-1)*MotionLevel)-1)/2+2);}
-        public double WidthFor(int pinnedCount) {return 28+HoverPadding()*2+(1+(ShowSettings?1:0)+(ShowComputer?1:0)+(ShowPower?1:0)+(ShowNetwork?1:0)+(ShowRecycleBin?1:0)+pinnedCount)*(IconSize+16+Spacing)+(ShowSeparator?17:0);}
-    }
-    public class RemovedItem {public Entry Entry;public int Index;public bool WasRemoved,MembershipOnly;public string RemovedGroup;}
-    public class RemovalBatch {public List<RemovedItem> Items=new List<RemovedItem>();}
-    public static class EntryRules {
-        public static RemovalBatch Remove(Preferences prefs,IEnumerable<string> paths,string group=null) {
-            var wanted=new HashSet<string>(paths,StringComparer.OrdinalIgnoreCase);var batch=new RemovalBatch();
-            for(int i=0;i<prefs.Apps.Count;i++) {var a=prefs.Apps[i];if(!wanted.Contains(a.Path))continue;if(group!=null&&group!="全部"&&FeatureRules.InGroup(a,group)&&FeatureRules.Memberships(a).Count()>1){batch.Items.Add(new RemovedItem{Entry=FeatureRules.Copy(a),Index=i,MembershipOnly=true,RemovedGroup=group});FeatureRules.RemoveMembership(a,group);wanted.Remove(a.Path);}else batch.Items.Add(new RemovedItem{Entry=a,Index=i,WasRemoved=prefs.Removed.Any(p=>string.Equals(p,a.Path,StringComparison.OrdinalIgnoreCase))});}
-            prefs.Apps.RemoveAll(a=>wanted.Contains(a.Path));
-            foreach(var item in batch.Items)if(!item.MembershipOnly){if(!item.WasRemoved)prefs.Removed.Add(item.Entry.Path);RemovalRules.Remember(prefs,item.Entry);}
-            return batch;
-        }
-        public static int Undo(Preferences prefs,RemovalBatch batch) {
-            int restored=0;if(batch==null)return 0;
-            foreach(var item in batch.Items.OrderBy(x=>x.Index)) {
-                if(item.MembershipOnly){var existing=prefs.Apps.FirstOrDefault(a=>string.Equals(a.Path,item.Entry.Path,StringComparison.OrdinalIgnoreCase));if(existing!=null){if(!string.IsNullOrWhiteSpace(item.RemovedGroup))FeatureRules.AddMembership(existing,item.RemovedGroup);else foreach(var name in FeatureRules.Memberships(item.Entry))FeatureRules.AddMembership(existing,name);restored++;continue;}}
-                if(!prefs.Apps.Any(a=>string.Equals(a.Path,item.Entry.Path,StringComparison.OrdinalIgnoreCase))) {prefs.Apps.Insert(Math.Min(item.Index,prefs.Apps.Count),item.Entry);restored++;}
-                if(!item.WasRemoved)RemovalRules.Forget(prefs,item.Entry);
-            }prefs.Groups=FeatureRules.Groups(prefs.Groups,prefs.Apps);return restored;
-        }
-        public static List<Entry> NormalizeEntries(IEnumerable<Entry> apps){var result=new List<Entry>();var byPath=new Dictionary<string,Entry>(StringComparer.OrdinalIgnoreCase);foreach(var a in apps??new Entry[0]){if(a==null||string.IsNullOrWhiteSpace(a.Path))continue;if(Directory.Exists(a.Path)){a.Path=EntryPathRules.Normalize(a.Path);a.IsFolder=true;}FeatureRules.NormalizeMemberships(a);Entry existing;if(!byPath.TryGetValue(a.Path,out existing)){byPath.Add(a.Path,a);result.Add(a);continue;}foreach(var group in FeatureRules.Memberships(a))FeatureRules.AddMembership(existing,group);existing.Pinned|=a.Pinned;existing.IsFolder|=a.IsFolder;if(string.IsNullOrEmpty(existing.IconPath))existing.IconPath=a.IconPath;if(string.IsNullOrEmpty(existing.LaunchTarget)){existing.LaunchTarget=a.LaunchTarget;existing.LaunchArguments=a.LaunchArguments;}if(string.IsNullOrEmpty(existing.ProductInfo))existing.ProductInfo=a.ProductInfo;if(string.IsNullOrEmpty(existing.WindowTarget))existing.WindowTarget=a.WindowTarget;}return result;}
-        public static bool Importable(string path) {string ext=System.IO.Path.GetExtension(path).ToLowerInvariant();return ext==".lnk"||ext==".appref-ms"||ext==".exe"||ext==".url"||ext==".cmd"||ext==".bat"||DocumentRules.Supported(path);}
-        public static List<string> Candidates(IEnumerable<string> paths,IEnumerable<Entry> existing) {
-            var known=new HashSet<string>(existing.Select(a=>a.Path),StringComparer.OrdinalIgnoreCase);
-            known=new HashSet<string>(known.Select(EntryPathRules.Normalize),StringComparer.OrdinalIgnoreCase);
-            return paths.Select(EntryPathRules.Normalize).Where(p=>!string.IsNullOrWhiteSpace(p)&&!known.Contains(p)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(EntryPathRules.Name,StringComparer.CurrentCultureIgnoreCase).ToList();
-        }
-    }
-    public class ScanResult {public List<string> Paths=new List<string>();public int Skipped;public bool Limited;}
-    public static class ImportScanner {
-        public static ScanResult Scan(IEnumerable<string> roots,bool recurse,CancellationToken cancellation,int fileLimit=2500,int directoryLimit=10000,bool launchOnly=false) {
-            var result=new ScanResult();var pending=new Stack<string>(roots.Where(Directory.Exists));var visited=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            while(pending.Count>0) {
-                cancellation.ThrowIfCancellationRequested();string folder=pending.Pop();if(!visited.Add(folder))continue;
-                if(visited.Count>directoryLimit||result.Paths.Count>=fileLimit){result.Limited=true;break;}
-                try {
-                    foreach(var path in Directory.EnumerateFiles(folder)) {cancellation.ThrowIfCancellationRequested();if(EntryRules.Importable(path)&&(!launchOnly||StartupEntryRules.Candidate(path)))result.Paths.Add(path);if(result.Paths.Count>=fileLimit){result.Limited=true;break;}}
-                    if(recurse)foreach(var path in Directory.EnumerateDirectories(folder)) {cancellation.ThrowIfCancellationRequested();try{if((File.GetAttributes(path)&FileAttributes.ReparsePoint)==0)pending.Push(path);}catch{result.Skipped++;}}
-                }catch(OperationCanceledException){throw;}catch{result.Skipped++;}
-            }return result;
-        }
-    }
+
     public static partial class Store {
-        public static readonly string Folder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GlassBoard");
+        public static readonly string Folder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lumina");
         public static readonly string FileName = System.IO.Path.Combine(Folder, "layout.json");
         static bool? diagnostics;
         static readonly string[] EssentialTags={"SAVE","START","LOAD","ERROR","SESSION_END","RECOVER","SHUTDOWN","LAUNCH"};
@@ -299,7 +66,7 @@ namespace GlassBoard {
         public const int RestoreMessage=0x8000+47;
         [DllImport("user32.dll",CharSet=CharSet.Unicode)] static extern IntPtr FindWindow(string cls,string title);
         [DllImport("user32.dll",SetLastError=true)] static extern bool PostMessage(IntPtr h,int message,IntPtr w,IntPtr l);
-        public static bool RequestQuit(){var h=FindWindow(null,"GlassBoard Dock");return h!=IntPtr.Zero&&PostMessage(h,0x0010,IntPtr.Zero,IntPtr.Zero);} public static bool RequestRestore() {var h=FindWindow(null,"GlassBoard Dock");return h!=IntPtr.Zero&&PostMessage(h,RestoreMessage,IntPtr.Zero,IntPtr.Zero);}
+        public static bool RequestQuit(){var h=FindWindow(null,"Lumina Dock");return h!=IntPtr.Zero&&PostMessage(h,0x0010,IntPtr.Zero,IntPtr.Zero);} public static bool RequestRestore() {var h=FindWindow(null,"Lumina Dock");return h!=IntPtr.Zero&&PostMessage(h,RestoreMessage,IntPtr.Zero,IntPtr.Zero);}
         [DllImport("user32.dll",SetLastError=true)] public static extern bool RegisterHotKey(IntPtr h,int id,uint mods,uint key);
         [DllImport("user32.dll")] public static extern bool UnregisterHotKey(IntPtr h,int id);
         [DllImport("user32.dll",SetLastError=true)] public static extern bool SetWindowDisplayAffinity(IntPtr h,uint value);
@@ -599,8 +366,8 @@ namespace GlassBoard {
         internal Controller(bool desktop) {
             persistConfiguration=desktop;
             if(!desktop){Prefs=new Preferences();Board=new BoardWindow(this);Dock=new DockWindow(this);return;}
-            Prefs=Store.Load();if(Prefs.ConfigRevision<1){if(Prefs.KeepWindowSeconds<=0)Prefs.KeepWindowSeconds=3;Prefs.ConfigRevision=1;Save();}RunningWindows.KeepWindowSeconds=Prefs.KeepWindowSeconds;if(Prefs.ThemeFollowSystem)Prefs.Light=SystemTheme.IsLight();bool resetMotion=MotionPresets.ApplyInitialBaseline(Prefs);DesktopPersistence.DesktopOnly=Prefs.AllDesktopLayer;if(!string.IsNullOrEmpty(Store.RecoveryMessage))MessageBox.Show(Store.RecoveryMessage,"GlassBoard 配置恢复");if(Prefs.Removed.Count>0||Prefs.RemovedIdentities.Count>0)MigrateRemovalIdentities(); Board=new BoardWindow(this); Dock=new DockWindow(this);glassSuppressed=Prefs.GameMode||(Prefs.AutoGameMode&&FullscreenState.Active());
-            Tray=new Forms.NotifyIcon {Text="GlassBoard v0.2.0 · 玻璃启动台",Icon=Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Drawing.SystemIcons.Application,Visible=true};
+            Prefs=Store.Load();if(Prefs.ConfigRevision<1){if(Prefs.KeepWindowSeconds<=0)Prefs.KeepWindowSeconds=3;Prefs.ConfigRevision=1;Save();}RunningWindows.KeepWindowSeconds=Prefs.KeepWindowSeconds;MigrateLegacyPaths();if(Prefs.ThemeFollowSystem)Prefs.Light=SystemTheme.IsLight();bool resetMotion=MotionPresets.ApplyInitialBaseline(Prefs);DesktopPersistence.DesktopOnly=Prefs.AllDesktopLayer;if(!string.IsNullOrEmpty(Store.RecoveryMessage))MessageBox.Show(Store.RecoveryMessage,"Lumina 配置恢复");if(Prefs.Removed.Count>0||Prefs.RemovedIdentities.Count>0)MigrateRemovalIdentities(); Board=new BoardWindow(this); Dock=new DockWindow(this);glassSuppressed=Prefs.GameMode||(Prefs.AutoGameMode&&FullscreenState.Active());
+            Tray=new Forms.NotifyIcon {Text="Lumina v0.2.0 · 玻璃启动台",Icon=Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Drawing.SystemIcons.Application,Visible=true};
             RefreshTrayMenu();
             Tray.DoubleClick+=(s,e)=>Toggle(true);
             Dock.Refresh(); if(!GlassSuppressed)Dock.Show();
@@ -637,10 +404,10 @@ namespace GlassBoard {
             menu.Items.Add("工作区管理",null,(s,e)=>ManageWorkspaces());foreach(var work in Prefs.Workspaces){var workspace=work;menu.Items.Add("打开工作区 · "+workspace.Name,null,(s,e)=>LaunchWorkspace(workspace));}
             menu.Items.Add("外观方案",null,(s,e)=>ManageSchemes());
             menu.Items.Add("打开配置文件夹",null,(s,e)=>Process.Start(new ProcessStartInfo(Store.Folder){UseShellExecute=true}));
-            menu.Items.Add(new Forms.ToolStripSeparator());menu.Items.Add("退出 GlassBoard",null,(s,e)=>Quit());
+            menu.Items.Add(new Forms.ToolStripSeparator());menu.Items.Add("退出 Lumina",null,(s,e)=>Quit());
             Tray.ContextMenuStrip=menu;if(previous!=null)previous.Dispose();
         }
-        public void Save() { if(!persistConfiguration)return;try { DockOrderRules.Normalize(Prefs);Store.Save(Prefs); } catch(Exception ex) {Store.Log(ex);MessageBox.Show("布局保存失败："+ex.Message,"GlassBoard");} }
+        public void Save() { if(!persistConfiguration)return;try { DockOrderRules.Normalize(Prefs);Store.Save(Prefs); } catch(Exception ex) {Store.Log(ex);MessageBox.Show("布局保存失败："+ex.Message,"Lumina");} }
         public void Refresh() {Save();Dock.Refresh();Board.SyncGroups();Board.Render();RefreshWidgets();}
         public void StartDesktopAutoSync(){if(!persistConfiguration)return;if(autoSync==null)autoSync=new DesktopAutoSync(this);autoSync.Start();}
         public void StopDesktopAutoSync(){if(autoSync!=null){autoSync.Stop();autoSync=null;}}
@@ -656,7 +423,7 @@ namespace GlassBoard {
             catch(Exception ex) { Store.Log(ex); Store.Trace("LAUNCH toggle failed entry="+entry.Name+" error="+ex.Message); }
             if(handled) { Board.CollapseSmooth(); return; }
             try { Process.Start(new ProcessStartInfo(entry.Path){UseShellExecute=true}); Board.CollapseSmooth(); }
-            catch(Exception ex) { Store.Log(ex); Store.Trace("LAUNCH start failed entry="+entry.Name+" error="+ex.Message); if(!Store.Silent)MessageBox.Show("无法打开「"+entry.Name+"」。\n入口可能已移动或卸载。\n\n"+ex.Message,"GlassBoard"); }
+            catch(Exception ex) { Store.Log(ex); Store.Trace("LAUNCH start failed entry="+entry.Name+" error="+ex.Message); if(!Store.Silent)MessageBox.Show("无法打开「"+entry.Name+"」。\n入口可能已移动或卸载。\n\n"+ex.Message,"Lumina"); }
         }
         public void Add(IEnumerable<string> paths,bool manual=true,string targetGroup=null) {
             if(manual&&targetGroup==null&&Board.IsVisible)targetGroup=Board.CurrentGroup;
@@ -688,13 +455,13 @@ namespace GlassBoard {
             Board.ModalBusy=true;
             try {
                 string text="从「"+group+"」移除已选的 "+count+" 个入口？\n"+(group=="全部"?"本次从所有分组与 Dock 移除，原软件和磁盘文件保留。":"同一软件在其他组中的入口保留；原软件和磁盘文件保留。")+"\n移除后可点击「撤销」。";
-                var answer=Board.IsVisible?MessageBox.Show(Board,text,"GlassBoard",MessageBoxButton.YesNo):MessageBox.Show(text,"GlassBoard",MessageBoxButton.YesNo);
+                var answer=Board.IsVisible?MessageBox.Show(Board,text,"Lumina",MessageBoxButton.YesNo):MessageBox.Show(text,"Lumina",MessageBoxButton.YesNo);
                 if(answer==MessageBoxResult.Yes) {foreach(var entry in Prefs.Apps.Where(a=>targets.Contains(a.Path)))LaunchInfoService.Enrich(entry);var before=BeginBoardEdit();EntryRules.Remove(Prefs,targets,group);EndBoardEdit(before,"移除入口");Board.FinishSelection();Refresh();Board.SetStatus("已移除 "+count+" 个入口 · 可撤销本次移除");}
             } finally {Board.ModalBusy=false;}
         }
         public void UndoRemoval(){UndoBoard();}
         public void Pin(Entry a) {
-            if(!a.Pinned && Prefs.Apps.Count(x=>x.Pinned)>=20) {MessageBox.Show("最多固定 20 个入口。请先取消一个固定。","GlassBoard");return;}
+            if(!a.Pinned && Prefs.Apps.Count(x=>x.Pinned)>=20) {MessageBox.Show("最多固定 20 个入口。请先取消一个固定。","Lumina");return;}
             var before=BeginBoardEdit();a.Pinned=!a.Pinned;EndBoardEdit(before,"调整 Dock 固定");Refresh();
         }
         static IEnumerable<string> Shortcuts(string root) {
@@ -723,7 +490,7 @@ namespace GlassBoard {
         public ContextMenu Menu(Entry a,string scope="全部") {
             var menu=MenuTheme.Create(Prefs.Light);
             Action<string,Action> item=(title,action)=> {var mi=new MenuItem{Header=title};mi.Click+=(s,e)=>action();menu.Items.Add(mi);};
-            item("打开",()=>Launch(a));item("打开文件所在位置",()=>{try{FileShellActions.Location(a);}catch(Exception ex){MessageBox.Show(ex.Message,"GlassBoard");}});item("文件属性",()=>{try{FileShellActions.Properties(a.Path);}catch(Exception ex){MessageBox.Show(ex.Message,"GlassBoard");}});item(a.Pinned?"取消 Dock 固定":"固定到 Dock",()=>Pin(a));
+            item("打开",()=>Launch(a));item("打开文件所在位置",()=>{try{FileShellActions.Location(a);}catch(Exception ex){MessageBox.Show(ex.Message,"Lumina");}});item("文件属性",()=>{try{FileShellActions.Properties(a.Path);}catch(Exception ex){MessageBox.Show(ex.Message,"Lumina");}});item(a.Pinned?"取消 Dock 固定":"固定到 Dock",()=>Pin(a));
             if(scope=="Dock"){item("添加软件或文件到 Dock",()=>ChooseDockFiles());AddDockWindowMenus(menu,a);}
             else {
                 item("前移一位",()=> {int i=Prefs.Apps.IndexOf(a);if(i>0){Prefs.Apps.RemoveAt(i);Prefs.Apps.Insert(i-1,a);Refresh();}});
@@ -747,7 +514,7 @@ namespace GlassBoard {
             Action cleanup=()=>{if(cleaned)return;cleaned=true;settingsOpen=false;settingsWindow=null;settingsTabs=null;preview.Stop();stateTimer.Stop();Save();try{if(!ShuttingDown){Dock.Refresh();RefreshWidgets();}}catch(Exception ex){Store.Log(ex);}};
             try {
                 Board.Hide();
-                var w=new Window{Title="GlassBoard · 个性化与控制 v0.2.0 · 抖音 森霖Sama 制作",Width=Math.Min(940,SystemParameters.WorkArea.Width-40),Height=Math.Min(790,SystemParameters.WorkArea.Height-50),MinWidth=560,ResizeMode=ResizeMode.CanResize,WindowStartupLocation=WindowStartupLocation.CenterScreen,Owner=Dock,Topmost=true,Background=new SolidColorBrush(Color.FromRgb(28,30,38)),Foreground=Brushes.White};
+                var w=new Window{Title="Lumina · 个性化与控制 v0.2.0 · 抖音 森霖Sama 制作",Width=Math.Min(940,SystemParameters.WorkArea.Width-40),Height=Math.Min(790,SystemParameters.WorkArea.Height-50),MinWidth=560,ResizeMode=ResizeMode.CanResize,WindowStartupLocation=WindowStartupLocation.CenterScreen,Owner=Dock,Topmost=true,Background=new SolidColorBrush(Color.FromRgb(28,30,38)),Foreground=Brushes.White};
                 settingsWindow=w;w.Closed+=(s,e)=>cleanup();
                 var area=SystemParameters.WorkArea;var vertical=SettingsPlacementRules.Vertical(area.Top,area.Height,Dock.RestingTop,Dock.Height,790);w.WindowStartupLocation=WindowStartupLocation.Manual;w.Left=area.Left+(area.Width-w.Width)/2;w.Top=vertical[0];w.Height=vertical[1];
                 Polish.Apply(w,false);var root=new Grid{Margin=new Thickness(24)};root.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});root.RowDefinitions.Add(new RowDefinition());root.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});w.Content=root;
@@ -889,7 +656,7 @@ namespace GlassBoard {
                 BuildMaterialEditor(widgetsPage,"小组件玻璃材质 DIY",Prefs.Widgets.Material,()=>{RefreshWidgets();Save();});
                 widgetsPage.Children.Add(FeatureUi.Button("重置全部组件位置",()=>{Prefs.Widgets.Panels.Clear();Prefs.Placement.WidgetLeft=Prefs.Placement.WidgetTop=null;RefreshWidgets();Save();}));
                 bool startup=false;string activeTiming=Prefs.StartupTiming;try{startup=StartupService.Enabled;if(startup)activeTiming=StartupService.Mode;}catch(Exception ex){Store.Log(ex);}
-                var startupCheck=new CheckBox{Content="登录 Windows 后自动启动 GlassBoard",IsChecked=startup,Foreground=Brushes.White,Margin=new Thickness(0,10,0,12)};generalPage.Children.Add(startupCheck);
+                var startupCheck=new CheckBox{Content="登录 Windows 后自动启动 Lumina",IsChecked=startup,Foreground=Brushes.White,Margin=new Thickness(0,10,0,12)};generalPage.Children.Add(startupCheck);
                 generalPage.Children.Add(new TextBlock{Text="自启动优先级",Margin=new Thickness(0,4,0,8)});var startupMode=new ComboBox{ItemsSource=StartupRules.Names,SelectedIndex=Array.IndexOf(StartupRules.Modes,StartupRules.Mode(activeTiming)),MinHeight=36};generalPage.Children.Add(startupMode);
                 var startupInfo=new TextBlock{Foreground=Brushes.LightGray,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,10,0,16)};generalPage.Children.Add(startupInfo);bool startupSync=false;
                 Action startupState=()=>{try{bool enabled=StartupService.Enabled;startupInfo.Text=enabled?"已开启："+StartupRules.Names[Array.IndexOf(StartupRules.Modes,StartupService.Mode)]+"。移动程序后请重新应用启动设置。":"未开启；选择优先级会保存，下次开启时生效。";}catch(Exception ex){startupInfo.Text="无法读取启动设置："+ex.GetBaseException().Message;}};
@@ -905,7 +672,7 @@ namespace GlassBoard {
                 generalPage.Children.Add(new TextBlock{Text="部分以管理员权限运行的程序（例如 5E）恢复后会自动最小化；保持窗口会在这几秒内重新拉起它。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,10)});
                 generalPage.Children.Add(new TextBlock{Text="管理员权限",FontSize=18,Margin=new Thickness(0,22,0,10)});
                 generalPage.Children.Add(new TextBlock{Text=AdminService.IsElevated()?"当前以管理员权限运行，可以直接读取提权程序的窗口路径、缩略图与图标。":"当前以普通权限运行：以管理员权限运行的程序，其缩略图、拖拽吸附与前台激活会受限。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,10)});
-                generalPage.Children.Add(FeatureUi.Button("以管理员身份重启 GlassBoard",()=>RestartElevated()));
+                generalPage.Children.Add(FeatureUi.Button("以管理员身份重启 Lumina",()=>RestartElevated()));
                 check(generalPage,"记录诊断日志（排查问题时开启）",Store.Diagnostics,value=>{Store.Diagnostics=value;});
                 generalPage.Children.Add(new TextBlock{Text="关闭时 session.log 只记录启动、保存与错误；开启后会把 Dock 点击、窗口切换、组件刷新等细节写进 session.log。日志超过 1 MB 自动轮转，最多保留 5 份。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,10)});
                 BuildUpdateSettings(generalPage,w);generalPage.Children.Add(FeatureUi.Button("找回旧版入口与分组",()=>RecoverHistoricalEntries(w)));
@@ -938,13 +705,13 @@ namespace GlassBoard {
             try {
                 string message;
                 if(action==1){bool next=hidden??!DesktopVisibility.DesiredHidden(true);if(next&&TaskbarAutoHide.Enabled)TaskbarAutoHide.Set(false);message=DesktopVisibility.SetHidden(true,next);}else if(action==2){bool next=hidden??!cleanDesktopActive;SetCleanDesktop(next);message=next?"已隐藏桌面图标和分区":"已恢复桌面图标和分区";}else {SetCleanDesktop(false);try{TaskbarAutoHide.ShowAndClear();}catch(Exception ex){Store.Log(ex);}DesktopVisibility.ShowAll();message="已执行任务栏与桌面图标恢复";}
-                Board.SetStatus(message);if(Tray!=null)Tray.ShowBalloonTip(1500,"GlassBoard",message,Forms.ToolTipIcon.Info);
-            }catch(Exception ex){Store.Log(ex);MessageBox.Show("无法切换系统界面："+ex.Message,"GlassBoard");}
+                Board.SetStatus(message);if(Tray!=null)Tray.ShowBalloonTip(1500,"Lumina",message,Forms.ToolTipIcon.Info);
+            }catch(Exception ex){Store.Log(ex);MessageBox.Show("无法切换系统界面："+ex.Message,"Lumina");}
         }
         public void Quit() {
             if(ShuttingDown)return;
             try{if(settingsWindow!=null)settingsWindow.Close();Store.Save(Prefs);}
-            catch(Exception ex){Store.Log(ex);MessageBox.Show("退出前保存失败，软件仍保持运行，避免丢失当前内容。\n"+ex.Message,"GlassBoard");return;}
+            catch(Exception ex){Store.Log(ex);MessageBox.Show("退出前保存失败，软件仍保持运行，避免丢失当前内容。\n"+ex.Message,"Lumina");return;}
             ShuttingDown=true;SystemTheme.Changed-=SystemThemeChanged;SystemTheme.Stop();
             try{DesktopVisibility.RestoreOriginal();}catch(Exception ex){Store.Log(ex);}try{TaskbarAutoHide.Restore();}catch(Exception ex){Store.Log(ex);}
             try{CloseControlCenter();CloseWidgets();}catch(Exception ex){Store.Log(ex);}if(Tray!=null){Tray.Visible=false;Tray.Dispose();}Dock.ReleaseHotkey();Application.Current.Shutdown();
@@ -961,7 +728,7 @@ namespace GlassBoard {
         readonly Controller C;readonly string targetGroup;readonly CancellationTokenSource cancellation=new CancellationTokenSource();
         readonly List<AddCandidate> candidates=new List<AddCandidate>();ListBox list;TextBlock status;Button add;WrapPanel sources;CheckBox recursive,launchOnly;bool busy,closed,changing;
         public BatchAddWindow(Controller controller) {
-            C=controller;targetGroup=C.Board.IsVisible?C.Board.CurrentGroup:"全部";Title="GlassBoard · 添加到 "+targetGroup;Width=Math.Min(800,SystemParameters.WorkArea.Width-40);Height=Math.Min(670,SystemParameters.WorkArea.Height-50);
+            C=controller;targetGroup=C.Board.IsVisible?C.Board.CurrentGroup:"全部";Title="Lumina · 添加到 "+targetGroup;Width=Math.Min(800,SystemParameters.WorkArea.Width-40);Height=Math.Min(670,SystemParameters.WorkArea.Height-50);
             WindowStartupLocation=WindowStartupLocation.CenterOwner;Owner=C.Board.IsVisible?(Window)C.Board:C.Dock;Topmost=true;Background=new SolidColorBrush(Color.FromRgb(32,34,42));Foreground=Brushes.White;
             var root=new Grid{Margin=new Thickness(24)};Content=root;root.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});root.RowDefinitions.Add(new RowDefinition());root.RowDefinitions.Add(new RowDefinition{Height=GridLength.Auto});
             var header=new StackPanel();root.Children.Add(header);header.Children.Add(new TextBlock{Text="一次加入应用、文件与文件夹",FontSize=22,Margin=new Thickness(0,0,0,8)});
@@ -1023,7 +790,7 @@ namespace GlassBoard {
         public double RestingTop {get{return shownTop;}}
         public void ScanPaused(bool paused){if(paused){if(runningTimer.IsEnabled)runningTimer.Stop();return;}if(runningTimer.IsEnabled)return;runningTimer.Interval=TimeSpan.FromSeconds(5);runningTimer.Start();}
         public DockWindow(Controller c):base(29) {
-            C=c;Title="GlassBoard Dock";Height=112;ShowActivated=false;Topmost=false;ContentGrid.Children.Add(Items);InitDockPointer();InitializeBackgroundMove();InitTaskDock();
+            C=c;Title="Lumina Dock";Height=112;ShowActivated=false;Topmost=false;ContentGrid.Children.Add(Items);InitDockPointer();InitializeBackgroundMove();InitTaskDock();
             moveGrip=new Thumb{Width=42,Height=6,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,Margin=new Thickness(0,7,0,0),Cursor=Cursors.SizeAll,ToolTip="拖动 Dock；设置中可锁定位置"};Root.Children.Add(moveGrip);
             moveGrip.Template=InvisibleDockGrip();Closing+=(s,e)=>{if(!C.ShuttingDown){e.Cancel=true;Dispatcher.BeginInvoke(new Action(()=>C.Quit()));}};
             moveGrip.DragStarted+=(s,e)=>BeginDockMove();moveGrip.DragDelta+=(s,e)=>{if(!dragging)return;var area=DockPlacementArea(true);Left=FeatureRules.Position(Left+e.HorizontalChange,area.Left,area.Width,Width);Top=DockGeometryRules.Top(Top+e.VerticalChange,area,Height);};moveGrip.DragCompleted+=(s,e)=>FinishDockMove();
@@ -1040,7 +807,7 @@ namespace GlassBoard {
             var quit=new MenuItem{Header="退出"};quit.Click+=(s,e)=>C.Quit();menu.Items.Add(quit);ContextMenu=menu;
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged+=DisplayChanged;
         }
-        void TrayWarning(string shortcuts) {Dispatcher.BeginInvoke(new Action(()=> {if(C.Tray!=null)C.Tray.ShowBalloonTip(3000,"GlassBoard",shortcuts+" 已被占用，对应功能仍可从托盘操作。",Forms.ToolTipIcon.Info);}));}
+        void TrayWarning(string shortcuts) {Dispatcher.BeginInvoke(new Action(()=> {if(C.Tray!=null)C.Tray.ShowBalloonTip(3000,"Lumina",shortcuts+" 已被占用，对应功能仍可从托盘操作。",Forms.ToolTipIcon.Info);}));}
         bool RegisterKey(HotkeySetting key) {bool ok=Native.RegisterHotKey(source.Handle,key.ActionId,key.Modifiers|0x4000,key.Key);if(!ok){int code=Marshal.GetLastWin32Error();Store.Log("RegisterHotKey failed action="+HotkeyRules.Actions[key.ActionId-1]+" key="+HotkeyRules.Label(key),new Win32Exception(code,"RegisterHotKey"));}return ok;}
         void DisplayChanged(object s,EventArgs e) {Dispatcher.BeginInvoke(new Action(()=>{C.Board.Hide();Refresh();}));}
         public bool ApplyHotkeys(List<HotkeySetting> candidate,out string error) {if(hotkeys==null){error="快捷键窗口尚未就绪。";return false;}return hotkeys.TryApply(candidate,out error);}
@@ -1151,7 +918,7 @@ namespace GlassBoard {
         public string CurrentGroup {get{return currentGroup;}}
         public void ClearSearch(){if(Search!=null)Search.Clear();}
         public BoardWindow(Controller c):base(42) {
-            C=c;Title="GlassBoard 应用启动台";AllowDrop=true;InitDragExperience();
+            C=c;Title="Lumina 应用启动台";AllowDrop=true;InitDragExperience();
             IsVisibleChanged+=(s,e)=>{if(IsVisible)idleRelease.Stop();else if(layout!=null)idleRelease.Start();};idleRelease.Tick+=(s,e)=>{if(IsVisible){idleRelease.Stop();return;}if(ReleaseHiddenView())idleRelease.Stop();};Closed+=(s,e)=>{idleRelease.Stop();sizeRefresh.Stop();};
             PreviewKeyDown+=(s,e)=> {
                 if(Search==null||groupDragRunning)return;
@@ -1290,13 +1057,13 @@ namespace GlassBoard {
             tile.MouseMove+=(s,e)=> {if(e.LeftButton!=MouseButtonState.Pressed||dragEntry!=a)return;var p=e.GetPosition(this);if(Math.Abs(p.X-dragStart.X)+Math.Abs(p.Y-dragStart.Y)>10) {dragEntry=null;tile.ReleaseMouseCapture();StartEntryDrag(tile,a);}};
             tile.MouseLeftButtonUp+=(s,e)=> {tile.ReleaseMouseCapture();if(dragEntry==a){dragEntry=null;if(editing){if(!selected.Remove(a.Path))selected.Add(a.Path);Render();e.Handled=true;}else C.Launch(a);}};
             tile.Drop+=(s,e)=> {
-                if(!e.Data.GetDataPresent("GlassBoard.Entry"))return;
-                string path=(string)e.Data.GetData("GlassBoard.Entry");C.ReorderEntry(path,a);e.Handled=true;
+                if(!e.Data.GetDataPresent("Lumina.Entry"))return;
+                string path=(string)e.Data.GetData("Lumina.Entry");C.ReorderEntry(path,a);e.Handled=true;
             };return tile;
         }
-        string[] DraggedEntries(IDataObject data){if(data.GetDataPresent("GlassBoard.Entries"))return (string[])data.GetData("GlassBoard.Entries");if(data.GetDataPresent("GlassBoard.Entry"))return new[]{(string)data.GetData("GlassBoard.Entry")};return new string[0];}
+        string[] DraggedEntries(IDataObject data){if(data.GetDataPresent("Lumina.Entries"))return (string[])data.GetData("Lumina.Entries");if(data.GetDataPresent("Lumina.Entry"))return new[]{(string)data.GetData("Lumina.Entry")};return new string[0];}
         void OpenGroup(string name){FinishSelection();currentGroup=name;docFilter="全部";page=0;ClearSearch();SyncGroups();Render(true);}
-        void RefreshFolders(){if(folderBar==null||groupDragRunning)return;if(activeDrag&&folderBar.Children.Count>0){if(folderBar.Children.OfType<Border>().Select(b=>b.Tag as string).SequenceEqual(new[]{"全部","未分组"}.Concat(C.Prefs.Groups)))return;EndDragPreview();}string signature=currentGroup+"/"+LightTheme+"/"+string.Join("|",new[]{"全部","未分组"}.Concat(C.Prefs.Groups).Select(g=>g+":"+C.Prefs.Apps.Count(a=>FeatureRules.InGroup(a,g))));if(folderSignature==signature&&folderBar.Children.Count>0)return;folderSignature=signature;folderBar.Children.Clear();foreach(string item in new[]{"全部","未分组"}.Concat(C.Prefs.Groups)){string name=item;int count=name=="全部"?C.Prefs.Apps.Count:C.Prefs.Apps.Count(a=>FeatureRules.InGroup(a,name));var normal=name==currentGroup?new SolidColorBrush(Color.FromArgb(55,130,180,255)):new SolidColorBrush(Color.FromArgb(22,255,255,255));var box=new Border{Tag=name,CornerRadius=new CornerRadius(12),Background=normal,Padding=new Thickness(10,6,10,6),Margin=new Thickness(0,0,6,6),Cursor=Cursors.Hand,AllowDrop=true,ToolTip=name=="全部"?"查看全部入口":"点击打开；将一个或多个入口拖到这里分组"};var label=new StackPanel{Orientation=Orientation.Horizontal};var folderIcon=Polish.Icon(name=="全部"?"grid":"folder",TextBrush,18);folderIcon.Margin=new Thickness(0,0,6,0);label.Children.Add(folderIcon);label.Children.Add(new TextBlock{Text=name+"  "+count,Foreground=TextBrush,FontSize=12,VerticalAlignment=VerticalAlignment.Center});box.Child=label;AttachGroupReorder(box,name);box.DragEnter+=(sender,e)=>{if(DraggedEntries(e.Data).Length>0||e.Data.GetDataPresent(DataFormats.FileDrop)){BeginGroupHover(name);box.Background=new SolidColorBrush(Color.FromArgb(90,100,160,240));e.Effects=GroupDragEffect(e.Data,name);e.Handled=true;}};box.DragOver+=(sender,e)=>{if(DraggedEntries(e.Data).Length>0||e.Data.GetDataPresent(DataFormats.FileDrop))BeginGroupHover(name);e.Effects=GroupDragEffect(e.Data,name);e.Handled=true;};box.DragLeave+=(sender,e)=>{StopGroupHover(name);box.Background=normal;};box.Drop+=(sender,e)=>{e.Handled=true;if(name=="全部")return;var paths=DraggedEntries(e.Data);if(paths.Length>0){string from=e.Data.GetDataPresent("GlassBoard.SourceGroup")?(string)e.Data.GetData("GlassBoard.SourceGroup"):currentGroup;C.TransferEntries(paths,from,name);}else if(e.Data.GetDataPresent(DataFormats.FileDrop)){C.Add((string[])e.Data.GetData(DataFormats.FileDrop),true,name);OpenGroup(name);SetStatus("已添加到「"+name+"」");}};folderBar.Children.Add(box);}}
+        void RefreshFolders(){if(folderBar==null||groupDragRunning)return;if(activeDrag&&folderBar.Children.Count>0){if(folderBar.Children.OfType<Border>().Select(b=>b.Tag as string).SequenceEqual(new[]{"全部","未分组"}.Concat(C.Prefs.Groups)))return;EndDragPreview();}string signature=currentGroup+"/"+LightTheme+"/"+string.Join("|",new[]{"全部","未分组"}.Concat(C.Prefs.Groups).Select(g=>g+":"+C.Prefs.Apps.Count(a=>FeatureRules.InGroup(a,g))));if(folderSignature==signature&&folderBar.Children.Count>0)return;folderSignature=signature;folderBar.Children.Clear();foreach(string item in new[]{"全部","未分组"}.Concat(C.Prefs.Groups)){string name=item;int count=name=="全部"?C.Prefs.Apps.Count:C.Prefs.Apps.Count(a=>FeatureRules.InGroup(a,name));var normal=name==currentGroup?new SolidColorBrush(Color.FromArgb(55,130,180,255)):new SolidColorBrush(Color.FromArgb(22,255,255,255));var box=new Border{Tag=name,CornerRadius=new CornerRadius(12),Background=normal,Padding=new Thickness(10,6,10,6),Margin=new Thickness(0,0,6,6),Cursor=Cursors.Hand,AllowDrop=true,ToolTip=name=="全部"?"查看全部入口":"点击打开；将一个或多个入口拖到这里分组"};var label=new StackPanel{Orientation=Orientation.Horizontal};var folderIcon=Polish.Icon(name=="全部"?"grid":"folder",TextBrush,18);folderIcon.Margin=new Thickness(0,0,6,0);label.Children.Add(folderIcon);label.Children.Add(new TextBlock{Text=name+"  "+count,Foreground=TextBrush,FontSize=12,VerticalAlignment=VerticalAlignment.Center});box.Child=label;AttachGroupReorder(box,name);box.DragEnter+=(sender,e)=>{if(DraggedEntries(e.Data).Length>0||e.Data.GetDataPresent(DataFormats.FileDrop)){BeginGroupHover(name);box.Background=new SolidColorBrush(Color.FromArgb(90,100,160,240));e.Effects=GroupDragEffect(e.Data,name);e.Handled=true;}};box.DragOver+=(sender,e)=>{if(DraggedEntries(e.Data).Length>0||e.Data.GetDataPresent(DataFormats.FileDrop))BeginGroupHover(name);e.Effects=GroupDragEffect(e.Data,name);e.Handled=true;};box.DragLeave+=(sender,e)=>{StopGroupHover(name);box.Background=normal;};box.Drop+=(sender,e)=>{e.Handled=true;if(name=="全部")return;var paths=DraggedEntries(e.Data);if(paths.Length>0){string from=e.Data.GetDataPresent("Lumina.SourceGroup")?(string)e.Data.GetData("Lumina.SourceGroup"):currentGroup;C.TransferEntries(paths,from,name);}else if(e.Data.GetDataPresent(DataFormats.FileDrop)){C.Add((string[])e.Data.GetData(DataFormats.FileDrop),true,name);OpenGroup(name);SetStatus("已添加到「"+name+"」");}};folderBar.Children.Add(box);}}
         void RefreshDocBar(){
             if(docBar==null)return;
             bool visible=!C.Prefs.BoardHideGroups&&string.Equals(currentGroup,C.Prefs.DesktopDocsGroup,StringComparison.OrdinalIgnoreCase);
@@ -1327,10 +1094,10 @@ namespace GlassBoard {
             if(args.Length>0 && args[0]=="--self-test"){Store.Silent=true;return SelfTest.Run();}
             if(args.Length>1 && args[0]=="--toggle-check") return ToggleCheck(args);
             if(args.Length>0 && args[0]=="--restore-shell") {
-                try {if(Native.RequestRestore())return 0;try{TaskbarAutoHide.ShowAndClear();}catch(Exception ex){Store.Log(ex);}DesktopVisibility.ShowAll();MessageBox.Show("已执行任务栏和桌面图标恢复。","GlassBoard");return 0;}catch(Exception ex){MessageBox.Show(ex.Message,"GlassBoard");return 1;}
+                try {if(Native.RequestRestore())return 0;try{TaskbarAutoHide.ShowAndClear();}catch(Exception ex){Store.Log(ex);}DesktopVisibility.ShowAll();MessageBox.Show("已执行任务栏和桌面图标恢复。","Lumina");return 0;}catch(Exception ex){MessageBox.Show(ex.Message,"Lumina");return 1;}
             }
-            bool created;using(var mutex=new Mutex(true,"Local\\GlassBoard.Desktop.v1",out created)) {
-                if(!created){MessageBox.Show("已有 GlassBoard 在运行，本次启动的 v0.2.0 尚未运行。\n请先从托盘退出已有程序，再启动此版本。","GlassBoard v0.2.0");return 0;}
+            bool created;using(var mutex=new Mutex(true,"Local\\Lumina.Desktop.v1",out created)) {
+                if(!created){MessageBox.Show("已有 Lumina 在运行，本次启动的 v0.2.0 尚未运行。\n请先从托盘退出已有程序，再启动此版本。","Lumina v0.2.0");return 0;}
                 try {
                     Store.Trace("START exe="+System.Reflection.Assembly.GetExecutingAssembly().Location+" OS="+Environment.OSVersion+" CLR="+Environment.Version);
                     try{DesktopVisibility.Recover();}catch(Exception ex){Store.Log(ex);}
@@ -1338,9 +1105,9 @@ namespace GlassBoard {
                     var app=new Application {ShutdownMode=ShutdownMode.OnExplicitShutdown};
                     app.Exit+=(s,e)=>{try{DesktopVisibility.RestoreOriginal();}catch(Exception ex){Store.Log(ex);}try{TaskbarAutoHide.Restore();}catch(Exception ex){Store.Log(ex);}};
                     Controller controller=null;
-                    app.DispatcherUnhandledException+=(s,e)=>{Store.Log(e.Exception);if(controller!=null)try{Store.Save(controller.Prefs);}catch(Exception saveError){Store.Log(saveError);}MessageBox.Show("操作失败，详情已记录在配置文件夹 error.log。\n"+e.Exception.Message,"GlassBoard");e.Handled=true;};
+                    app.DispatcherUnhandledException+=(s,e)=>{Store.Log(e.Exception);if(controller!=null)try{Store.Save(controller.Prefs);}catch(Exception saveError){Store.Log(saveError);}MessageBox.Show("操作失败，详情已记录在配置文件夹 error.log。\n"+e.Exception.Message,"Lumina");e.Handled=true;};
                     controller=new Controller();app.SessionEnding+=(s,e)=>controller.SaveSession();if(args.Any(a=>a=="--recover-widgets"))controller.RecoverWidgets();app.Run();GC.KeepAlive(controller);return 0;
-                } catch(Exception ex){Store.Log(ex);MessageBox.Show("启动失败："+ex.Message,"GlassBoard");return 1;}
+                } catch(Exception ex){Store.Log(ex);MessageBox.Show("启动失败："+ex.Message,"Lumina");return 1;}
             }
         }
         static int ToggleCheck(string[] args){
@@ -1365,67 +1132,4 @@ namespace GlassBoard {
             return 0;
         }
     }
-    public static class SelfTest {
-        sealed class ButtonTestWindow : GlassWindow {
-            public ButtonTestWindow() : base(12) {}
-            void RequireCaptureAllowed(){uint affinity;var handle=new WindowInteropHelper(this).EnsureHandle();if(!Native.GetWindowDisplayAffinity(handle,out affinity))throw new Win32Exception(Marshal.GetLastWin32Error(),"GetWindowDisplayAffinity self-test");if(affinity!=0)throw new Exception("玻璃窗口仍被标记为限制屏幕捕获："+affinity);}
-            public void CheckCaptureCompatibility(){Width=240;Height=180;Left=SystemParameters.WorkArea.Left+20;Top=SystemParameters.WorkArea.Top+20;RequireCaptureAllowed();Backdrop(false);RequireCaptureAllowed();Show();Backdrop(true);RequireCaptureAllowed();Hide();RequireCaptureAllowed();}
-            public void CheckHandlers() {
-                var deferred=Button("编辑",null,60);bool deferredCalled=false;
-                deferred.ApplyTemplate();
-                deferred.Click+=(s,e)=>deferredCalled=true;
-                deferred.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
-                bool inlineCalled=false;var inline=Button("添加",(s,e)=>inlineCalled=true);
-                inline.ApplyTemplate();
-                inline.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
-                if(!deferredCalled||!inlineCalled)throw new Exception("按钮事件绑定失败");
-                foreach(string icon in new string[]{"play","pause","next","previous","music","shuffle","repeat","sun"}){var control=Button("",null,52);control.Content=Polish.Icon(icon,Polish.Ink(true),22);control.ApplyTemplate();control.Measure(new Size(52,52));control.Arrange(new Rect(0,0,52,52));if(control.DesiredSize.Width<=0)throw new Exception("组件图标布局失败："+icon);}
-                var toggle=Controller.VisibilitySwitch();toggle.ApplyTemplate();var thumb=(Border)toggle.Template.FindName("Thumb",toggle);
-                toggle.IsChecked=true;if(thumb.HorizontalAlignment!=HorizontalAlignment.Right)throw new Exception("开关开启状态失败");
-                toggle.IsChecked=false;if(thumb.HorizontalAlignment!=HorizontalAlignment.Left)throw new Exception("开关关闭状态失败");int clicks=0;toggle.Click+=(s,e)=>clicks++;toggle.IsChecked=true;toggle.IsChecked=false;if(clicks!=0)throw new Exception("状态同步触发了用户点击");toggle.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));if(clicks!=1)throw new Exception("组件点击命令没有执行");
-            }
-        }
-        static string running;
-        static System.Threading.Timer watchdog;
-        static readonly List<string> failures=new List<string>();
-        static void Arm(string name,int seconds){running=name;Disarm();watchdog=new System.Threading.Timer(state=>{try{File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"self-test-result.txt"),"TIMEOUT: "+(running??"self-test")+"（超过 "+seconds+" 秒无响应，已跳过后续检查）\r\n",Encoding.UTF8);}catch{}Environment.Exit(2);},null,seconds*1000,System.Threading.Timeout.Infinite);}
-        static void Disarm(){var timer=watchdog;watchdog=null;if(timer!=null)try{timer.Dispose();}catch{}}
-        static void Check(string name,int seconds,Action action){Arm(name,seconds);try{action();}catch(Exception ex){failures.Add(name+"："+ex.GetBaseException().Message);}finally{Disarm();}}
-        static void Step(string name,int seconds,Action action){Check(name,seconds,action);}
-        public static int Run() {
-            try {
-                Step("内存资源",60,()=>CheckMemoryResources());
-                Step("菜单外观",90,()=>MenuAppearanceChecks.Run());
-                Step("Dock 行为",90,()=>DockBehaviorChecks.Run());
-                Step("反馈面板",90,()=>FeedbackChecks.Run());
-                Step("反馈面板 1.8",90,()=>Feedback18Checks.Run());
-                Step("组件外观",90,()=>PersonalizationChecks.Run());
-                Step("按钮与捕获",90,()=>{var buttons=new ButtonTestWindow();try{buttons.CheckHandlers();buttons.CheckCaptureCompatibility();}finally{buttons.Close();}});
-                Step("主题模板",180,()=>{foreach(bool light in new bool[]{false,true}){var styled=new Window{Width=440,Height=350};try{Polish.Apply(styled,light);var panel=new StackPanel();styled.Content=panel;var button=new Button{Content="样式"};var combo=new ComboBox{ItemsSource=new string[]{"A","B"},SelectedIndex=0};var text=new TextBox{Text=new string('长',120),FontSize=17,TextWrapping=TextWrapping.Wrap,MinHeight=48,Padding=new Thickness(12,9,12,9)};var check=new CheckBox{Content="显示",IsChecked=true};var slider=new Slider{Minimum=0,Maximum=100,Value=25};panel.Children.Add(button);panel.Children.Add(combo);panel.Children.Add(text);panel.Children.Add(check);panel.Children.Add(slider);new WindowInteropHelper(styled).EnsureHandle();styled.ShowInTaskbar=false;styled.ShowActivated=false;styled.WindowStartupLocation=WindowStartupLocation.Manual;styled.Left=SystemParameters.WorkArea.Right-470;styled.Top=SystemParameters.WorkArea.Bottom-380;styled.Show();styled.ShowInTaskbar=false;styled.WindowStartupLocation=WindowStartupLocation.Manual;styled.Left=SystemParameters.WorkArea.Right-470;styled.Top=SystemParameters.WorkArea.Bottom-380;styled.Show();panel.Measure(new Size(400,300));panel.Arrange(new Rect(0,0,400,300));panel.UpdateLayout();foreach(var control in new Control[]{button,combo,text,check,slider})control.ApplyTemplate();foreach(double font in new[]{13.0,17.0,24.0}){var probe=new TextBox{Text="闹钟 08:30 中文测试",FontSize=font};panel.Children.Add(probe);probe.ApplyTemplate();probe.Measure(new Size(360,double.PositiveInfinity));probe.Arrange(new Rect(0,0,360,probe.DesiredSize.Height));probe.UpdateLayout();var host=(ScrollViewer)probe.Template.FindName("PART_ContentHost",probe);var line=new TextBlock{Text=probe.Text,FontFamily=probe.FontFamily,FontSize=font};line.Measure(new Size(360,double.PositiveInfinity));if(host==null||host.ViewportHeight+.5<line.DesiredSize.Height)throw new Exception("输入框文字被裁切："+font);panel.Children.Remove(probe);}var track=(Track)slider.Template.FindName("PART_Track",slider);if(track==null||track.Thumb==null)throw new Exception("新滑块模板无 Thumb");slider.Value=75;if(Math.Abs(track.Value-75)>.01)throw new Exception("新滑块值绑定失败");text.Measure(new Size(320,double.PositiveInfinity));if(text.DesiredSize.Height<=48)throw new Exception("长便签标题没有按行增高");var checkBoxPart=(Border)check.Template.FindName("Box",check);if(checkBoxPart==null)throw new Exception("勾选框缺少点击区域");foreach(bool state in new bool[]{false,true,false,true}){check.IsChecked=state;panel.UpdateLayout();var point=checkBoxPart.TranslatePoint(new Point(checkBoxPart.ActualWidth/2,checkBoxPart.ActualHeight/2),check);if(check.InputHitTest(point)==null)throw new Exception("勾选框中心不能点击，状态="+state);var templateRoot=(FrameworkElement)VisualTreeHelper.GetChild(check,0);var gap=templateRoot.TranslatePoint(new Point(23,templateRoot.ActualHeight/2),check);if(check.InputHitTest(gap)==null)throw new Exception("勾选框与文字间隙不能点击");}if(combo.Template.FindName("PART_Popup",combo)==null)throw new Exception("新下拉模板无 Popup");}finally{styled.Close();}}});
-
-                Step("配置与资源",120,()=>{var p=new Preferences{Light=true,DockGap=25,Imported=true,OpacityPercent=40};p.Removed.Add("C:\\工具.lnk");
-                p.Apps.Add(new Entry{Name="中文 软件",Path="C:\\测试目录\\工具.lnk",Pinned=true});
-                using(var s=new MemoryStream()) {
-                    var json=new DataContractJsonSerializer(typeof(Preferences));json.WriteObject(s,p);s.Position=0;
-                    var restored=(Preferences)json.ReadObject(s);
-                    if(restored.Apps.Count!=1||restored.Apps[0].Name!="中文 软件"||!restored.Apps[0].Pinned||restored.DockGap!=25||restored.OpacityPercent!=40||restored.Removed.Count!=1)throw new Exception("配置往返失败");
-                }
-                if(LayoutRules.Pages(0,35)!=1||LayoutRules.Pages(35,35)!=1||LayoutRules.Pages(36,35)!=2||LayoutRules.Pages(70,35)!=2)throw new Exception("分页边界失败");
-                if(!LayoutRules.Matches("Microsoft Visual Studio Code","code MICROSOFT")||!LayoutRules.Matches("剪映专业版","剪映")||LayoutRules.Matches("Steam","maya"))throw new Exception("搜索失败");
-                if(LayoutRules.GlassOpacity(-1)!=0||LayoutRules.GlassOpacity(100)!=100||LayoutRules.GlassOpacity(double.NaN)!=72)throw new Exception("透明度边界失败");
-                foreach(string key in new[]{"Wechat","Alipay"})using(var stream=new MemoryStream(CreatorAssets.Read(key),false)){var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.StreamSource=stream;bitmap.EndInit();if(bitmap.PixelWidth<200||bitmap.PixelHeight<200)throw new Exception("收款图片尺寸异常");bitmap.Freeze();}});
-                Disarm();string resultPath=System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"self-test-result.txt");
-                if(failures.Count>0){File.WriteAllText(resultPath,"FAILED（其余检查已继续执行）：\r\n"+string.Join("\r\n",failures.ToArray())+"\r\n",Encoding.UTF8);return 1;}
-                File.WriteAllText(resultPath,"PASS: transparent material bounds and widget recovery menu; Dock rendering/order/mouse-capture release and native process path/reuse; light/dark nested menus, submenu open/close, checkmarks, disabled items, header sliders, shortcut overlay cache and legacy configuration; shared theme styles, bounded thumbnails and stream-independent pixels, hidden board release/reopen; recordable glass window affinity before/after backdrop/show/hide; embedded creator image decoding, WPF light/dark button/combo/text/check/slider templates, value bindings, button handlers, visibility switch, configuration, removed entries, opacity bounds, pages and search\r\n",Encoding.UTF8);return 0;
-            }catch(Exception ex){Disarm();File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"self-test-result.txt"),ex.ToString());return 1;}
-        }
-        static void CheckMemoryResources(){
-            var one=new Window();var two=new Window();try{foreach(bool light in new[]{false,true}){Polish.Apply(one,light);Polish.Apply(two,light);foreach(var type in new[]{typeof(Button),typeof(TextBox),typeof(ComboBox),typeof(Slider),typeof(CheckBox)}){var style=(Style)one.Resources[type];if(!style.IsSealed||!object.ReferenceEquals(style,two.Resources[type]))throw new Exception("主题样式未共享："+type.Name);}Polish.Apply(one,light);}}finally{one.Close();two.Close();}
-            foreach(var dims in new[]{new[]{512,4096},new[]{4096,512},new[]{64,64}}){byte[] pixels=new byte[dims[0]*dims[1]];var source=BitmapSource.Create(dims[0],dims[1],96,96,PixelFormats.Gray8,null,pixels,dims[0]);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(source));using(var stream=new MemoryStream()){encoder.Save(stream);var image=ThumbnailImages.Read(stream.ToArray(),600);if(!image.IsFrozen||image.PixelWidth>600||image.PixelHeight>600||image.PixelWidth>dims[0]||image.PixelHeight>dims[1])throw new Exception("缩略图尺寸或冻结状态无效");int stride=(image.PixelWidth*image.Format.BitsPerPixel+7)/8;image.CopyPixels(new byte[stride*image.PixelHeight],stride,0);}}
-            var controller=new Controller(false);try{controller.Prefs.Groups.Add("内存检查分组");controller.Board.Open();if(!controller.Board.HasView||!controller.Board.IsVisible)throw new Exception("面板未创建");controller.Board.Hide();controller.Board.ModalBusy=true;if(controller.Board.ReleaseHiddenView())throw new Exception("忙碌时清理了面板");controller.Board.ModalBusy=false;if(!controller.Board.ReleaseHiddenView()||controller.Board.HasView)throw new Exception("隐藏面板资源未释放");controller.Board.Render();controller.Board.Open();if(!controller.Board.HasView||!controller.Board.IsVisible||!controller.Prefs.Groups.Contains("内存检查分组"))throw new Exception("面板重开或配置保留失败");}finally{controller.ShuttingDown=true;controller.Dock.ReleaseHotkey();controller.Board.Close();controller.Dock.Close();}
-        }
-    }
 }
-
-
-

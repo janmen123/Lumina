@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace GlassBoard {
+namespace Lumina {
     // Turns a mixed Chinese/Latin name into pinyin-initial text ("抖音" → "dy") so
     // search boxes can match by the first letter of each character. The mapping is
     // derived from GB2312 code ranges, which covers common simplified Chinese without

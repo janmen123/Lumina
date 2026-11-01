@@ -1,4 +1,4 @@
-using System;using System.Linq;using GlassBoard;
+using System;using System.Linq;using Lumina;
 class Review {static int Main(){int failures=0;Action<bool,string> check=(ok,name)=>{Console.WriteLine((ok?"PASS: ":"FAIL: ")+name);if(!ok)failures++;};
 var p=new Preferences();p.Apps.Add(new Entry{Path="same.exe",Group="A",ExtraGroups=new System.Collections.Generic.List<string>{"B"}});var removal=EntryRules.Remove(p,new[]{"same.exe"},"A");FeatureRules.AddShared(p,new[]{"same.exe"},"C");EntryRules.Undo(p,removal);check(FeatureRules.InGroup(p.Apps[0],"C"),"undo retains group added after removal");
 p=new Preferences();p.Apps.Add(new Entry{Path="same.exe",Group="A",ExtraGroups=new System.Collections.Generic.List<string>{"B"}});FeatureRules.Transfer(p,new[]{"same.exe"},"全部","C");check(FeatureRules.InGroup(p.Apps[0],"A")&&FeatureRules.InGroup(p.Apps[0],"B")&&FeatureRules.InGroup(p.Apps[0],"C"),"all-view drop retains existing memberships");

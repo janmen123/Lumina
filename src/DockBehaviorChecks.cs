@@ -5,7 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 
-namespace GlassBoard {
+namespace Lumina {
     public static class DockBehaviorChecks {
         public static void Run(){
             var path=RunningWindows.ProcessPath((uint)Process.GetCurrentProcess().Id);if(string.IsNullOrEmpty(path))throw new Exception("窗口进程路径读取失败");

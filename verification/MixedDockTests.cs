@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Linq;using System.Text;using System.Collections.Generic;using System.Runtime.Serialization.Json;using GlassBoard;
+using System;using System.IO;using System.Linq;using System.Text;using System.Collections.Generic;using System.Runtime.Serialization.Json;using Lumina;
 class MixedDockTests {
     static int count;static void Check(bool test,string name){count++;if(!test)throw new Exception(name);}
     static T RoundTrip<T>(T item){using(var s=new MemoryStream()){var j=new DataContractJsonSerializer(typeof(T));j.WriteObject(s,item);s.Position=0;return (T)j.ReadObject(s);}}

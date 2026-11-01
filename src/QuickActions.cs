@@ -1,5 +1,5 @@
 using System;using System.Diagnostics;using System.Runtime.InteropServices;using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;
-namespace GlassBoard {
+namespace Lumina {
     public partial class DockWindow {
         [DllImport("PowrProf.dll",SetLastError=true)] [return:MarshalAs(UnmanagedType.U1)] static extern bool SetSuspendState([MarshalAs(UnmanagedType.U1)]bool hibernate,[MarshalAs(UnmanagedType.U1)]bool force,[MarshalAs(UnmanagedType.U1)]bool disableWake);
         void AddQuickButtons(){if(C.Prefs.Dock.ShowRecycleBin)AddSystemButton(DockLayoutRules.RecycleBin,DockButton("♻",null,OpenRecycleBin,"回收站"),OpenRecycleBin);if(C.Prefs.Dock.ShowPower)AddQuickButton(DockLayoutRules.Power,"⏻","电源",new[]{"睡眠","重启","关机"},i=>Power(i));if(C.Prefs.Dock.ShowNetwork)AddQuickButton(DockLayoutRules.Network,"⌁","控制中心",new[]{"打开控制中心","小球设置"},i=>{if(i==0)C.OpenControlCenter();else C.ControlCenterSettings(this);});}

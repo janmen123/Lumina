@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-namespace GlassBoard {
+namespace Lumina {
     public partial class WidgetOptions {
         [DataMember] public bool IslandEnabled,IslandGlass;
         [DataMember(EmitDefaultValue=false)] public bool? IslandMotion;
@@ -20,12 +20,12 @@ namespace GlassBoard {
         Point start;bool down,dragged;
         public override bool WantsTopmost{get{return false;}}
         public IslandWindow(WidgetManager m):base(28) {
-            manager=m;Title="GlassBoard 灵动岛";Width=132;Height=68;Root.Margin=new Thickness(10);Surface.Effect=null;
+            manager=m;Title="Lumina 灵动岛";Width=132;Height=68;Root.Margin=new Thickness(10);Surface.Effect=null;
             Surface.CornerRadius=new CornerRadius(26);Surface.BorderThickness=new Thickness(1);
             ContentGrid.Children.Add(content);
             header.Height=48;header.Margin=new Thickness(13,0,13,0);header.Cursor=Cursors.Hand;
             header.ColumnDefinitions.Add(new ColumnDefinition{Width=GridLength.Auto});header.ColumnDefinitions.Add(new ColumnDefinition());header.ColumnDefinitions.Add(new ColumnDefinition{Width=GridLength.Auto});
-            title.Foreground=Brushes.White;title.FontSize=13;title.FontWeight=FontWeights.SemiBold;title.TextTrimming=TextTrimming.CharacterEllipsis;title.Text="GlassBoard";header.Children.Add(title);
+            title.Foreground=Brushes.White;title.FontSize=13;title.FontWeight=FontWeights.SemiBold;title.TextTrimming=TextTrimming.CharacterEllipsis;title.Text="Lumina";header.Children.Add(title);
             subtitle.Foreground=new SolidColorBrush(Color.FromArgb(170,255,255,255));subtitle.FontSize=10;subtitle.TextTrimming=TextTrimming.CharacterEllipsis;Grid.SetColumn(subtitle,1);subtitle.Margin=new Thickness(8,0,0,0);header.Children.Add(subtitle);
             time.Foreground=Brushes.White;time.FontFamily=new FontFamily("Segoe UI");time.FontSize=16;time.FontWeight=FontWeights.SemiBold;time.VerticalAlignment=VerticalAlignment.Center;time.Margin=new Thickness(8,0,0,0);Grid.SetColumn(time,2);header.Children.Add(time);
             content.Children.Add(header);

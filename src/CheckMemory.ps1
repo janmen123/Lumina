@@ -4,16 +4,16 @@ $root=Split-Path -Parent $PSScriptRoot
 $samples=New-Object 'Collections.Generic.List[object]'
 $previousCpu=@{}
 $end=(Get-Date).AddSeconds($Seconds)
-Write-Host 'GlassBoard CPU and memory sampling. Keep the same widgets/player/layout for comparisons.'
+Write-Host 'Lumina CPU and memory sampling. Keep the same widgets/player/layout for comparisons.'
 Write-Host 'Open or hide the panel during sampling to check retention. No process memory is modified.'
 do {
     $processes=@(Get-CimInstance Win32_Process)
-    $main=@($processes | Where-Object {$_.Name -ieq 'GlassBoard.exe' -and $_.CommandLine -notmatch '--netease-ui-bridge|--self-test|--restore-shell'})
-    if($main.Count -eq 0){throw 'GlassBoard is not running. Start it before running this check.'}
+    $main=@($processes | Where-Object {$_.Name -ieq 'Lumina.exe' -and $_.CommandLine -notmatch '--netease-ui-bridge|--self-test|--restore-shell'})
+    if($main.Count -eq 0){throw 'Lumina is not running. Start it before running this check.'}
     $ids=New-Object 'Collections.Generic.HashSet[int]'
     foreach($item in $main){[void]$ids.Add([int]$item.ProcessId)}
     do {$changed=$false;foreach($item in $processes){
-        $musicHelper=(($item.Name -ieq 'powershell.exe' -or $item.Name -ieq 'pwsh.exe') -and $item.CommandLine -match '(?:Native)?MediaBridge\.ps1|-EncodedCommand') -or ($item.Name -ieq 'GlassBoard.exe' -and $item.CommandLine -match '--netease-ui-bridge')
+        $musicHelper=(($item.Name -ieq 'powershell.exe' -or $item.Name -ieq 'pwsh.exe') -and $item.CommandLine -match '(?:Native)?MediaBridge\.ps1|-EncodedCommand') -or ($item.Name -ieq 'Lumina.exe' -and $item.CommandLine -match '--netease-ui-bridge')
         if($musicHelper -and $ids.Contains([int]$item.ParentProcessId) -and $ids.Add([int]$item.ProcessId)){$changed=$true}
     }}while($changed)
     $stamp=(Get-Date).ToString('o')

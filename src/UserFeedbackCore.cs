@@ -1,5 +1,5 @@
 using System;using System.Collections.Generic;using System.Linq;using System.IO;using System.Runtime.Serialization;
-namespace GlassBoard {
+namespace Lumina {
     public static class RemovalRules {
         public static string Identity(Entry entry){if(entry==null)return null;string target=WindowActivationRules.NormalizePath(entry.LaunchTarget);if(string.IsNullOrWhiteSpace(target))return "path|"+(WindowActivationRules.NormalizePath(entry.Path)??"");return "target|"+target+"|"+(entry.LaunchArguments??"").Trim();}
         public static bool Blocked(Preferences prefs,Entry entry){return (prefs.Removed??new List<string>()).Any(p=>string.Equals(WindowActivationRules.NormalizePath(p),WindowActivationRules.NormalizePath(entry.Path),StringComparison.OrdinalIgnoreCase))||(prefs.RemovedIdentities??new List<string>()).Contains(Identity(entry),StringComparer.OrdinalIgnoreCase);}

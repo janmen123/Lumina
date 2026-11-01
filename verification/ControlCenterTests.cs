@@ -1,4 +1,4 @@
-using System;using System.IO;using System.Text;using System.Runtime.Serialization.Json;using GlassBoard;
+using System;using System.IO;using System.Text;using System.Runtime.Serialization.Json;using Lumina;
 class ControlCenterTests {
     static int checks;
     static void Check(bool result,string message){checks++;if(!result)throw new Exception(message);}

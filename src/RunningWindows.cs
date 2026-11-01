@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;using System.Windows.Media;using System.Windows.Media.Imaging;using System.Windows.Interop;
 
-namespace GlassBoard {
+namespace Lumina {
     public sealed class RunningWindow {public IntPtr Handle;public uint ProcessId;public string Path,Title,FolderPath,AppId,ProcessName,Class;}
     public static partial class RunningWindows {
         delegate bool Callback(IntPtr window,IntPtr value);

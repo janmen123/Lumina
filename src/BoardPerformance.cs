@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Text;using System.Windows;using System.Windows.Controls;using System.Windows.Media;using System.Windows.Threading;
-namespace GlassBoard {
+namespace Lumina {
     public partial class BoardWindow {
         string viewStructureKey,viewDataKey;bool viewRenderDirty=true,openingFrame;
         readonly DispatcherTimer openingSettled=new DispatcherTimer(DispatcherPriority.Background){Interval=TimeSpan.FromMilliseconds(220)};

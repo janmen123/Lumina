@@ -1,5 +1,5 @@
 using System;using System.Threading.Tasks;using System.Windows.Controls;using System.Windows.Media;
-namespace GlassBoard {
+namespace Lumina {
  public sealed partial class ControlCenterWindow {
   TextBlock nativeTrayStatus;
   void ShowTray(){MarkSection("tray");page="tray";volumeDelay.Stop();brightnessDelay.Stop();SetSectionSize(true);body.Children.Clear();

@@ -1,5 +1,5 @@
 using System;using System.IO;using System.IO.Compression;using System.Text;
-namespace GlassBoard {
+namespace Lumina {
     // Real, editable files. CreateNew prevents overwriting an existing document.
     public static class BoardFiles {
         public static readonly string[] Extensions={".txt",".md",".docx",".xlsx"};

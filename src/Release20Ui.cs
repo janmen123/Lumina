@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;using System.Windows.Input;using System.Windows.Media;using System.Windows.Media.Animation;using System.Runtime.InteropServices;
-namespace GlassBoard {
+namespace Lumina {
     public static class NativeStartMenu {
         [DllImport("user32.dll")]static extern void keybd_event(byte key,byte scan,uint flags,UIntPtr extra);
         public static void Open(){

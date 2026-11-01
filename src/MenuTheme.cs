@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
 
-namespace GlassBoard {
+namespace Lumina {
     // Popup chrome is themed explicitly: the Windows MenuItem template paints
     // submenu backgrounds with SystemColors even when the item text is themed.
     public sealed class MenuTheme {
@@ -14,7 +14,7 @@ namespace GlassBoard {
             // Token replacement keeps both templates on one palette.
             string background=light?"#EEF7FAFF":"#ED253241",ink=light?"#202635":"#F4F6FC",line=light?"#408396AC":"#35D5E3FF",hover=light?"#26739DDC":"#285F9DDD";
             Func<string,string> palette=x=>x.Replace("@BG",background).Replace("@INK",ink).Replace("@LINE",line).Replace("@HOVER",hover).Replace("@MATERIAL",light?"1":"0").Replace("@ASSEMBLY",typeof(PopupChrome).Assembly.GetName().Name);
-            string itemXaml=@"<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:glass='clr-namespace:GlassBoard;assembly=@ASSEMBLY' TargetType='MenuItem'>
+            string itemXaml=@"<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:glass='clr-namespace:Lumina;assembly=@ASSEMBLY' TargetType='MenuItem'>
 <Grid>
  <Border x:Name='Chrome' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' Background='{TemplateBinding Background}' CornerRadius='8' BorderBrush='Transparent' BorderThickness='1' Padding='{TemplateBinding Padding}'>
   <Grid>
@@ -48,12 +48,12 @@ namespace GlassBoard {
             item.Setters.Add(new Setter(Control.PaddingProperty,new Thickness(8,7,8,7)));
             item.Setters.Add(new Setter(Control.TemplateProperty,(ControlTemplate)XamlReader.Parse(palette(itemXaml))));
             separator=new Style(typeof(Separator));
-            separator.Setters.Add(new Setter(Control.TemplateProperty,(ControlTemplate)XamlReader.Parse(palette(@"<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:glass='clr-namespace:GlassBoard;assembly=@ASSEMBLY' TargetType='Separator'><Border Height='1' Background='@LINE' Margin='28,5,10,5'/></ControlTemplate>"))));
+            separator.Setters.Add(new Setter(Control.TemplateProperty,(ControlTemplate)XamlReader.Parse(palette(@"<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:glass='clr-namespace:Lumina;assembly=@ASSEMBLY' TargetType='Separator'><Border Height='1' Background='@LINE' Margin='28,5,10,5'/></ControlTemplate>"))));
             menu=new Style(typeof(ContextMenu));menu.Setters.Add(new Setter(FrameworkElement.MinWidthProperty,220.0));menu.Setters.Add(new Setter(ContextMenu.HasDropShadowProperty,false));
             menu.Setters.Add(new Setter(Control.ForegroundProperty,Polish.Ink(light)));
             menu.Setters.Add(new Setter(Control.BackgroundProperty,Polish.Color(background)));
             menu.Setters.Add(new Setter(Control.FontSizeProperty,13.0));
-            menu.Setters.Add(new Setter(Control.TemplateProperty,(ControlTemplate)XamlReader.Parse(palette(@"<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:glass='clr-namespace:GlassBoard;assembly=@ASSEMBLY' TargetType='ContextMenu'><Grid Margin='8'><Border BorderBrush='#60000000' BorderThickness='1' CornerRadius='14' IsHitTestVisible='False'><Border.Effect><DropShadowEffect BlurRadius='14' ShadowDepth='3' Opacity='.22'/></Border.Effect></Border><Border Background='{TemplateBinding Background}' glass:PopupChrome.Material='@MATERIAL' BorderBrush='@LINE' BorderThickness='1' CornerRadius='14' Padding='6' SnapsToDevicePixels='True'><ScrollViewer CanContentScroll='False' MaxHeight='420' VerticalScrollBarVisibility='Auto' HorizontalScrollBarVisibility='Disabled'><ItemsPresenter Grid.IsSharedSizeScope='True'/></ScrollViewer></Border></Grid></ControlTemplate>"))));
+            menu.Setters.Add(new Setter(Control.TemplateProperty,(ControlTemplate)XamlReader.Parse(palette(@"<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:glass='clr-namespace:Lumina;assembly=@ASSEMBLY' TargetType='ContextMenu'><Grid Margin='8'><Border BorderBrush='#60000000' BorderThickness='1' CornerRadius='14' IsHitTestVisible='False'><Border.Effect><DropShadowEffect BlurRadius='14' ShadowDepth='3' Opacity='.22'/></Border.Effect></Border><Border Background='{TemplateBinding Background}' glass:PopupChrome.Material='@MATERIAL' BorderBrush='@LINE' BorderThickness='1' CornerRadius='14' Padding='6' SnapsToDevicePixels='True'><ScrollViewer CanContentScroll='False' MaxHeight='420' VerticalScrollBarVisibility='Auto' HorizontalScrollBarVisibility='Disabled'><ItemsPresenter Grid.IsSharedSizeScope='True'/></ScrollViewer></Border></Grid></ControlTemplate>"))));
             item.Seal();separator.Seal();menu.Seal();
         }
         static MenuTheme For(bool light){MenuTheme value;if(!themes.TryGetValue(light,out value)){value=new MenuTheme(light);themes[light]=value;}return value;}

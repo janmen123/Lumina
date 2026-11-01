@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Windows;using System.Windows.Controls;using System.Windows.Media;
-namespace GlassBoard {
+namespace Lumina {
     public static class FeedbackChecks {
         sealed class Probe:GlassWindow {
             public Probe():base(22){}

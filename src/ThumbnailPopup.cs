@@ -7,7 +7,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace GlassBoard {
+namespace Lumina {
     // Hover preview for Dock icons: up to five frosted bubbles in a row, each holding a
     // live DWM thumbnail of one window. Hovering a bubble grows it and nudges the
     // neighbours aside; clicking it brings that window to the front.
@@ -103,7 +103,7 @@ namespace GlassBoard {
         }
 
         Card Create(RunningWindow window,double x,double y,double w,double h) {
-            var parameters=new HwndSourceParameters("GlassBoardCard") {
+            var parameters=new HwndSourceParameters("LuminaCard") {
                 Width=(int)Math.Round(w*scale),Height=(int)Math.Round(h*scale),
                 WindowStyle=unchecked((int)0x80000000),
                 ExtendedWindowStyle=0x08000000|0x00000008,

@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Windows;using System.Windows.Controls;using System.Windows.Media;
-namespace GlassBoard {
+namespace Lumina {
     public sealed partial class WidgetWindow {
         internal void CheckAppearance(){
             foreach(string kind in WidgetRules.Kinds){var style=M.C.Prefs.Widgets.Style(kind);style.Frameless=true;style.TextColor="#33CCFF";

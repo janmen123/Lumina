@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Windows;using System.Windows.Controls;
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         internal void CheckOrbNavigation(){var anchor=new ControlOrbWindow(this);var panel=new ControlCenterWindow(this,anchor);try{panel.CheckPeerSections();panel.CheckReopenAfterTray();}finally{panel.Close();anchor.Close();}}
         internal void CheckFeedback18Pages(){var manual=new StackPanel();BuildManual(manual);var entries=manual.Children.OfType<Expander>().ToList();if(entries.Count<18||entries.Any(e=>e.IsExpanded||!(e.Content is TextBlock)))throw new Exception("说明书折叠条目不完整");var home=new StackPanel();BuildHomePage(home,Dock);if(!home.Children.OfType<Image>().Any(i=>i.Source!=null))throw new Exception("抖音主页码没有加载");var panel=new StackPanel();BuildUpdateSettings(panel,Dock);if(panel.Children.OfType<CheckBox>().Any()||!panel.Children.OfType<TextBox>().Any(t=>t.Text==RepositoryUrl))throw new Exception("GitHub 手动更新入口异常");}

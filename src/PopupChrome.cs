@@ -10,7 +10,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
-namespace GlassBoard {
+namespace Lumina {
     // Shared popup material. Sample only the app's own visual once on opening;
     // never capture the desktop, poll pixels, or blur menu text.
     public static class PopupChrome {

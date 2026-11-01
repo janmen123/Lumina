@@ -1,4 +1,4 @@
-using System;using System.Reflection;using System.Collections;using System.Collections.Generic;using GlassBoard;
+using System;using System.Reflection;using System.Collections;using System.Collections.Generic;using Lumina;
 class FeatureTests {
 static int count;static void Check(bool value,string name){if(!value)throw new Exception(name);Console.WriteLine("PASS "+name);count++;}
 [STAThread]static int Main(){try{

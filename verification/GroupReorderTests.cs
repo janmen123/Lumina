@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Runtime.Serialization.Json;
 using System.Windows;
 using System.Windows.Controls;
-using GlassBoard;
+using Lumina;
 
 public static class GroupReorderTests {
     static int checks;
@@ -68,14 +68,14 @@ public static class GroupReorderTests {
         var flags = BindingFlags.Instance | BindingFlags.NonPublic;
         var dragRunning = typeof(BoardWindow).GetField("groupDragRunning", flags);
         var canDrop = typeof(BoardWindow).GetMethod("CanDropGroup", flags);
-        var groupData = new DataObject(); groupData.SetData("GlassBoard.GroupTabOrder", "学习");
+        var groupData = new DataObject(); groupData.SetData("Lumina.GroupTabOrder", "学习");
         Func<IDataObject, string, bool> accepts = (data, name) => (bool)canDrop.Invoke(board, new object[] { data, name });
         Check(!accepts(groupData, "游戏"), "external group payload rejected");
         dragRunning.SetValue(board, true);
         Check(accepts(groupData, "游戏"), "own group drag accepted");
         Check(!accepts(groupData, "全部") && !accepts(groupData, "未分组"), "built-in groups fixed");
         Check(!accepts(groupData, "学习"), "self drop rejected");
-        var appData = new DataObject(); appData.SetData("GlassBoard.Entry", "C:\\example.exe");
+        var appData = new DataObject(); appData.SetData("Lumina.Entry", "C:\\example.exe");
         Check(!accepts(appData, "游戏"), "app drag not interpreted as group reorder");
         var fileData = new DataObject(DataFormats.FileDrop, new[] { "C:\\example.exe" });
         Check(!accepts(fileData, "游戏"), "file drag not interpreted as group reorder");
@@ -93,7 +93,7 @@ public static class GroupReorderTests {
         var bar = (WrapPanel)typeof(BoardWindow).GetField("folderBar", flags).GetValue(board);
         bar.Measure(new Size(1200, 200)); bar.Arrange(new Rect(0, 0, 1200, 200));
         var targetBox = bar.Children.OfType<Border>().First(b => (string)b.Tag == "学习");
-        var dragged = new DataObject(); dragged.SetData("GlassBoard.GroupTabOrder", "系统");
+        var dragged = new DataObject(); dragged.SetData("Lumina.GroupTabOrder", "系统");
         var dragArgs = (DragEventArgs)Activator.CreateInstance(typeof(DragEventArgs),
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null,
             new object[] { dragged, DragDropKeyStates.LeftMouseButton, DragDropEffects.Move, targetBox, new Point(1, 1) }, null);

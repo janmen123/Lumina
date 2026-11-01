@@ -1,7 +1,7 @@
 ﻿using System;using System.Collections.Generic;using System.IO;using System.Linq;using System.Diagnostics;
 using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;using System.Windows.Input;
 using System.Windows.Media;using System.Windows.Media.Animation;using System.Windows.Threading;
-namespace GlassBoard {
+namespace Lumina {
     public partial class Controller {
         public DockPinResult PinDockPaths(IEnumerable<string> paths,DockDropTarget target){
             var candidates=new List<Entry>();
@@ -107,8 +107,8 @@ namespace GlassBoard {
         void ActivateTask(IntPtr handle){if(RunningWindows.ActivateHandle(handle))C.Board.CollapseSmooth();else{RunningWindows.Scan();ReadTaskGroups();Refresh(false);ShowTaskHint("此窗口已关闭");}}
         void ToggleTask(RunningWindow window){if(RunningWindows.ToggleWindow(window))C.Board.CollapseSmooth();else{RunningWindows.Scan();ReadTaskGroups();Refresh(false);ShowTaskHint("此窗口已关闭");}}
         static string[] DockPayload(IDataObject data){
-            if(data.GetDataPresent("GlassBoard.Entries"))return data.GetData("GlassBoard.Entries") as string[]??new string[0];
-            if(data.GetDataPresent("GlassBoard.Entry"))return new[]{data.GetData("GlassBoard.Entry") as string};
+            if(data.GetDataPresent("Lumina.Entries"))return data.GetData("Lumina.Entries") as string[]??new string[0];
+            if(data.GetDataPresent("Lumina.Entry"))return new[]{data.GetData("Lumina.Entry") as string};
             return data.GetDataPresent(DataFormats.FileDrop)?data.GetData(DataFormats.FileDrop) as string[]??new string[0]:new string[0];
         }
         DockDropTarget ExternalDockTarget(double x){var buttons=Items.Children.OfType<Button>().Where(b=>ItemKey(b)!=null).ToList();return DockDropRules.OnGap(null,buttons.Select(ItemKey).ToArray(),buttons.Select(b=>b.TranslatePoint(new Point(b.ActualWidth/2,0),Items).X).ToArray(),x);}

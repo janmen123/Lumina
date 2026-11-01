@@ -1,5 +1,5 @@
 // Historical v0.9.6 test. Superseded by PersistenceTests.cs for v0.9.7 mirror/journal precedence.
-using System;using System.IO;using System.Collections.Generic;using GlassBoard;
+using System;using System.IO;using System.Collections.Generic;using Lumina;
 public static class RemovalStoreTests {
     static void Check(bool value,string message){if(!value)throw new Exception(message);}
     public static int Main(){

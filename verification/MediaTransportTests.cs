@@ -1,6 +1,6 @@
 // Executed on .NET 8 with PowerShell mock paths in /tmp; native Windows UI is not covered.
 using System;using System.IO;using System.Text;using System.Diagnostics;using System.Runtime.Serialization.Json;using System.Threading.Tasks;using System.Reflection;
-namespace GlassBoard {
+namespace Lumina {
     public sealed class MediaSessionBridge:IDisposable {
         readonly bool nativeOnly,neteaseOnly;public MediaSessionBridge(bool native=false,bool netease=false){nativeOnly=native;neteaseOnly=netease;}public bool UseNative;Process process;readonly object gate=new object();bool stopped;DateTime retry=DateTime.MinValue;string lastFailure="";readonly object errorGate=new object();string stderr="";
         public Task<MediaSnapshot> Send(string command,double seconds=0,string key=null,MediaSnapshot hint=null){return Task.Run(()=>{lock(gate){if(stopped)return new MediaSnapshot{Status="播放器已关闭"};try{
@@ -14,7 +14,7 @@ namespace GlassBoard {
     }
 
 class TransportTest {static void Check(bool ok,string message){if(!ok)throw new Exception(message);}static int Main(){
-using(var worker=Process.Start(new ProcessStartInfo{FileName="/tmp/glassboard-pwsh/pwsh",Arguments="-NoLogo -NoProfile -File /tmp/GlassBoardNativeMock085.ps1",UseShellExecute=false,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true,StandardOutputEncoding=Encoding.UTF8}))
+using(var worker=Process.Start(new ProcessStartInfo{FileName="/tmp/glassboard-pwsh/pwsh",Arguments="-NoLogo -NoProfile -File /tmp/LuminaNativeMock085.ps1",UseShellExecute=false,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true,StandardOutputEncoding=Encoding.UTF8}))
 using(var bridge=new MediaSessionBridge(true)){
 typeof(MediaSessionBridge).GetField("process",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(bridge,worker);
 var hint=new MediaSnapshot{Available=true,Source="FakeMusic",Title="再见",Artist="张震岳",Album="思念是一种病",Key="FakeMusic|再见|张震岳|思念是一种病",Playing=true};

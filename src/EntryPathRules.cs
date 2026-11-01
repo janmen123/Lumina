@@ -1,5 +1,5 @@
 using System;using System.IO;
-namespace GlassBoard {
+namespace Lumina {
     public static class EntryPathRules {
         public static string Normalize(string path){
             if(string.IsNullOrWhiteSpace(path)||!Directory.Exists(path))return path;

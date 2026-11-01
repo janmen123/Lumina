@@ -1,5 +1,5 @@
 using System;using System.IO;using System.Linq;using System.Diagnostics;using System.Runtime.InteropServices;using System.Text;using System.Windows;using System.Windows.Controls;
-namespace GlassBoard {
+namespace Lumina {
     public static class FileShellActions {
         [StructLayout(LayoutKind.Sequential,CharSet=CharSet.Unicode)] struct SHELLEXECUTEINFO{public int Size;public uint Mask;public IntPtr Window;[MarshalAs(UnmanagedType.LPWStr)]public string Verb,File,Parameters,Directory;public int Show;public IntPtr Instance,IdList;[MarshalAs(UnmanagedType.LPWStr)]public string Class;public IntPtr ClassKey;public uint Hotkey;public IntPtr Icon,Process;}
         [DllImport("shell32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern bool ShellExecuteEx(ref SHELLEXECUTEINFO info);

@@ -12,7 +12,7 @@ public void RemoveMany(IEnumerable<string> paths) {
             Board.ModalBusy=true;
             try {
                 string text="从面板移除已选的 "+count+" 个入口？\n原软件和文件会保留，已固定的入口也会从 Dock 移除。\n移除后可点击「撤销移除」。";
-                var answer=Board.IsVisible?MessageBox.Show(Board,text,"GlassBoard",MessageBoxButton.YesNo):MessageBox.Show(text,"GlassBoard",MessageBoxButton.YesNo);
+                var answer=Board.IsVisible?MessageBox.Show(Board,text,"Lumina",MessageBoxButton.YesNo):MessageBox.Show(text,"Lumina",MessageBoxButton.YesNo);
                 if(answer==MessageBoxResult.Yes) {lastRemoval=EntryRules.Remove(Prefs,targets);Board.FinishSelection();Refresh();Board.SetStatus("已移除 "+count+" 个入口 · 可撤销本次移除");}
             } finally {Board.ModalBusy=false;}
         }}

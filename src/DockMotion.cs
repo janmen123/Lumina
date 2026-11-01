@@ -1,5 +1,5 @@
 using System;using System.Linq;using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;using System.Windows.Input;using System.Windows.Media;using System.Windows.Media.Animation;
-namespace GlassBoard {
+namespace Lumina {
     public partial class DockWindow {
         int revealSerial,layoutSerial;
         Rect DockPlacementArea(bool pointer=false){return DesktopWindowPolicy.WorkArea(this,pointer,C.Prefs.Dock.UseScreenBounds);}

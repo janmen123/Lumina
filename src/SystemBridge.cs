@@ -1,5 +1,5 @@
 using System;using System.Collections.Generic;using System.IO;using System.Text;using System.Diagnostics;using System.Runtime.Serialization;using System.Runtime.Serialization.Json;using System.Threading;using System.Threading.Tasks;
-namespace GlassBoard {
+namespace Lumina {
     [DataContract]public sealed class BridgeRequest {
         [DataMember]public int Version=1,Id;[DataMember]public string Action="",Text="",Key="",Adapter="",Profile="",Password="",Title="",Artist="",Album="",Source="",Path="";
         [DataMember]public double Value,Position,Duration;[DataMember]public bool Enabled,Playing,Translation;[DataMember]public int Offset,Auth,Cipher;

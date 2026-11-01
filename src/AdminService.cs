@@ -1,6 +1,6 @@
 ﻿using System;using System.ComponentModel;using System.Diagnostics;using System.Security.Principal;using System.Windows;
 
-namespace GlassBoard {
+namespace Lumina {
     public static class AdminService {
         public static bool IsElevated(){
             try {
@@ -19,9 +19,9 @@ namespace GlassBoard {
                 Quit();
             } catch(Win32Exception ex) {
                 if(ex.NativeErrorCode==1223)return;
-                Store.Log(ex);MessageBox.Show("无法以管理员身份重启："+ex.Message,"GlassBoard");
+                Store.Log(ex);MessageBox.Show("无法以管理员身份重启："+ex.Message,"Lumina");
             } catch(Exception ex) {
-                Store.Log(ex);MessageBox.Show("无法以管理员身份重启："+ex.Message,"GlassBoard");
+                Store.Log(ex);MessageBox.Show("无法以管理员身份重启："+ex.Message,"Lumina");
             }
         }
     }

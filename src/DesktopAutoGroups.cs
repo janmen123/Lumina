@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows.Threading;
-namespace GlassBoard {
+namespace Lumina {
     public static class DesktopAutoRules {
         public const string DefaultFolderGroup="文件夹";
         public const string DefaultDocsGroup="文档";
