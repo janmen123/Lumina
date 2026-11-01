@@ -31,6 +31,7 @@ namespace Lumina {
             if(args.Length>0 && args[0]=="--quit")return Native.RequestQuit()?0:1;if(args.Length>0 && args[0]=="--open-native-tray")return NativeTrayLauncher.Run();
             
             if(args.Length>1&&args[0]=="--wait-for"){int waitPid;if(int.TryParse(args[1],out waitPid)){try{Process.GetProcessById(waitPid).WaitForExit(8000);}catch{}}}
+            if(args.Length>0 && args[0]=="--test-logic")return LogicTests.Run();
             if(args.Length>0 && args[0]=="--self-test"){Store.Silent=true;return SelfTest.Run();}
             if(args.Length>1 && args[0]=="--toggle-check") return ToggleCheck(args);
             if(args.Length>0 && args[0]=="--restore-shell") {

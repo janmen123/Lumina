@@ -55,6 +55,7 @@ namespace Lumina {
         static void Step(string name,int seconds,Action action){Check(name,seconds,action);}
         public static int Run() {
             try {
+                Step("逻辑规则",20,()=>{if(LogicTests.Run()!=0)throw new Exception("逻辑检查未通过，详见 logic-test-result.txt");});
                 Step("内存资源",60,()=>CheckMemoryResources());
                 Step("菜单外观",90,()=>MenuAppearanceChecks.Run());
                 Step("Dock 行为",90,()=>DockBehaviorChecks.Run());

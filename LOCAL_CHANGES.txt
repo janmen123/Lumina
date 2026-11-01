@@ -244,3 +244,8 @@
 - GlassWindow、DesktopVisibility、DockWindow、BoardWindow、BatchAddWindow(含 AddCandidate) 各自独立成文件。
 - 拆分从 git 已提交版本按类边界机械切分，所有类与成员完整保留；总数 5923 行（含重复的 using 头）。
 - 构建通过（仅 CS0414 警告），--self-test 全部 PASS。
+32) 2026-11-02 新增 --test-logic 纯逻辑自检（45 项），并作为 --self-test 第一步
+- 新增 src/LogicTests.cs：不创建窗口、不碰桌面，可在无界面环境运行。
+- 覆盖：分页与搜索、透明度/数值钳制、游戏模式抑制、Dock 拖动阈值与松手提交、间隙落点、Dock 排序与合并、窗口激活与 steam 快捷方式匹配、快捷键校验、时钟触发与倒计时、导入去重。
+- Program.Main 新增 --test-logic；SelfTest 第一步“逻辑规则”（20 秒）复用同一套检查。
+- 结果写入 logic-test-result.txt；--test-logic 45/45 通过，--self-test 全部 PASS。
