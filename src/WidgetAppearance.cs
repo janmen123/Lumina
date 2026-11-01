@@ -15,7 +15,7 @@ namespace GlassBoard {
         }
         Brush StyleInk(string kind){var s=StyleFor(kind);var b=s.TextColor==""?(M.C.Prefs.Light?Polish.Ink(true):Brushes.White):(Brush)new BrushConverter().ConvertFromString(s.TextColor);var solid=b as SolidColorBrush;if(solid!=null){var c=solid.Color;c.A=(byte)Math.Round(255*s.TextOpacity/100);var result=new SolidColorBrush(c);result.Freeze();return result;}return b;}
         void PaintText(DependencyObject root,WidgetStyle s,Brush ink){
-            var text=root as TextBlock;if(text!=null){text.Foreground=ink;text.Opacity=1;text.Effect=s.TextShadow?new DropShadowEffect{BlurRadius=3,ShadowDepth=1,Opacity=.65,Color=Colors.Black}:null;}
+            var text=root as TextBlock;if(text!=null){text.Foreground=ink;text.Opacity=(s.ClockStyle==1&&text==weekday)?.3:1;text.Effect=s.TextShadow?new DropShadowEffect{BlurRadius=3,ShadowDepth=1,Opacity=.65,Color=Colors.Black}:null;}
             var control=root as Control;if(control!=null){control.Foreground=ink;}
             for(int i=0;i<VisualTreeHelper.GetChildrenCount(root);i++)PaintText(VisualTreeHelper.GetChild(root,i),s,ink);
         }
@@ -23,7 +23,7 @@ namespace GlassBoard {
         void ApplyCardAppearance(){if(stack==null)return;foreach(var card in stack.Children.OfType<Border>()){string kind=card.Tag as string;if(!WidgetRules.Kinds.Contains(kind))continue;var style=StyleFor(kind);double opacity=WidgetSizing.Background(M.C.Prefs.Widgets,M.C.Prefs.Widgets.Position(PanelId));card.Background=style.Frameless||opacity==0?null:GlassMaterials.Fill(CurrentMaterial,LightTheme,opacity);card.BorderBrush=style.Frameless?null:Polish.Line(LightTheme);card.BorderThickness=new Thickness(style.Frameless?0:1);PaintCard(card,kind);}if(BareShell){ReleaseBackdrop();Surface.Visibility=Visibility.Collapsed;foreach(var host in Root.Children.OfType<Border>().Where(b=>b.Tag as string=="material"))host.Visibility=Visibility.Collapsed;}else{Surface.Visibility=Visibility.Visible;foreach(var host in Root.Children.OfType<Border>().Where(b=>b.Tag as string=="material"))host.Visibility=Visibility.Visible;}}
         void AddAppearanceMenu(ContextMenu menu,string kind){var item=new MenuItem{Header="外观 DIY · 文字颜色 / 无框 / 样式"};item.Click+=(s,e)=>M.C.CustomizeWidgets(kind,this);menu.Items.Insert(0,item);var bare=new MenuItem{Header="无框模式",IsCheckable=true,IsChecked=StyleFor(kind).Frameless};bare.Click+=(s,e)=>{StyleFor(kind).Frameless=bare.IsChecked;M.C.Save();M.Sync();};menu.Items.Insert(1,bare);}
         void ClockDesign(StackPanel parent){
-            var s=StyleFor("clock");ResetAdvancedClock();weekday=clockHours=clockMinutes=null;
+            var s=StyleFor("clock");ResetAdvancedClock();clockKey="";weekday=clockHours=clockMinutes=null;
             clock=new TextBlock{FontSize=s.ClockSize,FontWeight=FontWeights.Light,Foreground=TextBrush};date=new TextBlock{FontSize=13,Margin=new Thickness(2,4,0,0),Foreground=MutedBrush};clockStatus=new TextBlock{FontSize=11,Margin=new Thickness(2,9,0,0),TextTrimming=TextTrimming.CharacterEllipsis,Foreground=MutedBrush};
             if(!string.IsNullOrEmpty(s.Font))clock.FontFamily=new FontFamily(s.Font);
             var body=new StackPanel{Cursor=Cursors.SizeAll};

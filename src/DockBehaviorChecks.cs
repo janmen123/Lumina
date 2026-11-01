@@ -13,7 +13,7 @@ namespace GlassBoard {
             var controller=new Controller(false);try{
                 for(int i=0;i<4;i++)controller.Prefs.Apps.Add(new Entry{Name="Dock"+i,Path=path+"-"+i,Pinned=true});controller.Prefs.Normalize();controller.Dock.Refresh(false);
                 foreach(var key in controller.Prefs.Hotkeys)key.Enabled=false;controller.Dock.Show();controller.Dock.UpdateLayout();
-                var first=controller.Prefs.Apps[0];var last=controller.Prefs.Apps[3];if(!DockOrderRules.Move(controller.Prefs,first.Path,last.Path,false))throw new Exception("Dock 排序失败");controller.Dock.Refresh(false);
+                var first=controller.Prefs.Apps[0];var last=controller.Prefs.Apps[3];if(!DockOrderRules.Move(controller.Prefs,first.Path,last.Path,false))throw new Exception("Dock 排序失败");controller.Dock.Refresh(false);controller.Dock.UpdateLayout();
                 var panel=FindPanel(controller.Dock);var buttons=panel==null?new Button[0]:panel.Children.OfType<Button>().Where(b=>b.Tag is Entry).ToArray();var expected=DockOrderRules.Ordered(controller.Prefs).Take(buttons.Length).ToArray();
                 Store.Trace("CHECK dock render ok buttons="+buttons.Length);if(buttons.Length<1||!buttons.Select(b=>((Entry)b.Tag).Path).SequenceEqual(expected.Select(a=>a.Path))||buttons.Any(b=>b.Tag==null))throw new Exception("Dock 渲染顺序或排序入口错误");Store.Trace("CHECK pointer reorder start");controller.Dock.CheckPointerReorder();Store.Trace("CHECK pointer reorder ok");controller.Dock.CheckTaskDock();controller.Dock.CheckMixedPointerReorder();
             }finally{Store.Trace("CHECK dock cleanup");controller.ShuttingDown=true;controller.Dock.ReleaseHotkey();controller.Board.Close();controller.Dock.Close();}

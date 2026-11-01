@@ -5,7 +5,7 @@ static List<RunningWindow> MatchWindows(Entry entry,IEnumerable<string> paths){
 var candidates=paths.Where(p=>!string.IsNullOrWhiteSpace(p)).ToArray();
 var exact=windows.Where(w=>candidates.Contains(w.Path,StringComparer.OrdinalIgnoreCase)||WindowActivationRules.HostedMatch(entry,w.Path,w.AppId)).ToList();if(exact.Count>0)return exact;
 var names=candidates.Select(Path.GetFileName).Where(n=>!string.IsNullOrEmpty(n)&&!new[]{"update.exe","launcher.exe","rundll32.exe","explorer.exe"}.Contains(n.ToLowerInvariant())).ToArray();
-var named=windows.Where(w=>!string.IsNullOrEmpty(w.Path)&&names.Contains(Path.GetFileName(w.Path),StringComparer.OrdinalIgnoreCase)).ToList();if(named.Count>0)return named;
+var named=windows.Where(w=>string.IsNullOrEmpty(w.Path)?names.Contains(w.ProcessName,StringComparer.OrdinalIgnoreCase):names.Contains(Path.GetFileName(w.Path),StringComparer.OrdinalIgnoreCase)).ToList();if(named.Count>0)return named;
 string key=(entry.Name??"").Trim();if(key.Equals("DSH",StringComparison.OrdinalIgnoreCase))key="DeepSeek Harness";if(key.Contains("抖音"))key="douyin";if(key.Length<2)return new List<RunningWindow>();
 return windows.Where(w=>!string.IsNullOrEmpty(w.Path)&&!string.IsNullOrEmpty(w.Title)&&w.Title.IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0&&(Path.GetFileNameWithoutExtension(w.Path).IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0||candidates.Any(p=>string.Equals(Path.GetDirectoryName(p),Path.GetDirectoryName(w.Path),StringComparison.OrdinalIgnoreCase)))).ToList();
 }}

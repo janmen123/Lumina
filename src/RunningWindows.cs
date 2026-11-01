@@ -8,7 +8,7 @@ using System.Text;
 using System.Windows;using System.Windows.Media;using System.Windows.Media.Imaging;using System.Windows.Interop;
 
 namespace GlassBoard {
-    public sealed class RunningWindow {public IntPtr Handle;public uint ProcessId;public string Path,Title,FolderPath,AppId;}
+    public sealed class RunningWindow {public IntPtr Handle;public uint ProcessId;public string Path,Title,FolderPath,AppId,ProcessName;}
     public static partial class RunningWindows {
         delegate bool Callback(IntPtr window,IntPtr value);
         [DllImport("user32.dll")] static extern bool EnumWindows(Callback callback,IntPtr value);
@@ -55,16 +55,32 @@ namespace GlassBoard {
             var process=OpenProcess(0x1000,false,id);if(process==IntPtr.Zero)return null;
             try{int length=512;var path=new StringBuilder(length);if(!QueryFullProcessImageName(process,0,path,ref length)){if(Marshal.GetLastWin32Error()!=122)return null;length=32768;path=new StringBuilder(length);if(!QueryFullProcessImageName(process,0,path,ref length))return null;}return WindowActivationRules.NormalizePath(path.ToString());}finally{CloseHandle(process);}
         }
+        // An elevated process denies PROCESS_QUERY_LIMITED_INFORMATION to a normal one, so
+        // QueryFullProcessImageName returns nothing. Toolhelp still reports the image name,
+        // which is enough to match and group the window without asking for its path.
+        [DllImport("kernel32.dll",SetLastError=true)]static extern IntPtr CreateToolhelp32Snapshot(uint flags,uint id);
+        [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern bool Process32FirstW(IntPtr snapshot,IntPtr entry);
+        [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern bool Process32NextW(IntPtr snapshot,IntPtr entry);
+        static Dictionary<uint,string> toolhelp;
+        static Dictionary<uint,string> ToolhelpNames(){
+            var found=new Dictionary<uint,string>();IntPtr buffer=IntPtr.Zero,snapshot=IntPtr.Zero;
+            try{buffer=Marshal.AllocHGlobal(600);Marshal.WriteInt32(buffer,0,568);snapshot=CreateToolhelp32Snapshot(0x2,0);if(snapshot==IntPtr.Zero||snapshot==new IntPtr(-1))return found;
+                bool more=Process32FirstW(snapshot,buffer);
+                for(int guard=0;more&&guard<8192;guard++){uint id=(uint)Marshal.ReadInt32(buffer,8);string name=Marshal.PtrToStringUni(new IntPtr(buffer.ToInt64()+(IntPtr.Size==8?44:36)));if(!string.IsNullOrEmpty(name))found[id]=name;Marshal.WriteInt32(buffer,0,568);more=Process32NextW(snapshot,buffer);}
+            }catch(Exception ex){Store.Log(ex);}
+            finally{if(snapshot!=IntPtr.Zero&&snapshot!=new IntPtr(-1))CloseHandle(snapshot);if(buffer!=IntPtr.Zero)Marshal.FreeHGlobal(buffer);}
+            return found;
+        }
         public static void Scan(){
-            windows.Clear();if((DateTime.UtcNow-foldersAt).TotalSeconds>=25){foldersAt=DateTime.UtcNow;folders=ExplorerWindows.Read();}var byPid=new Dictionary<uint,string>();var appIds=new Dictionary<uint,string>();int own=Process.GetCurrentProcess().Id;
+            windows.Clear();toolhelp=null;if((DateTime.UtcNow-foldersAt).TotalSeconds>=25){foldersAt=DateTime.UtcNow;folders=ExplorerWindows.Read();}var byPid=new Dictionary<uint,string>();var appIds=new Dictionary<uint,string>();var names=new Dictionary<uint,string>();int own=Process.GetCurrentProcess().Id;
             EnumWindows((handle,value)=>{
                 if(!IsWindowVisible(handle))return true;int style=GetWindowLong(handle,-20);if((style&0x80)!=0||((style&0x40000)==0&&GetWindow(handle,4)!=IntPtr.Zero&&IsWindowVisible(GetWindow(handle,4))))return true;
                 int cloaked;try{if(DwmGetWindowAttribute(handle,14,out cloaked,4)==0&&cloaked!=0)return true;}catch{}
                 uint id;GetWindowThreadProcessId(handle,out id);if(id==own)return true;string path;
-                if(!byPid.TryGetValue(id,out path)){try{path=ProcessPath(id);}catch{path=null;}byPid[id]=path;appIds[id]=ProcessAppId(id);}
+                if(!byPid.TryGetValue(id,out path)){try{path=ProcessPath(id);}catch{path=null;}byPid[id]=path;appIds[id]=ProcessAppId(id);string processName=null;if(string.IsNullOrEmpty(path)){if(toolhelp==null)toolhelp=ToolhelpNames();toolhelp.TryGetValue(id,out processName);}names[id]=processName;}
                 var text=new StringBuilder(1024);GetWindowText(handle,text,text.Capacity);if(string.IsNullOrWhiteSpace(text.ToString()))return true;
                 var cls=new StringBuilder(128);GetClassName(handle,cls,cls.Capacity);if(new[]{"Progman","WorkerW","Shell_TrayWnd","Shell_SecondaryTrayWnd"}.Contains(cls.ToString()))return true;
-                string folder;folders.TryGetValue(handle.ToInt64(),out folder);windows.Add(new RunningWindow{Handle=handle,ProcessId=id,Path=path,Title=text.ToString(),FolderPath=folder,AppId=appIds[id]});return true;
+                string folder;folders.TryGetValue(handle.ToInt64(),out folder);string windowName;names.TryGetValue(id,out windowName);windows.Add(new RunningWindow{Handle=handle,ProcessId=id,Path=path,Title=text.ToString(),FolderPath=folder,AppId=appIds[id],ProcessName=windowName});return true;
             },IntPtr.Zero);
         }
         static void Resolve(Entry entry){
@@ -131,16 +147,32 @@ namespace GlassBoard {
             try{Native.SetForegroundWindow(handle);BringWindowToTop(handle);}
             finally{try{if(attachTarget)AttachThreadInput(own,targetThread,false);if(attachForeground)AttachThreadInput(own,foregroundThread,false);}catch(Exception ex){Store.Log(ex);}}
         }
-        public static void Focus(IntPtr handle){
-            if(handle==IntPtr.Zero||!IsWindow(handle))return;
+        [DllImport("user32.dll")]static extern void SwitchToThisWindow(IntPtr window,bool alt);
+        // Windows refuses ShowWindow and SetForegroundWindow from a normal process into a
+        // window owned by an elevated one (UIPI, error 5). SwitchToThisWindow still restores
+        // and activates that window, and a posted SC_MINIMIZE still minimizes it.
+        static bool ActivateWindow(IntPtr handle){
+            if(handle==IntPtr.Zero||!IsWindow(handle))return false;
             if(IsIconic(handle))ShowWindowAsync(handle,9);
             ForceForeground(handle);
+            if(GetForegroundWindow()==handle)return true;
+            try{SwitchToThisWindow(handle,true);}catch(Exception ex){Store.Log(ex);}
+            return GetForegroundWindow()==handle;
+        }
+        static bool MinimizeWindow(IntPtr handle){
+            if(handle==IntPtr.Zero||!IsWindow(handle))return false;
+            ShowWindow(handle,6);
+            if(!IsIconic(handle))PostMessage(handle,0x112,new IntPtr(0xF020),IntPtr.Zero);
+            return IsIconic(handle);
+        }
+        public static void Focus(IntPtr handle){
+            if(handle==IntPtr.Zero||!IsWindow(handle))return;
+            ActivateWindow(handle);
         }
         public static bool ActivateHandle(IntPtr handle){
-            if(!IsWindow(handle))return false;if(IsIconic(handle))ShowWindowAsync(handle,9);
+            if(!IsWindow(handle))return false;
             var popup=GetLastActivePopup(handle);var target=popup!=IntPtr.Zero&&IsWindowVisible(popup)?popup:handle;
-            ForceForeground(target);
-            if(GetForegroundWindow()!=target){var flash=new FLASHWINFO{Size=(uint)Marshal.SizeOf(typeof(FLASHWINFO)),Window=target,Flags=3,Count=2};FlashWindowEx(ref flash);Store.Trace("WINDOW_SWITCH foreground request blocked handle="+target);}
+            if(!ActivateWindow(target)){var flash=new FLASHWINFO{Size=(uint)Marshal.SizeOf(typeof(FLASHWINFO)),Window=target,Flags=3,Count=2};FlashWindowEx(ref flash);Store.Trace("WINDOW_SWITCH foreground request blocked handle="+target);}
             // A recognized existing window must never fall through to launching
             // another instance merely because Windows refused foreground focus.
             return true;
@@ -166,12 +198,10 @@ namespace GlassBoard {
             bool front=OwnsForeground(window.Handle,EffectiveForeground())||(hint!=IntPtr.Zero&&hint==window.Handle);
             var fg=EffectiveForeground();Store.Trace("WINDOW decide handle="+window.Handle+" hint="+hint+" fg="+fg+" fgpid="+OwnerOf(fg)+" fgtitle="+TitleOf(fg)+" front="+front+" iconic="+IsIconic(window.Handle));
             if(WindowActivationRules.MinimizeDock(front,IsIconic(window.Handle))){
-                ShowWindow(window.Handle,6);
-                if(!IsIconic(window.Handle)){Store.Trace("WINDOW_MINIMIZE rejected handle="+window.Handle);return true;}
+                if(!MinimizeWindow(window.Handle)){Store.Trace("WINDOW_MINIMIZE rejected handle="+window.Handle);return true;}
                 Store.Trace("WINDOW minimize handle="+window.Handle);
                 return true; // A rejected minimize must not launch a second instance.
             }
-            if(IsIconic(window.Handle))ShowWindow(window.Handle,9);
             ActivateHandle(window.Handle);Store.Trace("WINDOW activate handle="+window.Handle);return true;
         }
         internal static bool ToggleWindow(RunningWindow window){return ToggleWindow(window,IntPtr.Zero);}

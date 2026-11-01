@@ -152,6 +152,7 @@ namespace GlassBoard {
             IsVisibleChanged+=(s,e)=>{if(!IsVisible)CancelDockPointer(false);};Closed+=(s,e)=>CancelDockPointer(false);
         }
         internal void CheckPointerReorder(){
+            UpdateLayout();
             var buttons=Items.Children.OfType<Button>().Where(b=>b.Tag is Entry).ToList();if(buttons.Count<3)throw new Exception("指针排序测试缺少可见图标");
             var first=(Entry)buttons.First().Tag;var last=(Entry)buttons.Last().Tag;Point start=buttons.Last().TranslatePoint(new Point(buttons.Last().ActualWidth/2,buttons.Last().ActualHeight/2),this),end=buttons.First().TranslatePoint(new Point(buttons.First().ActualWidth/2,buttons.First().ActualHeight/2),this);
             if(!StartDockPointer(buttons.Last(),last,start,null))throw new Exception("Dock 未捕获排序鼠标");MoveDockPointer(end);FinishDockPointer(end);UpdateLayout();if(DockOrderRules.Ordered(C.Prefs)[0].Path!=last.Path)throw new Exception("后向前松手未提交");

@@ -177,3 +177,9 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 只识别 DesktopMgr64 的 TXMiniSkin「桌面整理」窗口；恢复前核验窗口归属。写入现有 shell 恢复日志，程序退出或异常后下一次启动可恢复。
 - 不移动、删除分区或文件；用户实测隐藏、右键和恢复均正常。107 个入口、顺序和分组保持不变。若腾讯更新更改窗口实现可能需要调整兼容逻辑。
 - 备份：backups\clean-desktop-20261030-200833。
+21) 2026-11-02 修复提权程序（5E）在 Dock 点击无反应与三项自测失败
+- 提权进程拒绝普通进程查询映像路径，此前 5E 窗口拿不到 Path，任务键退化为 window:<句柄>，被 Dock 运行区过滤掉，点击只能走到“再启动一个实例”；改为用 Toolhelp32 读取映像名，按名字匹配 Dock 入口与任务分组，图标与名称取自入口。
+- 提权窗口同样拒绝 ShowWindow / SetForegroundWindow / AttachThreadInput（ERROR_ACCESS_DENIED），最小化与还原改为 SwitchToThisWindow 还原激活、PostMessage WM_SYSCOMMAND/SC_MINIMIZE 最小化，实测 5E 主窗口可还原并激活、可最小化。
+- 自测修复：指针排序前补 UpdateLayout（重建后的按钮此前 ActualWidth=0，起点终点重合被判成点击）；无框组件与主题模板检查先 Show 窗口再做命中测试；混排检查补开回收站入口。
+- 真实缺陷修复：组件 Build 一直调用旧版 Clock，ClockDesign（自定义时钟样式的唯一实现）从未被调用；同分钟内重建时钟不刷新文本；PaintText 把星期叠字层透明度冲回 1；海报样式时钟（样式 6/12）忘记把右列加入 Grid，时间与日期整列不显示。
+- 构建通过；--self-test 全部 PASS（此前三项失败全部转为通过），error.log 无新增。

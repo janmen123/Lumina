@@ -16,7 +16,7 @@ namespace GlassBoard {
         }
     }
     public partial class DockWindow {
-        sealed class TaskGroup {public string Key,Name;public List<RunningWindow> Windows;}
+        sealed class TaskGroup {public string Key,Name;public Entry Known;public List<RunningWindow> Windows;}
         readonly DockWheelState taskWheel=new DockWheelState();readonly Stopwatch taskClock=Stopwatch.StartNew();
         readonly DispatcherTimer taskHintTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(1800)};
         List<TaskGroup> taskGroups=new List<TaskGroup>();string taskSignature="";bool externalDockDrag,boardPinDragging;
@@ -53,16 +53,28 @@ namespace GlassBoard {
             menu.Opened+=(s,e)=>{common.IsChecked=!taskWheel.Running;running.IsChecked=taskWheel.Running;};menu.Items.Add(common);menu.Items.Add(running);
         }
         static string TaskKey(RunningWindow window){
-            // Hosted apps and inaccessible processes need separate window identities.
-            if(!string.IsNullOrWhiteSpace(window.FolderPath))return "folder:"+window.Handle.ToInt64();string name=Path.GetFileName(window.Path??"");return string.IsNullOrEmpty(window.Path)||name.Equals("ApplicationFrameHost.exe",StringComparison.OrdinalIgnoreCase)?"window:"+window.Handle.ToInt64():window.Path;
+            // Hosted apps need a window identity, and an elevated process hides its image
+            // path, so its windows are grouped by the name Toolhelp still reports.
+            if(!string.IsNullOrWhiteSpace(window.FolderPath))return "folder:"+window.Handle.ToInt64();
+            string name=Path.GetFileName(window.Path??"");
+            if(!string.IsNullOrEmpty(window.Path)&&!name.Equals("ApplicationFrameHost.exe",StringComparison.OrdinalIgnoreCase))return window.Path;
+            name=window.ProcessName;
+            return string.IsNullOrEmpty(name)||name.Equals("ApplicationFrameHost.exe",StringComparison.OrdinalIgnoreCase)?"window:"+window.Handle.ToInt64():"name:"+name;
         }
         void ReadTaskGroups(){
             taskGroups=RunningWindows.Snapshot().GroupBy(TaskKey,StringComparer.OrdinalIgnoreCase).OrderBy(g=>g.Key,StringComparer.OrdinalIgnoreCase).Select(g=>{
                 var windows=g.OrderBy(w=>w.Handle.ToInt64()).ToList();string name=Path.GetFileNameWithoutExtension(windows[0].Path??"");
-                var known=C.Prefs.Apps.FirstOrDefault(a=>!a.IsFolder&&WindowActivationRules.Executables(a).Contains(windows[0].Path,StringComparer.OrdinalIgnoreCase));
-                return new TaskGroup{Key=g.Key,Name=known!=null?known.Name:string.IsNullOrWhiteSpace(name)||(g.Key.StartsWith("window:")||g.Key.StartsWith("folder:"))?windows[0].Title:name,Windows=windows};
+                var known=KnownEntry(windows[0]);
+                return new TaskGroup{Key=g.Key,Name=known!=null?known.Name:string.IsNullOrWhiteSpace(name)||(g.Key.StartsWith("window:")||g.Key.StartsWith("folder:"))?windows[0].Title:name,Windows=windows,Known=known};
             }).ToList();taskSignature=TaskSignature();
         }
+        Entry KnownEntry(RunningWindow window){
+            var known=C.Prefs.Apps.FirstOrDefault(a=>!a.IsFolder&&WindowActivationRules.Executables(a).Contains(window.Path,StringComparer.OrdinalIgnoreCase));
+            if(known!=null||!string.IsNullOrEmpty(window.Path)||string.IsNullOrEmpty(window.ProcessName))return known;
+            // An elevated process hides its path; its entry is still found by image name.
+            return C.Prefs.Apps.FirstOrDefault(a=>!a.IsFolder&&WindowActivationRules.Executables(a).Any(p=>string.Equals(Path.GetFileName(p),window.ProcessName,StringComparison.OrdinalIgnoreCase)));
+        }
+        ImageSource TaskIcon(TaskGroup group){return group.Known!=null?FeatureUi.Icon(group.Known,false,false):RunningWindows.Icon(group.Windows[0]);}
         string TaskSignature(){return string.Join("|",RunningWindows.Snapshot().OrderBy(w=>w.Handle.ToInt64()).Select(w=>w.Handle.ToInt64()+":"+w.Path+":"+w.Title));}
         void RefreshTaskSnapshot(){if(thumbnails!=null)return;
             if((!taskWheel.Running&&!C.Prefs.Dock.ShowRunningSection)||DockInputBusy||externalDockDrag||dragging||C.Board.ModalBusy||(taskMenu!=null&&taskMenu.IsOpen)||(ContextMenu!=null&&ContextMenu.IsOpen)||Items.Children.OfType<Button>().Any(b=>b.IsMouseOver||(b.ContextMenu!=null&&b.ContextMenu.IsOpen)))return;
@@ -71,7 +83,7 @@ namespace GlassBoard {
         void BuildTaskButtons(int shown,int slots){
             var taskOrder=DockLayoutRules.Running(C.Prefs,TaskKeys);var ordered=taskGroups.OrderBy(g=>taskOrder.IndexOf("running:"+g.Key)).ToList();
             foreach(var group in ordered.Take(shown)){
-                var selected=group;var button=DockButton(null,RunningWindows.Icon(group.Windows[0]),()=>OpenTask(selected,null),group.Name+(group.Windows.Count>1?" · "+group.Windows.Count+" 个窗口":""));
+                var selected=group;var button=DockButton(null,TaskIcon(group),()=>OpenTask(selected,null),group.Name+(group.Windows.Count>1?" · "+group.Windows.Count+" 个窗口":""));
                 button.Tag=group;BindLayoutButton(button,"running:"+group.Key,group.Name,()=>OpenTask(selected,button));var content=button.Content as Grid;
                 if(content!=null)content.Children.Add(new Border{Width=group.Windows.Count>1?12:5,Height=4,CornerRadius=new CornerRadius(2),Background=Polish.Accent,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Bottom,IsHitTestVisible=false});
                 button.ContextMenu=TaskWindowMenu(group);Items.Children.Add(button);
