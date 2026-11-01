@@ -26,6 +26,12 @@ using Drawing = System.Drawing;
 
 
 namespace Lumina {
+    // 线程模型：全部 UI 与状态变更都跑在 WPF 主线程（Dispatcher），没有后台线程直接改 Prefs。
+    // 静态可变状态只有三类，均为单线程访问：
+    //   1) Store：配置缓存、保存锁与日志节流（Persistence.cs，保存时加 saveLock）；
+    //   2) RunningWindows：窗口快照与 Toolhelp 进程名缓存，每次 Scan() 重建；
+    //   3) DockWindow/BoardWindow 等窗口类里的当前悬停、拖拽与预览状态。
+    // Controller 本身是单例（Main 里创建，app.Run 期间存活）。
     public partial class Controller {
         public Preferences Prefs;
         public DockWindow Dock;
@@ -41,7 +47,7 @@ namespace Lumina {
             persistConfiguration=desktop;
             if(!desktop){Prefs=new Preferences();Board=new BoardWindow(this);Dock=new DockWindow(this);return;}
             Prefs=Store.Load();if(Prefs.ConfigRevision<1){if(Prefs.KeepWindowSeconds<=0)Prefs.KeepWindowSeconds=3;Prefs.ConfigRevision=1;Save();}RunningWindows.KeepWindowSeconds=Prefs.KeepWindowSeconds;MigrateLegacyPaths();if(Prefs.ThemeFollowSystem)Prefs.Light=SystemTheme.IsLight();bool resetMotion=MotionPresets.ApplyInitialBaseline(Prefs);DesktopPersistence.DesktopOnly=Prefs.AllDesktopLayer;if(!string.IsNullOrEmpty(Store.RecoveryMessage))MessageBox.Show(Store.RecoveryMessage,"Lumina 配置恢复");if(Prefs.Removed.Count>0||Prefs.RemovedIdentities.Count>0)MigrateRemovalIdentities(); Board=new BoardWindow(this); Dock=new DockWindow(this);glassSuppressed=Prefs.GameMode||(Prefs.AutoGameMode&&FullscreenState.Active());
-            Tray=new Forms.NotifyIcon {Text="Lumina v0.2.0 · 玻璃启动台",Icon=Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Drawing.SystemIcons.Application,Visible=true};
+            Tray=new Forms.NotifyIcon {Text=AppInfo.Display+" · 玻璃启动台",Icon=Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Drawing.SystemIcons.Application,Visible=true};
             RefreshTrayMenu();
             Tray.DoubleClick+=(s,e)=>Toggle(true);
             Dock.Refresh(); if(!GlassSuppressed)Dock.Show();

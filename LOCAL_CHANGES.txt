@@ -249,3 +249,13 @@
 - 覆盖：分页与搜索、透明度/数值钳制、游戏模式抑制、Dock 拖动阈值与松手提交、间隙落点、Dock 排序与合并、窗口激活与 steam 快捷方式匹配、快捷键校验、时钟触发与倒计时、导入去重。
 - Program.Main 新增 --test-logic；SelfTest 第一步“逻辑规则”（20 秒）复用同一套检查。
 - 结果写入 logic-test-result.txt；--test-logic 45/45 通过，--self-test 全部 PASS。
+33) 2026-11-02 全局异常兜底与线程模型说明
+- 注册 AppDomain.UnhandledException 与 TaskScheduler.UnobservedTaskException，统一写入 error.log 并记 CRASH 轨迹。
+- 未观察的异步任务异常标记为已观察，避免进程被静默终止。
+- ControllerCore 顶部补充线程模型与静态可变状态说明（Store/RunningWindows/窗口类状态均为主线程访问）。
+- 构建通过，--self-test 全部 PASS。
+34) 2026-11-02 版本号收敛到唯一来源 AppInfo
+- 新增 src/AppInfo.cs（Version/Display），托盘提示与“已有实例在运行”提示改为引用。
+- 清单 assemblyIdentity 由 0.9.23.0 改为 0.2.0.0，与程序集版本一致。
+- 使用说明标题改为 Lumina v0.2.0。
+- 构建通过，--self-test 全部 PASS。

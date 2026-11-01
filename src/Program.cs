@@ -38,11 +38,13 @@ namespace Lumina {
                 try {if(Native.RequestRestore())return 0;try{TaskbarAutoHide.ShowAndClear();}catch(Exception ex){Store.Log(ex);}DesktopVisibility.ShowAll();MessageBox.Show("已执行任务栏和桌面图标恢复。","Lumina");return 0;}catch(Exception ex){MessageBox.Show(ex.Message,"Lumina");return 1;}
             }
             bool created;using(var mutex=new Mutex(true,"Local\\Lumina.Desktop.v1",out created)) {
-                if(!created){MessageBox.Show("已有 Lumina 在运行，本次启动的 v0.2.0 尚未运行。\n请先从托盘退出已有程序，再启动此版本。","Lumina v0.2.0");return 0;}
+                if(!created){MessageBox.Show("已有 Lumina 在运行，本次启动的 v"+AppInfo.Version+" 尚未运行。\n请先从托盘退出已有程序，再启动此版本。","Lumina v0.2.0");return 0;}
                 try {
                     Store.Trace("START exe="+System.Reflection.Assembly.GetExecutingAssembly().Location+" OS="+Environment.OSVersion+" CLR="+Environment.Version);
                     try{DesktopVisibility.Recover();}catch(Exception ex){Store.Log(ex);}
                     try{TaskbarAutoHide.Restore();}catch(Exception ex){Store.Log(ex);}
+                    AppDomain.CurrentDomain.UnhandledException+=(s,e)=>{var error=e.ExceptionObject as Exception;if(error==null)error=new Exception("非托管异常");Store.Log(error);try{Store.Trace("CRASH unhandled terminating="+e.IsTerminating);}catch{}};
+                    TaskScheduler.UnobservedTaskException+=(s,e)=>{Store.Log(e.Exception);try{Store.Trace("CRASH unobserved task");}catch{}e.SetObserved();};
                     var app=new Application {ShutdownMode=ShutdownMode.OnExplicitShutdown};
                     app.Exit+=(s,e)=>{try{DesktopVisibility.RestoreOriginal();}catch(Exception ex){Store.Log(ex);}try{TaskbarAutoHide.Restore();}catch(Exception ex){Store.Log(ex);}};
                     Controller controller=null;
