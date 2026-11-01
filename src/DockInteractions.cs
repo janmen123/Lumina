@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -50,7 +50,7 @@ namespace GlassBoard {
         }
         bool StartDockPointer(FrameworkElement owner,Entry entry,Point point,Action beforeDrag){return StartPointerItem(owner,entry.Path,entry.Name,()=>C.LaunchDock(entry),point,beforeDrag);}
         bool StartPointerItem(FrameworkElement owner,string key,string name,Action click,Point point,Action beforeDrag){
-            if(!IsVisible||!LayoutKeys.Contains(key,StringComparer.OrdinalIgnoreCase))return false;
+            if(!IsVisible||(!LayoutKeys.Contains(key,StringComparer.OrdinalIgnoreCase)&&!TaskKeys.Contains(key,StringComparer.OrdinalIgnoreCase)))return false;
             // Remember what the user was looking at before the click is handled,
             // so a Dock click can minimize/restore exactly like the taskbar.
             pointerHint=RunningWindows.CaptureForegroundHint();

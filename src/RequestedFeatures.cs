@@ -1,9 +1,9 @@
-using System;using System.Linq;using System.Collections.Generic;using System.IO;using System.Diagnostics;using System.Windows;using System.Windows.Controls;using System.Windows.Input;using System.Windows.Media;
+﻿using System;using System.Linq;using System.Collections.Generic;using System.IO;using System.Diagnostics;using System.Windows;using System.Windows.Controls;using System.Windows.Input;using System.Windows.Media;
 namespace GlassBoard { internal static class SnapStyles{[System.Runtime.InteropServices.DllImport("user32.dll")]static extern int GetWindowLong(IntPtr h,int n);[System.Runtime.InteropServices.DllImport("user32.dll")]static extern int SetWindowLong(IntPtr h,int n,int v);internal static void MakePassive(IntPtr h){SetWindowLong(h,-20,GetWindowLong(h,-20)|0x20|0x08000000|0x80);}}
 public static partial class RunningWindows {
 static List<RunningWindow> MatchWindows(Entry entry,IEnumerable<string> paths){
 var candidates=paths.Where(p=>!string.IsNullOrWhiteSpace(p)).ToArray();
-var exact=windows.Where(w=>candidates.Contains(w.Path,StringComparer.OrdinalIgnoreCase)).ToList();if(exact.Count>0)return exact;
+var exact=windows.Where(w=>candidates.Contains(w.Path,StringComparer.OrdinalIgnoreCase)||WindowActivationRules.HostedMatch(entry,w.Path,w.AppId)).ToList();if(exact.Count>0)return exact;
 var names=candidates.Select(Path.GetFileName).Where(n=>!string.IsNullOrEmpty(n)&&!new[]{"update.exe","launcher.exe","rundll32.exe","explorer.exe"}.Contains(n.ToLowerInvariant())).ToArray();
 var named=windows.Where(w=>!string.IsNullOrEmpty(w.Path)&&names.Contains(Path.GetFileName(w.Path),StringComparer.OrdinalIgnoreCase)).ToList();if(named.Count>0)return named;
 string key=(entry.Name??"").Trim();if(key.Equals("DSH",StringComparison.OrdinalIgnoreCase))key="DeepSeek Harness";if(key.Contains("抖音"))key="douyin";if(key.Length<2)return new List<RunningWindow>();

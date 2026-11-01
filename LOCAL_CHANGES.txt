@@ -165,3 +165,15 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 清理调用点：DesktopServices.cs 只留 LaunchInfoService；ProductCore.cs 删 MusicMetadataRecovery、备份校验不再要求 notes.json；PersonalizationCore/Ui/Checks、FeedbackChecks、BoardFileUi、ControllerFeatures、ProductExperience、GlassBoard 托盘菜单同步清理。
 - 自测修复：--self-test 下 Store.Silent=true，LaunchDock / Launch 启动失败不再弹 MessageBox（此前 Dock 行为检查会弹“无法打开「Dock0」”卡满 90 秒超时）；恢复为快速失败“后向前松手未提交”，自测 45 秒内跑完。
 - 构建与实测：Build.ps1 通过；重启后工作集 125 MB（删除前 164.6 MB，空载曾测到 87.8 MB）；桌面组件页只剩三项；session.log 正常 SAVE，error.log 无新增。
+19) 2026-10-30 修复隐藏桌面图标导致桌面鼠标失效
+- 使用 Explorer 桌面图标显示命令切换系统状态，不再隐藏 SHELLDLL_DefView 和 SysListView32，不再由定时器强制隐藏桌面窗口。
+- 原状态单独记录到 desktop-icons-recovery.txt，正常退出或下次启动恢复；任务栏原有恢复逻辑保留。
+- 编译成功；4 次显隐循环、桌面视图可见与原状态恢复通过；实际 Ctrl+Alt+Home 两次改变了 Windows 图标状态并恢复为原先的隐藏状态。
+- 桌面右键与左键交互尚未实测；Explorer 命令属于系统实现细节，跨 Windows 版本兼容性需关注。
+- 修改前 exe、源码、布局、恢复记录：backups\desktop-icons-fix-20261030-194452。
+
+20) 2026-10-30 修复整洁桌面与腾讯桌面整理兼容
+- Ctrl+Alt+Home 切换整洁桌面：保留壁纸、任务栏和 Dock；调用 Windows 显隐原生图标，隐藏指定腾讯桌面整理桌面窗口，并暂时隐藏 GlassBoard 桌面组件和小球；再次按键恢复原状态。
+- 只识别 DesktopMgr64 的 TXMiniSkin「桌面整理」窗口；恢复前核验窗口归属。写入现有 shell 恢复日志，程序退出或异常后下一次启动可恢复。
+- 不移动、删除分区或文件；用户实测隐藏、右键和恢复均正常。107 个入口、顺序和分组保持不变。若腾讯更新更改窗口实现可能需要调整兼容逻辑。
+- 备份：backups\clean-desktop-20261030-200833。

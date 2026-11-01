@@ -1,4 +1,4 @@
-using System;using System.Collections.Generic;using System.IO;using System.Linq;using System.Diagnostics;
+﻿using System;using System.Collections.Generic;using System.IO;using System.Linq;using System.Diagnostics;
 using System.Windows;using System.Windows.Controls;using System.Windows.Controls.Primitives;using System.Windows.Input;
 using System.Windows.Media;using System.Windows.Media.Animation;using System.Windows.Threading;
 namespace GlassBoard {
@@ -82,11 +82,16 @@ namespace GlassBoard {
         MenuItem TaskWindowItem(RunningWindow window){var selected=window;var item=new MenuItem{Header=string.IsNullOrWhiteSpace(window.Title)?"未命名窗口":window.Title,ToolTip=window.Title};item.Click+=(s,e)=>ActivateTask(selected.Handle);return item;}
         ContextMenu TaskWindowMenu(TaskGroup group){var menu=MenuTheme.Create(C.Prefs.Light);foreach(var window in group.Windows)menu.Items.Add(TaskWindowItem(window));menu.Items.Add(new Separator());foreach(var window in group.Windows){var selected=window;var close=new MenuItem{Header=group.Windows.Count==1?"关闭窗口":"关闭 · "+window.Title};close.Click+=(s,e)=>{if(!RunningWindows.RequestClose(selected))ShowTaskHint("窗口已关闭或当前无法发送请求");};menu.Items.Add(close);}AddDockControls(menu);return menu;}
         void OpenTask(TaskGroup group,FrameworkElement owner){
-            var foreground=RunningWindows.ForegroundMatch(group.Windows);
-            if(foreground!=null){ToggleTask(foreground);return;}
-            if(group.Windows.Count==1){ToggleTask(group.Windows[0]);return;}
-            if(owner==null)owner=Items.Children.OfType<Button>().FirstOrDefault(b=>b.Tag==group);OpenTaskMenu(TaskWindowMenu(group),owner??this);
+            // Refresh before acting: a launcher may replace its window after an update.
+            RunningWindows.Scan();
+            var current=RunningWindows.Snapshot().Where(w=>string.Equals(TaskKey(w),group.Key,StringComparison.OrdinalIgnoreCase)).ToList();
+            if(current.Count==0){ReadTaskGroups();Refresh(false);ShowTaskHint("此窗口已关闭");return;}
+            var known=C.Prefs.Apps.FirstOrDefault(a=>RunningWindows.For(a).Any(w=>current.Any(c=>c.Handle==w.Handle)));
+            if(known!=null){C.LaunchDock(known,pointerHint);return;}
+            var foreground=RunningWindows.ForegroundMatch(current);
+            ToggleTask(foreground??current.FirstOrDefault(w=>!RunningWindows.Minimized(w.Handle))??current[0]);
         }
+
         void OpenTaskMenu(ContextMenu menu,UIElement owner){taskMenu=menu;menu.Closed+=(s,e)=>{if(taskMenu==menu)taskMenu=null;};menu.PlacementTarget=owner;menu.Placement=PlacementMode.Top;menu.IsOpen=true;}
         void ActivateTask(IntPtr handle){if(RunningWindows.ActivateHandle(handle))C.Board.CollapseSmooth();else{RunningWindows.Scan();ReadTaskGroups();Refresh(false);ShowTaskHint("此窗口已关闭");}}
         void ToggleTask(RunningWindow window){if(RunningWindows.ToggleWindow(window))C.Board.CollapseSmooth();else{RunningWindows.Scan();ReadTaskGroups();Refresh(false);ShowTaskHint("此窗口已关闭");}}

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Windows;using System.Windows.Media;using System.Windows.Media.Imaging;using System.Windows.Interop;
 
 namespace GlassBoard {
-    public sealed class RunningWindow {public IntPtr Handle;public uint ProcessId;public string Path,Title,FolderPath;}
+    public sealed class RunningWindow {public IntPtr Handle;public uint ProcessId;public string Path,Title,FolderPath,AppId;}
     public static partial class RunningWindows {
         delegate bool Callback(IntPtr window,IntPtr value);
         [DllImport("user32.dll")] static extern bool EnumWindows(Callback callback,IntPtr value);
@@ -46,20 +46,25 @@ namespace GlassBoard {
         static readonly List<RunningWindow> windows=new List<RunningWindow>();
         static readonly BoundedCache<string,TargetInfo> targets=new BoundedCache<string,TargetInfo>(192,StringComparer.OrdinalIgnoreCase);
         static readonly BoundedCache<string,long> last=new BoundedCache<string,long>(192,StringComparer.OrdinalIgnoreCase);
+        [DllImport("kernel32.dll",CharSet=CharSet.Unicode)]static extern int GetApplicationUserModelId(IntPtr process,ref uint length,StringBuilder value);
+        static string ProcessAppId(uint id){
+            var process=OpenProcess(0x1000,false,id);if(process==IntPtr.Zero)return null;
+            try{uint length=512;var value=new StringBuilder((int)length);return GetApplicationUserModelId(process,ref length,value)==0?value.ToString():null;}catch{return null;}finally{CloseHandle(process);}
+        }
         public static string ProcessPath(uint id){
             var process=OpenProcess(0x1000,false,id);if(process==IntPtr.Zero)return null;
             try{int length=512;var path=new StringBuilder(length);if(!QueryFullProcessImageName(process,0,path,ref length)){if(Marshal.GetLastWin32Error()!=122)return null;length=32768;path=new StringBuilder(length);if(!QueryFullProcessImageName(process,0,path,ref length))return null;}return WindowActivationRules.NormalizePath(path.ToString());}finally{CloseHandle(process);}
         }
         public static void Scan(){
-            windows.Clear();if((DateTime.UtcNow-foldersAt).TotalSeconds>=25){foldersAt=DateTime.UtcNow;folders=ExplorerWindows.Read();}var byPid=new Dictionary<uint,string>();int own=Process.GetCurrentProcess().Id;
+            windows.Clear();if((DateTime.UtcNow-foldersAt).TotalSeconds>=25){foldersAt=DateTime.UtcNow;folders=ExplorerWindows.Read();}var byPid=new Dictionary<uint,string>();var appIds=new Dictionary<uint,string>();int own=Process.GetCurrentProcess().Id;
             EnumWindows((handle,value)=>{
                 if(!IsWindowVisible(handle))return true;int style=GetWindowLong(handle,-20);if((style&0x80)!=0||((style&0x40000)==0&&GetWindow(handle,4)!=IntPtr.Zero&&IsWindowVisible(GetWindow(handle,4))))return true;
                 int cloaked;try{if(DwmGetWindowAttribute(handle,14,out cloaked,4)==0&&cloaked!=0)return true;}catch{}
                 uint id;GetWindowThreadProcessId(handle,out id);if(id==own)return true;string path;
-                if(!byPid.TryGetValue(id,out path)){try{path=ProcessPath(id);}catch{path=null;}byPid[id]=path;}
+                if(!byPid.TryGetValue(id,out path)){try{path=ProcessPath(id);}catch{path=null;}byPid[id]=path;appIds[id]=ProcessAppId(id);}
                 var text=new StringBuilder(1024);GetWindowText(handle,text,text.Capacity);if(string.IsNullOrWhiteSpace(text.ToString()))return true;
                 var cls=new StringBuilder(128);GetClassName(handle,cls,cls.Capacity);if(new[]{"Progman","WorkerW","Shell_TrayWnd","Shell_SecondaryTrayWnd"}.Contains(cls.ToString()))return true;
-                string folder;folders.TryGetValue(handle.ToInt64(),out folder);windows.Add(new RunningWindow{Handle=handle,ProcessId=id,Path=path,Title=text.ToString(),FolderPath=folder});return true;
+                string folder;folders.TryGetValue(handle.ToInt64(),out folder);windows.Add(new RunningWindow{Handle=handle,ProcessId=id,Path=path,Title=text.ToString(),FolderPath=folder,AppId=appIds[id]});return true;
             },IntPtr.Zero);
         }
         static void Resolve(Entry entry){

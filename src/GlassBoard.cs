@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -353,6 +353,17 @@ namespace GlassBoard {
         delegate bool EnumCallback(IntPtr h,IntPtr data);
         [DllImport("user32.dll")] static extern bool EnumWindows(EnumCallback callback,IntPtr data);
         [DllImport("user32.dll")] static extern bool EnumChildWindows(IntPtr parent,EnumCallback callback,IntPtr data);
+        [DllImport("user32.dll",SetLastError=true)] static extern IntPtr SendMessageTimeout(IntPtr h,uint message,IntPtr w,IntPtr l,uint flags,uint timeout,out IntPtr result);
+        static readonly string IconRecoveryFile=System.IO.Path.Combine(Store.Folder,"desktop-icons-recovery.txt");
+        static bool? originalIcons;
+        static bool NativeIconsHidden(){using(var key=Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced")){return key!=null&&Convert.ToInt32(key.GetValue("HideIcons",0))!=0;}}
+        static void NativeSetIcons(bool hide){
+            if(NativeIconsHidden()==hide)return;
+            var view=DesktopLists().FirstOrDefault(h=>Class(h)=="SHELLDLL_DefView");
+            if(view==IntPtr.Zero)throw new InvalidOperationException("未找到 Windows 桌面视图");
+            IntPtr result;if(SendMessageTimeout(view,0x111,new IntPtr(0x7402),IntPtr.Zero,2,3000,out result)==IntPtr.Zero)throw new Win32Exception(Marshal.GetLastWin32Error(),"切换桌面图标失败");
+            if(NativeIconsHidden()!=hide)throw new InvalidOperationException("Windows 未确认桌面图标状态已更改");
+        }
         static readonly string RecoveryFile=System.IO.Path.Combine(Store.Folder,"shell-recovery.json");
         static Dictionary<long,ShellState> original=new Dictionary<long,ShellState>();
         static bool? taskbarHidden,iconsHidden;
@@ -373,8 +384,21 @@ namespace GlassBoard {
                 return true;
             },IntPtr.Zero);return result.OrderBy(h=>Class(h)=="SHELLDLL_DefView"?0:1).ToList();
         }
+        [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h,out uint pid);
+        [DllImport("user32.dll",CharSet=CharSet.Unicode)] static extern int GetWindowText(IntPtr h,StringBuilder text,int count);
+        static bool IsDeskGoSurface(IntPtr h){
+            if(Class(h)!="TXMiniSkin")return false;var title=new StringBuilder(128);GetWindowText(h,title,128);if(title.ToString()!="桌面整理")return false;
+            uint pid;GetWindowThreadProcessId(h,out pid);try{using(var p=Process.GetProcessById((int)pid)){return p.ProcessName.Equals("DesktopMgr64",StringComparison.OrdinalIgnoreCase);}}catch{return false;}
+        }
+        static List<IntPtr> DeskGoSurfaces(){var result=new HashSet<IntPtr>();EnumWindows((h,d)=>{if(IsDeskGoSurface(h))result.Add(h);EnumChildWindows(h,(child,data)=>{if(IsDeskGoSurface(child))result.Add(child);return true;},IntPtr.Zero);return true;},IntPtr.Zero);return result.ToList();}
+        static List<IntPtr> hiddenDeskGo=new List<IntPtr>();
+        public static void SetDeskGoHidden(bool hide){
+            if(hide){hiddenDeskGo=DeskGoSurfaces().Where(IsWindowVisible).ToList();Remember(hiddenDeskGo);foreach(var h in hiddenDeskGo)ShowWindow(h,0);}
+            else{foreach(var h in hiddenDeskGo)if(IsWindow(h)&&IsDeskGoSurface(h))ShowWindow(h,8);hiddenDeskGo.Clear();}
+        }
         static bool MatchesSaved(ShellState state) {
             var h=new IntPtr(state.Handle);if(!IsWindow(h)||Class(h)!=state.ClassName)return false;
+            if(state.ClassName=="TXMiniSkin")return IsDeskGoSurface(h);
             if(state.ClassName=="Shell_TrayWnd"||state.ClassName=="Shell_SecondaryTrayWnd")return Taskbars().Contains(h);
             return (state.ClassName=="SysListView32"||state.ClassName=="SHELLDLL_DefView")&&DesktopLists().Contains(h);
         }
@@ -388,13 +412,20 @@ namespace GlassBoard {
             if(File.Exists(RecoveryFile))File.Replace(temp,RecoveryFile,null);else File.Move(temp,RecoveryFile);
         }
         public static bool? IsHidden(bool taskbar) {
-            var targets=taskbar?Taskbars():DesktopLists();if(targets.Count==0)return null;
+            if(!taskbar){try{return NativeIconsHidden();}catch(Exception ex){Store.Log(ex);return null;}}
+            var targets=Taskbars();if(targets.Count==0)return null;
             var lists=targets.Where(h=>Class(h)=="SysListView32").ToList();if(!taskbar&&lists.Count>0)targets=lists;
             return !targets.Any(IsWindowVisible);
         }
-        public static bool DesiredHidden(bool taskbar) {return (taskbar?taskbarHidden:iconsHidden)??IsHidden(taskbar)??false;}
+        public static bool DesiredHidden(bool taskbar) {return taskbar?(taskbarHidden??IsHidden(true)??false):(IsHidden(false)??false);}
         public static string SetHidden(bool taskbar,bool hide) {
-            var handles=taskbar?Taskbars():DesktopLists();string noun=taskbar?"任务栏":"桌面图标";
+            if(!taskbar){
+                bool before=NativeIconsHidden();
+                if(before!=hide&&originalIcons==null){Directory.CreateDirectory(Store.Folder);File.WriteAllText(IconRecoveryFile,before?"1":"0");originalIcons=before;}
+                NativeSetIcons(hide);iconsHidden=hide;
+                return "已"+(hide?"隐藏":"显示")+"桌面图标";
+            }
+            var handles=Taskbars();string noun="任务栏";
             if(handles.Count==0)return "未找到"+noun+"，请确认 Windows Explorer 已运行。";
             // Journal raw WS_VISIBLE before hiding; ancestors can make a visible child appear hidden.
             int failed=0;Remember(handles);foreach(var h in handles)if(!ShowWindowAsync(h,hide?0:8)){failed++;Store.Log(new Win32Exception(Marshal.GetLastWin32Error(),"无法切换 "+Class(h)));}
@@ -406,13 +437,14 @@ namespace GlassBoard {
         public static string ToggleIcons() {return SetHidden(false,!DesiredHidden(false));}
         static void Maintain() {
             try {
-                foreach(bool taskbar in new bool[]{true,false})if((taskbar?taskbarHidden:iconsHidden)==true) {
+                foreach(bool taskbar in new bool[]{true})if((taskbar?taskbarHidden:iconsHidden)==true) {
                     var handles=taskbar?Taskbars():DesktopLists();if(handles.Count==0)continue;Remember(handles);
                     foreach(var h in handles)if(IsWindowVisible(h))ShowWindowAsync(h,0);
                 }
             }catch(Exception ex){Store.Log(ex);maintenance.Stop();}
         }
         public static void Recover() {
+            if(File.Exists(IconRecoveryFile)){string saved=File.ReadAllText(IconRecoveryFile).Trim();if(saved!="0"&&saved!="1")throw new InvalidDataException("桌面图标恢复记录无效");NativeSetIcons(saved=="1");File.Delete(IconRecoveryFile);}
             if(!File.Exists(RecoveryFile))return;
             using(var s=File.OpenRead(RecoveryFile)) {
                 var states=(List<ShellState>)new DataContractJsonSerializer(typeof(List<ShellState>)).ReadObject(s);
@@ -422,11 +454,13 @@ namespace GlassBoard {
         }
         public static void RestoreOriginal() {
             maintenance.Stop();taskbarHidden=null;iconsHidden=null;
+            if(originalIcons.HasValue){NativeSetIcons(originalIcons.Value);originalIcons=null;if(File.Exists(IconRecoveryFile))File.Delete(IconRecoveryFile);}
             foreach(var state in original.Values)if(MatchesSaved(state))ShowWindow(new IntPtr(state.Handle),state.Visible?8:0);
             original.Clear();if(File.Exists(RecoveryFile))File.Delete(RecoveryFile);
         }
         public static void ShowAll() {
             maintenance.Stop();taskbarHidden=false;iconsHidden=false;
+            NativeSetIcons(false);originalIcons=null;if(File.Exists(IconRecoveryFile))File.Delete(IconRecoveryFile);
             var handles=Taskbars().Concat(DesktopLists()).ToArray();foreach(var h in handles)ShowWindow(h,8);
             original.Clear();if(File.Exists(RecoveryFile))File.Delete(RecoveryFile);
         }
@@ -811,12 +845,12 @@ namespace GlassBoard {
                     var record=new Button{Content="录制",Height=32,Margin=new Thickness(0,0,8,0)};Grid.SetColumn(record,3);row.Children.Add(record);record.Click+=(s,e)=>{var active=Dock.SuspendHotkeys();HotkeySetting captured;try{captured=FeatureUi.Record(w,id);}finally{Dock.ResumeHotkeys(active);}if(captured!=null){enabled.IsChecked=true;modifiers.SelectedIndex=Array.IndexOf(HotkeyRules.ModifierValues,captured.Modifiers);key.SelectedItem=keyChoices.First(x=>x.Value==captured.Key).Key;}};
                     if(id==2||id==3||id==7) {
                         var wrap=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center};Grid.SetColumn(wrap,4);row.Children.Add(wrap);
-                        var toggle=VisibilitySwitch();if(id==7){try{toggle.IsChecked=TaskbarAutoHide.Enabled;}catch{toggle.IsChecked=false;}}else toggle.IsChecked=DesktopVisibility.DesiredHidden(id==2);toggle.ToolTip=id==7?"开启 Windows 任务栏自动隐藏":"开启隐藏，关闭显示";wrap.Children.Add(toggle);wrap.Children.Add(new TextBlock{Text=id==7?"自动":"隐藏",Margin=new Thickness(6,0,0,0),VerticalAlignment=VerticalAlignment.Center,Foreground=Brushes.White});switches[id]=toggle;
+                        var toggle=VisibilitySwitch();if(id==7){try{toggle.IsChecked=TaskbarAutoHide.Enabled;}catch{toggle.IsChecked=false;}}else toggle.IsChecked=id==3?cleanDesktopActive:DesktopVisibility.DesiredHidden(true);toggle.ToolTip=id==7?"开启 Windows 任务栏自动隐藏":"开启隐藏，关闭显示";wrap.Children.Add(toggle);wrap.Children.Add(new TextBlock{Text=id==7?"自动":"隐藏",Margin=new Thickness(6,0,0,0),VerticalAlignment=VerticalAlignment.Center,Foreground=Brushes.White});switches[id]=toggle;
                         toggle.Checked+=(s,e)=>{if(!syncing){if(id==7)ToggleTaskbarAutoHide(true);else ShellAction(id-1,true);}};toggle.Unchecked+=(s,e)=>{if(!syncing){if(id==7)ToggleTaskbarAutoHide(false);else ShellAction(id-1,false);}};
                     }
                     var status=new TextBlock{Foreground=Brushes.LightGray,FontSize=11,TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,6,0,0)};group.Children.Add(status);info[id]=status;
                 }
-                Action updateState=()=>{syncing=true;foreach(var k in Prefs.Hotkeys){string state=!k.Enabled?"快捷键已关闭":Dock.HotkeyActive(k.ActionId)?"快捷键已注册":"快捷键未注册，请换组合或重新注册";if(k.ActionId==2||k.ActionId==3){bool taskbar=k.ActionId==2;bool? hidden=DesktopVisibility.IsHidden(taskbar);state+=" · 实际状态："+(!hidden.HasValue?"未找到系统窗口":hidden.Value?"隐藏":"显示");switches[k.ActionId].IsChecked=DesktopVisibility.DesiredHidden(taskbar);}if(k.ActionId==7){try{bool auto=TaskbarAutoHide.Enabled;switches[7].IsChecked=auto;state+=" · 自动隐藏："+(auto?"开启":"关闭");}catch{state+=" · 未找到 Windows 任务栏";}}info[k.ActionId].Text=state;}syncing=false;};
+                Action updateState=()=>{syncing=true;foreach(var k in Prefs.Hotkeys){string state=!k.Enabled?"快捷键已关闭":Dock.HotkeyActive(k.ActionId)?"快捷键已注册":"快捷键未注册，请换组合或重新注册";if(k.ActionId==2||k.ActionId==3){bool taskbar=k.ActionId==2;bool? hidden=DesktopVisibility.IsHidden(taskbar);state+=" · 实际状态："+(!hidden.HasValue?"未找到系统窗口":hidden.Value?"隐藏":"显示");switches[k.ActionId].IsChecked=taskbar?DesktopVisibility.DesiredHidden(true):cleanDesktopActive;}if(k.ActionId==7){try{bool auto=TaskbarAutoHide.Enabled;switches[7].IsChecked=auto;state+=" · 自动隐藏："+(auto?"开启":"关闭");}catch{state+=" · 未找到 Windows 任务栏";}}info[k.ActionId].Text=state;}syncing=false;};
                 stateTimer.Tick+=(s,e)=>updateState();updateState();stateTimer.Start();
                 var actions=new WrapPanel();keysPage.Children.Add(actions);
                 var reset=new Button{Content="恢复默认快捷键",Padding=new Thickness(12,7,12,7),Margin=new Thickness(0,0,8,6)};actions.Children.Add(reset);reset.Click+=(s,e)=>{foreach(var k in HotkeyRules.Defaults()){var row=controls[k.ActionId];row.Item1.IsChecked=true;row.Item2.SelectedIndex=Array.IndexOf(HotkeyRules.ModifierValues,k.Modifiers);row.Item3.SelectedItem=keyChoices.First(x=>x.Value==k.Key).Key;}};
@@ -877,10 +911,26 @@ namespace GlassBoard {
             }finally{if(!shown){if(settingsWindow!=null)settingsWindow.Close();cleanup();}}
         }
         bool settingsOpen;Window settingsWindow;TabControl settingsTabs;
+        bool cleanDesktopActive;
+        bool iconsBeforeClean;
+        public bool CleanDesktopActive {get{return cleanDesktopActive;}}
+        void SetCleanDesktop(bool hide){
+            if(hide==cleanDesktopActive)return;
+            if(hide){
+                iconsBeforeClean=DesktopVisibility.IsHidden(false)??false;
+                DesktopVisibility.SetHidden(false,true);
+                try{DesktopVisibility.SetDeskGoHidden(true);}catch{DesktopVisibility.SetHidden(false,iconsBeforeClean);throw;}
+                cleanDesktopActive=true;
+                if(widgets!=null)widgets.SetVisible(false);ControlCenterVisibility(false);
+            }else{
+                DesktopVisibility.SetDeskGoHidden(false);DesktopVisibility.SetHidden(false,iconsBeforeClean);cleanDesktopActive=false;
+                if(widgets!=null)widgets.Sync();RefreshControlCenter();
+            }
+        }
         public void ShellAction(int action,bool? hidden=null) {
             try {
                 string message;
-                if(action==1){bool next=hidden??!DesktopVisibility.DesiredHidden(true);if(next&&TaskbarAutoHide.Enabled)TaskbarAutoHide.Set(false);message=DesktopVisibility.SetHidden(true,next);}else if(action==2)message=hidden.HasValue?DesktopVisibility.SetHidden(false,hidden.Value):DesktopVisibility.ToggleIcons();else {try{TaskbarAutoHide.ShowAndClear();}catch(Exception ex){Store.Log(ex);}DesktopVisibility.ShowAll();message="已执行任务栏与桌面图标恢复";}
+                if(action==1){bool next=hidden??!DesktopVisibility.DesiredHidden(true);if(next&&TaskbarAutoHide.Enabled)TaskbarAutoHide.Set(false);message=DesktopVisibility.SetHidden(true,next);}else if(action==2){bool next=hidden??!cleanDesktopActive;SetCleanDesktop(next);message=next?"已隐藏桌面图标和分区":"已恢复桌面图标和分区";}else {SetCleanDesktop(false);try{TaskbarAutoHide.ShowAndClear();}catch(Exception ex){Store.Log(ex);}DesktopVisibility.ShowAll();message="已执行任务栏与桌面图标恢复";}
                 Board.SetStatus(message);if(Tray!=null)Tray.ShowBalloonTip(1500,"GlassBoard",message,Forms.ToolTipIcon.Info);
             }catch(Exception ex){Store.Log(ex);MessageBox.Show("无法切换系统界面："+ex.Message,"GlassBoard");}
         }
@@ -1015,7 +1065,7 @@ namespace GlassBoard {
                 foreach(var a in pinned.Skip(shown)) {var item=new MenuItem{Header=a.Name};var entry=a;item.Click+=(s,e)=>{if(!DockDragSuppresses(item))C.LaunchDock(entry);};BindDockSource(item,entry,()=>menu.IsOpen=false);menu.Items.Add(item);}
                 AddDockControls(menu);more.ContextMenu=menu;more.Click+=(s,e)=>{menu.PlacementTarget=more;menu.Placement=PlacementMode.Top;menu.IsOpen=true;};Items.Children.Add(more);
             }
-            if(o.ShowRunningSection&&pinned.Count>0){RunningWindows.Scan();ReadTaskGroups();if(taskGroups.Count>0){var pinnedTargets=new HashSet<string>(pinned.SelectMany(a=>WindowActivationRules.Executables(a)),StringComparer.OrdinalIgnoreCase);var extras=taskGroups.Where(g=>!g.Key.StartsWith("window:",StringComparison.Ordinal)&&!g.Key.StartsWith("folder:",StringComparison.Ordinal)&&!pinnedTargets.Contains(g.Windows[0].Path??"")).ToList();double cell=o.IconSize+16+o.Spacing;int fixedSlots=1+(o.ShowSettings?1:0)+(o.ShowComputer?1:0)+(o.ShowPower?1:0)+(o.ShowNetwork?1:0)+(o.ShowRecycleBin?1:0);int fit=Math.Max(0,(int)Math.Floor((area.Width-20-28-o.HoverPadding()*2-(o.ShowSeparator?17:0))/cell)-fixedSlots);int room=Math.Max(0,fit-shown-1);if(extras.Count>room)extras=extras.Take(room).ToList();if(extras.Count>0){extrasShown=extras.Count;Items.Children.Add(new Border{Width=1,Height=o.IconSize*.7,Margin=new Thickness(6,0,6,0),Background=new SolidColorBrush(Color.FromArgb(65,220,220,230)),VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false});foreach(var group in extras){var selected=group;var button=DockButton(null,RunningWindows.Icon(group.Windows[0]),()=>OpenTask(selected,null),"正在运行 · "+group.Name+(group.Windows.Count>1?" · "+group.Windows.Count+" 个窗口":""));button.Tag=group;var grid=button.Content as Grid;if(grid!=null)grid.Children.Add(RunningBadge.Create());button.ContextMenu=TaskWindowMenu(group);Items.Children.Add(button);}}}}
+            if(o.ShowRunningSection&&pinned.Count>0){RunningWindows.Scan();ReadTaskGroups();if(taskGroups.Count>0){var pinnedWindows=new HashSet<IntPtr>(pinned.SelectMany(a=>RunningWindows.For(a)).Select(w=>w.Handle));var extras=taskGroups.Where(g=>!g.Key.StartsWith("window:",StringComparison.Ordinal)&&!g.Key.StartsWith("folder:",StringComparison.Ordinal)&&!g.Windows.All(w=>pinnedWindows.Contains(w.Handle))).ToList();double cell=o.IconSize+16+o.Spacing;int fixedSlots=1+(o.ShowSettings?1:0)+(o.ShowComputer?1:0)+(o.ShowPower?1:0)+(o.ShowNetwork?1:0)+(o.ShowRecycleBin?1:0);int fit=Math.Max(0,(int)Math.Floor((area.Width-20-28-o.HoverPadding()*2-(o.ShowSeparator?17:0))/cell)-fixedSlots);int room=Math.Max(0,fit-shown-1);if(extras.Count>room)extras=extras.Take(room).ToList();if(extras.Count>0){extrasShown=extras.Count;Items.Children.Add(new Border{Width=1,Height=o.IconSize*.7,Margin=new Thickness(6,0,6,0),Background=new SolidColorBrush(Color.FromArgb(65,220,220,230)),VerticalAlignment=VerticalAlignment.Center,IsHitTestVisible=false});foreach(var group in extras){var selected=group;var button=DockButton(null,RunningWindows.Icon(group.Windows[0]),()=>OpenTask(selected,null),"正在运行 · "+group.Name+(group.Windows.Count>1?" · "+group.Windows.Count+" 个窗口":""));button.Tag=group;BindPointerItem(button,"running:"+group.Key,group.Name,()=>OpenTask(selected,button));var grid=button.Content as Grid;if(grid!=null)grid.Children.Add(RunningBadge.Create());button.ContextMenu=TaskWindowMenu(group);Items.Children.Add(button);}}}}
             if(pinned.Count==0) Items.Children.Add(DockButton("+",null,()=>C.Toggle(true),"打开面板，可拖入软件固定"));
             }
             AddQuickButtons();

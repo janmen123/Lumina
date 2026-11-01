@@ -18,10 +18,10 @@ namespace GlassBoard {
     }
     public partial class Controller {
         public readonly SystemBridge Systems=new SystemBridge();ControlOrbWindow controlOrb;
-        public void RefreshControlCenter(){if(ShuttingDown)return;var o=Prefs.ControlCenter;o.Normalize();if(!o.Enabled){if(controlOrb!=null){controlOrb.Close();controlOrb=null;}return;}if(controlOrb==null)controlOrb=new ControlOrbWindow(this);controlOrb.Sync();if(GlassSuppressed)controlOrb.HideAll();else if(!controlOrb.IsVisible)controlOrb.Show();}
+        public void RefreshControlCenter(){if(ShuttingDown)return;var o=Prefs.ControlCenter;o.Normalize();if(!o.Enabled){if(controlOrb!=null){controlOrb.Close();controlOrb=null;}return;}if(controlOrb==null)controlOrb=new ControlOrbWindow(this);controlOrb.Sync();if(GlassSuppressed||CleanDesktopActive)controlOrb.HideAll();else if(!controlOrb.IsVisible)controlOrb.Show();}
         public void OpenControlCenter(){Prefs.ControlCenter.Enabled=true;RefreshControlCenter();Save();if(controlOrb!=null&&!GlassSuppressed)controlOrb.OpenPanel("control");}
         void CloseControlCenter(){if(controlOrb!=null){controlOrb.Close();controlOrb=null;}Systems.Dispose();}
-        void ControlCenterVisibility(bool visible){if(controlOrb==null)return;if(visible&&Prefs.ControlCenter.Enabled)controlOrb.Show();else controlOrb.HideAll();}
+        void ControlCenterVisibility(bool visible){if(controlOrb==null)return;if(visible&&!CleanDesktopActive&&Prefs.ControlCenter.Enabled)controlOrb.Show();else controlOrb.HideAll();}
         public void ControlCenterSettings(Window owner){bool previous=Board.ModalBusy;Board.ModalBusy=true;try{if(controlOrb!=null)controlOrb.HidePanel();var w=FeatureUi.Dialog("控制中心 · 小球外观",Dock,460,700);var root=new StackPanel{Margin=new Thickness(24)};w.Content=new ScrollViewer{Content=root};var o=Prefs.ControlCenter;
             Action apply=()=>{o.Normalize();RefreshControlCenter();Save();};
             Action<string,bool,Action<bool>> check=(name,value,set)=>{var b=new CheckBox{Content=name,IsChecked=value,Margin=new Thickness(0,8,0,8)};root.Children.Add(b);b.Click+=(s,e)=>{set(b.IsChecked==true);apply();};};

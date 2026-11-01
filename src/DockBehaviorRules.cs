@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -43,6 +43,17 @@ namespace GlassBoard {
         internal static bool MinimizeDock(bool isForeground,bool isMinimized){return isForeground&&!isMinimized;}
         public static string NormalizePath(string path){if(string.IsNullOrWhiteSpace(path))return null;string value=path.Trim().Trim('"').Replace('/','\\');return value.StartsWith(@"\\?\",StringComparison.Ordinal)?value.Substring(4):value;}
         public static string[] Executables(Entry entry){if(entry==null||entry.IsFolder)return new string[0];var manual=NormalizePath(entry.WindowTarget);if(manual!=null&&Path.GetExtension(manual).Equals(".exe",StringComparison.OrdinalIgnoreCase))return new[]{manual};return new[]{entry.LaunchTarget,entry.Path}.Select(NormalizePath).Where(p=>p!=null&&Path.GetExtension(p).Equals(".exe",StringComparison.OrdinalIgnoreCase)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();}
+        public static bool HostedMatch(Entry entry,string path,string appId){
+            if(entry==null)return false;
+            // A manual association is authoritative.
+            if(!string.IsNullOrWhiteSpace(entry.WindowTarget))return false;
+            if(!string.IsNullOrWhiteSpace(appId)&&string.Equals(entry.LaunchTarget,appId,StringComparison.OrdinalIgnoreCase))return true;
+            var target=NormalizePath(entry.LaunchTarget);path=NormalizePath(path);
+            if(target==null||path==null||!Path.GetFileName(target).Equals("steam.exe",StringComparison.OrdinalIgnoreCase))return false;
+            // Only Steam's own helper under this installation, never games or another Steam install.
+            return string.Equals(path,Path.Combine(Path.GetDirectoryName(target),@"bin\cef\cef.win64\steamwebhelper.exe"),StringComparison.OrdinalIgnoreCase)
+                ||string.Equals(path,Path.Combine(Path.GetDirectoryName(target),@"bin\cef\cef.win7\steamwebhelper.exe"),StringComparison.OrdinalIgnoreCase);
+        }
         public static long Select(IEnumerable<long> windows,long foreground,long previous,bool ownForeground){
             var handles=windows.Where(h=>h!=0).Distinct().OrderBy(h=>h).ToList();if(handles.Count==0)return 0;
             int index=handles.IndexOf(foreground);if(index>=0)return handles[(index+1)%handles.Count];
