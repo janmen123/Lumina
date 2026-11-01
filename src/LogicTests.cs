@@ -90,10 +90,14 @@ namespace Lumina {
             Check("贴边收起后底边可唤醒",()=>InteractionRules.DockSpringOpen(false,true));
             Check("不贴边时按自动隐藏设置",()=>InteractionRules.DockSpringOpen(false,false)==false&&InteractionRules.DockSpringOpen(true,false));
             Check("最大化带标题栏不算独占全屏",()=>!WindowReliabilityRules.Fullscreen(true,false,true,true,true));
-            Check("底边压进 Dock 带的宽窗口要贴边收起",()=>WindowReliabilityRules.Immersive(true,false,true,true));
-            Check("最小化的窗口不算",()=>!WindowReliabilityRules.Immersive(true,true,true,true));
-            Check("窄窗口不算铺满",()=>!WindowReliabilityRules.Immersive(true,false,true,false));
-            Check("没压进 Dock 带的窗口不算",()=>!WindowReliabilityRules.Immersive(true,false,false,true));
+            Check("底边压进 Dock 带的宽窗口要贴边收起",()=>WindowReliabilityRules.Immersive(true,false,true,true,true));
+            Check("最小化的窗口不算",()=>!WindowReliabilityRules.Immersive(true,true,true,true,true));
+            Check("窄窗口不算铺满",()=>!WindowReliabilityRules.Immersive(true,false,true,false,true));
+            Check("没压进 Dock 带的窗口不算",()=>!WindowReliabilityRules.Immersive(true,false,false,true,true));
+            Check("没最大化也没铺满的窗口不算",()=>!WindowReliabilityRules.Immersive(true,false,true,true,false));
+            Check("贴边收起要连续两轮才生效",()=>InteractionRules.DuckStreak(0,true)==1&&InteractionRules.DuckStreak(1,true)==2&&!InteractionRules.DuckConfirmed(1)&&InteractionRules.DuckConfirmed(2));
+            Check("判定中断就清零",()=>InteractionRules.DuckStreak(2,false)==0);
+            Check("壁纸引擎不算游戏",()=>!GameDetection.IsGamePath("E:\\Steam1\\steamapps\\common\\wallpaper_engine\\bin\\wallpaper64.exe"));
             // 任务栏：隐藏时借用系统自动隐藏状态，让工作区退回整屏
             Check("自动隐藏只切最低位",()=>FeatureRules.AutoHideState(0x0u,true)==0x1u&&FeatureRules.AutoHideState(0x1u,false)==0x0u&&FeatureRules.AutoHideState(0x2u,true)==0x3u);
             // 窗口激活规则

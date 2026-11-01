@@ -15,6 +15,10 @@ namespace Lumina {
         // 则改成贴边收起、指针回到底边再弹出，既不挡内容又随时可点。
         public static bool DockDucks(bool respectFullscreen,bool exclusiveFullscreen,bool immersive,bool dragging){return respectFullscreen&&!dragging&&!exclusiveFullscreen&&immersive;}
         public static bool DockSpringOpen(bool autoHide,bool ducking){return autoHide||ducking;}
+        // 收起要连续两轮（前景轮询 300ms，约 600ms）判定成立才生效，避免窗口一闪就把 Dock 打下去；
+        // 恢复不设门槛，指针一碰或被遮挡的窗口走了就立刻回来。
+        public static int DuckStreak(int current,bool immersive){return immersive?Math.Min(current+1,2):0;}
+        public static bool DuckConfirmed(int streak){return streak>=2;}
         public static string WirelessState(SystemSnapshot snapshot,string kind){
             if(snapshot==null)return "尚未读取";
             var radios=(snapshot.Radios??new System.Collections.Generic.List<RadioSnapshot>()).Where(r=>r.Kind==kind).ToList();

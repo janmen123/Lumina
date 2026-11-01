@@ -81,7 +81,7 @@ namespace Lumina {
             if(!Measure(onMonitor,out window,out rect,out monitor))return false;
             bool reachesBand=rect.Bottom>=bandTop;
             bool wide=(rect.Right-rect.Left)*2>=(monitor.Monitor.Right-monitor.Monitor.Left);
-            return WindowReliabilityRules.Immersive(IsWindowVisible(window),IsIconic(window),reachesBand,wide);
+            return WindowReliabilityRules.Immersive(IsWindowVisible(window),IsIconic(window),reachesBand,wide,IsZoomed(window)||Covers(rect,monitor));
         }
         static bool Covers(RECT rect,MONITORINFO monitor) {
             return rect.Left<=monitor.Monitor.Left&&rect.Top<=monitor.Monitor.Top&&rect.Right>=monitor.Monitor.Right&&rect.Bottom>=monitor.Monitor.Bottom;
@@ -101,6 +101,10 @@ namespace Lumina {
                 "Progman","WorkerW","Shell_TrayWnd","Shell_SecondaryTrayWnd"
             }
             .Contains(cls.ToString()))return false;
+            // 桌面挂件和悬浮层（腾讯桌面整理、壁纸引擎等）是工具窗口、没有标题栏，
+            // 也不该被当成"铺满屏幕的应用窗口"，否则 Dock 会在桌面上自己收起来。
+            if((GetWindowLong(window,-20)&0x00000080)!=0)return false;
+            if((GetWindowLong(window,-16)&0x00C00000)==0&&!IsZoomed(window))return false;
             return GetWindowRect(window,out rect)&&GetMonitorInfo(MonitorFromWindow(window,2),ref monitor);
         }
     }

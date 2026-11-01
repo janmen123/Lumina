@@ -27,7 +27,9 @@ namespace Lumina {
             "\\epic games\\launcher\\",
             "\\riot games\\riot client\\",
             "\\steam\\bin\\",
-            "\\wegame\\"
+            "\\wegame\\",
+            "\\wallpaper_engine\\",
+            "\\steamworks shared\\"
         };
 
         public static bool IsGamePath(string path) {

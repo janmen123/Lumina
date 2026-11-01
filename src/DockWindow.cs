@@ -130,7 +130,8 @@ namespace Lumina {
             SetScanPause(ScanPauseReason.Fullscreen,false);
             // 判据用 Dock 自己那条带的物理顶边：任务栏是否收起都不影响它。
             double bandTop=shownTop*source.CompositionTarget.TransformToDevice.M11;
-            bool ducking=InteractionRules.DockDucks(respect,exclusive,respect&&FullscreenState.Immersive(source.Handle,bandTop),dragging||boardPinDragging);
+            duckStreak=InteractionRules.DuckStreak(duckStreak,respect&&FullscreenState.Immersive(source.Handle,bandTop));
+            bool ducking=InteractionRules.DockDucks(respect,exclusive,InteractionRules.DuckConfirmed(duckStreak),dragging||boardPinDragging);
             KeepDuckTimer(ducking);
             IsHitTestVisible=true;var position=Forms.Cursor.Position;var pointer=source.CompositionTarget.TransformFromDevice.Transform(new Point(position.X,position.Y));double bottom=dockScreenArea.Bottom;
             bool over=!renderedHidden&&pointer.X>=Left&&pointer.X<=Left+Width&&pointer.Y>=shownTop&&pointer.Y<=shownTop+Height;
@@ -139,6 +140,7 @@ namespace Lumina {
             bool hide=hidePolicy.Update(DateTime.UtcNow,InteractionRules.DockSpringOpen(C.Prefs.Dock.AutoHide,ducking),over,edge,dragging||DockInputBusy||externalDockDrag||(thumbnails!=null&&thumbnails.PointerInside)||(taskMenu!=null&&taskMenu.IsOpen)||menu||C.UiBusy||C.Board.IsVisible,ducking?0:C.Prefs.Dock.HideDelay);
             if(hide==renderedHidden)return;renderedHidden=hide;double target=hide?bottom-20:shownTop;AnimateDockVisibility(hide,target);
         }
+        int duckStreak;
         // 贴边收起时需要比 300ms 前景轮询更快的响应，否则指针扫过底边弹不出来。
         void KeepDuckTimer(bool ducking) {
             bool wanted=C.Prefs.Dock.AutoHide||ducking;

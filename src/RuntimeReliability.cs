@@ -49,8 +49,8 @@ namespace Lumina {
         // 这类窗口的底边正好落在 Dock 悬浮的那一条带上，Dock 会压在它的内容上。
         // 它不该被当成游戏全屏去停扫描，但需要让开。
         internal static bool Immersive(bool visible, bool minimized, bool reachesBand,
-            bool wide) {
-            return visible && !minimized && reachesBand && wide;
+            bool wide, bool maximizedOrCovers) {
+            return visible && !minimized && reachesBand && wide && maximizedOrCovers;
         }
     }
 
