@@ -17,7 +17,7 @@ namespace Lumina {
         readonly StackPanel content=new StackPanel();
         readonly Grid header=new Grid();
         readonly TextBlock title=new TextBlock(), subtitle=new TextBlock(), time=new TextBlock();
-        Point start;bool down,dragged;
+        Point start;bool down;
         public override bool WantsTopmost{get{return false;}}
         public IslandWindow(WidgetManager m):base(28) {
             manager=m;Title="Lumina 灵动岛";Width=132;Height=68;Root.Margin=new Thickness(10);Surface.Effect=null;
@@ -29,8 +29,8 @@ namespace Lumina {
             subtitle.Foreground=new SolidColorBrush(Color.FromArgb(170,255,255,255));subtitle.FontSize=10;subtitle.TextTrimming=TextTrimming.CharacterEllipsis;Grid.SetColumn(subtitle,1);subtitle.Margin=new Thickness(8,0,0,0);header.Children.Add(subtitle);
             time.Foreground=Brushes.White;time.FontFamily=new FontFamily("Segoe UI");time.FontSize=16;time.FontWeight=FontWeights.SemiBold;time.VerticalAlignment=VerticalAlignment.Center;time.Margin=new Thickness(8,0,0,0);Grid.SetColumn(time,2);header.Children.Add(time);
             content.Children.Add(header);
-            header.MouseLeftButtonDown+=(s,e)=>{down=true;dragged=false;start=e.GetPosition(this);header.CaptureMouse();};
-            header.MouseMove+=(s,e)=>{if(!down||e.LeftButton!=MouseButtonState.Pressed)return;Point p=e.GetPosition(this);if(Math.Abs(p.X-start.X)+Math.Abs(p.Y-start.Y)<5)return;down=false;dragged=true;header.ReleaseMouseCapture();if(manager.C.Prefs.Widgets.Locked)return;try{DragMove();var a=DesktopWindowPolicy.WorkArea(this,true);Left=FeatureRules.Position(Left,a.Left,a.Width,Width);Top=FeatureRules.Position(Top,a.Top,a.Height,Height);manager.C.Prefs.Widgets.IslandLeft=Left;manager.C.Prefs.Widgets.IslandTop=Top;manager.C.Save();}catch(InvalidOperationException){}};
+            header.MouseLeftButtonDown+=(s,e)=>{down=true;start=e.GetPosition(this);header.CaptureMouse();};
+            header.MouseMove+=(s,e)=>{if(!down||e.LeftButton!=MouseButtonState.Pressed)return;Point p=e.GetPosition(this);if(Math.Abs(p.X-start.X)+Math.Abs(p.Y-start.Y)<5)return;down=false;header.ReleaseMouseCapture();if(manager.C.Prefs.Widgets.Locked)return;try{DragMove();var a=DesktopWindowPolicy.WorkArea(this,true);Left=FeatureRules.Position(Left,a.Left,a.Width,Width);Top=FeatureRules.Position(Top,a.Top,a.Height,Height);manager.C.Prefs.Widgets.IslandLeft=Left;manager.C.Prefs.Widgets.IslandTop=Top;manager.C.Save();}catch(InvalidOperationException){}};
             header.MouseLeftButtonUp+=(s,e)=>{if(!down)return;down=false;header.ReleaseMouseCapture();};
             ContextMenuOpening+=(s,e)=>{ContextMenu=CreateMenu();};
             Loaded+=(s,e)=>{var a=DesktopWindowPolicy.WorkArea(this,true);var o=manager.C.Prefs.Widgets;Left=FeatureRules.Position(o.IslandLeft??(a.Left+(a.Width-Width)/2),a.Left,a.Width,Width);Top=FeatureRules.Position(o.IslandTop??(a.Top+8),a.Top,a.Height,Height);RefreshLayer();};

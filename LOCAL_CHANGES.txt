@@ -259,3 +259,8 @@
 - 清单 assemblyIdentity 由 0.9.23.0 改为 0.2.0.0，与程序集版本一致。
 - 使用说明标题改为 Lumina v0.2.0。
 - 构建通过，--self-test 全部 PASS。
+35) 2026-11-02 清理死代码：移除已下线的“支持创作者”页面实现与未使用字段
+- 删除 ProductExperience 中 BuildCreatorSupport/ShowCreatorImage/CreatorImage（设置页已移除该页，无调用方）。
+- 删除 IslandWindow 中只写不读的 dragged 字段，消除 CS0414 警告。
+- 仍保留 CreatorAssets/CreatorIdentityProof：用于校验签名素材（配置与资源自测覆盖）。
+- 构建无警告通过，--self-test 全部 PASS。
