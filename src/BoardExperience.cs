@@ -40,7 +40,6 @@ namespace Lumina {
             menu.Items.Add(new Separator());
             var backup=new MenuItem{Header="备份与恢复"};menu.Items.Add(backup);
             add(backup,"导出完整备份","",()=>C.ExportFullBackup(),true);add(backup,"恢复完整备份","",()=>C.RestoreFullBackup(),true);
-            add(menu,"支持创作者 · 森霖sama","",()=>C.Settings(5),true);
             return menu;
         }
         void MoreMenu(){EndDragPreview();var menu=CreateMoreMenu();iconMenu=menu;menu.Closed+=(s,e)=>{if(iconMenu==menu)iconMenu=null;};menu.PlacementTarget=this;menu.IsOpen=true;}

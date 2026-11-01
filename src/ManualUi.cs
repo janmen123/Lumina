@@ -5,7 +5,7 @@ namespace Lumina {
             panel.Children.Add(new TextBlock{Text="玻璃板使用说明",FontSize=25,FontWeight=FontWeights.SemiBold,Margin=new Thickness(0,12,0,8)});
             panel.Children.Add(new TextBlock{Text="点击问题标题展开查看。快捷键以你在「快捷键与开关」中设置的组合为准。",TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,0,0,18)});
             ManualGroup(panel,"开始使用");
-            ManualItem(panel,"设置父子分类与翻页动效","设置左侧按外观与动效、组件与系统、帮助与反馈分组。进入外观与动效 → UI 动效，可分别设置展开、悬停及大玻璃板翻页；翻页支持轻柔淡入、水平滑入和微缩淡入，与展开动画独立。");
+            ManualItem(panel,"设置父子分类与翻页动效","设置左侧按外观与动效、组件与系统分组。进入外观与动效 → UI 动效，可分别设置展开、悬停及大玻璃板翻页；翻页支持轻柔淡入、水平滑入和微缩淡入，与展开动画独立。");
             ManualItem(panel,"统一桌面层开关","外观与动效 → 面板与主题 → 所有组件置于桌面层。开启后统一覆盖 Dock、大面板、小球和组件的置顶偏好；关闭后恢复各自设置。设置窗口与系统原生菜单正常弹出。Windows 实际层级及 Win+D 请按验收清单测试。");
             ManualItem(panel,"小球独立栏目与原生开始菜单","右键小球 → 小球设置，可分别显示控制中心、系统托盘与开始菜单入口；开始菜单调用 Windows 系统自带菜单。系统托盘入口直接打开 Windows 原生隐藏图标面板，在系统面板中单击、双击或右键原图标。");
             ManualItem(panel,"第一次打开与完整解压","先将用户 ZIP 完整解压到固定位置，再运行 Lumina.exe 或 Start.cmd。不要在压缩包预览中直接运行，也不要只复制一个 EXE。便签和布局保存在当前 Windows 用户的配置目录，更新前可在通用中导出完整备份。新用户组件默认有框；老用户已有外观设置会保留。");

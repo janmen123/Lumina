@@ -20,7 +20,7 @@ namespace Lumina {
             var buttons=new System.Collections.Generic.Dictionary<int,Button>();var groups=new System.Collections.Generic.Dictionary<int,Expander>();
             Action sync=()=>{foreach(var pair in buttons){bool selected=pair.Key==tabs.SelectedIndex;pair.Value.Background=selected?Polish.Color("#344A70"):Brushes.Transparent;pair.Value.BorderBrush=selected?Polish.Color("#6A9BFA"):Brushes.Transparent;if(selected)groups[pair.Key].IsExpanded=true;}};
             Action<string,int[]> groupPage=(title,indices)=>{var children=new StackPanel();var parent=new Expander{Header=new TextBlock{Text=title,Foreground=Brushes.LightGray},Content=children,IsExpanded=true,Margin=new Thickness(0,6,0,8),Foreground=Brushes.White};navigation.Children.Add(parent);foreach(int i in indices){int index=i;var tab=(TabItem)tabs.Items[i];var button=new Button{Content=new TextBlock{Text=Convert.ToString(tab.Header),Foreground=Brushes.White,TextWrapping=TextWrapping.Wrap},Style=Polish.ButtonStyle(false),HorizontalContentAlignment=HorizontalAlignment.Left,Padding=new Thickness(10,9,10,9),Margin=new Thickness(15,2,2,2),Background=Brushes.Transparent,BorderBrush=Brushes.Transparent};button.Click+=(s,e)=>tabs.SelectedIndex=index;buttons[i]=button;groups[i]=parent;children.Children.Add(button);}};
-            groupPage("外观与动效",new[]{0,1,8});groupPage("组件与系统",new[]{3,2,4});groupPage("帮助与反馈",new[]{6,7,5});
+            groupPage("外观与动效",new[]{0,1,5});groupPage("组件与系统",new[]{3,2,4});
             tabs.SelectionChanged+=(s,e)=>{if(e.Source==tabs)sync();};sync();
         }
     }
