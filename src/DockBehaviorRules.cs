@@ -41,6 +41,7 @@ namespace GlassBoard {
             return handles.Contains(foreground)?foreground:handles.Contains(previous)?previous:handles.FirstOrDefault();
         }
         internal static bool MinimizeDock(bool isForeground,bool isMinimized){return isForeground&&!isMinimized;}
+        public static string Token(string value){if(string.IsNullOrWhiteSpace(value))return "";var text=new System.Text.StringBuilder(value.Length);foreach(var c in value){if(char.IsLetterOrDigit(c))text.Append(char.ToLowerInvariant(c));}return text.ToString();}
         public static string NormalizePath(string path){if(string.IsNullOrWhiteSpace(path))return null;string value=path.Trim().Trim('"').Replace('/','\\');return value.StartsWith(@"\\?\",StringComparison.Ordinal)?value.Substring(4):value;}
         public static string[] Executables(Entry entry){if(entry==null||entry.IsFolder)return new string[0];var manual=NormalizePath(entry.WindowTarget);if(manual!=null&&Path.GetExtension(manual).Equals(".exe",StringComparison.OrdinalIgnoreCase))return new[]{manual};return new[]{entry.LaunchTarget,entry.Path}.Select(NormalizePath).Where(p=>p!=null&&Path.GetExtension(p).Equals(".exe",StringComparison.OrdinalIgnoreCase)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();}
         public static bool HostedMatch(Entry entry,string path,string appId){
@@ -49,6 +50,12 @@ namespace GlassBoard {
             if(!string.IsNullOrWhiteSpace(entry.WindowTarget))return false;
             if(!string.IsNullOrWhiteSpace(appId)&&string.Equals(entry.LaunchTarget,appId,StringComparison.OrdinalIgnoreCase))return true;
             var target=NormalizePath(entry.LaunchTarget);path=NormalizePath(path);
+            if(path!=null&&!string.IsNullOrWhiteSpace(entry.LaunchTarget)&&entry.LaunchTarget.Trim().StartsWith("steam://rungameid/",StringComparison.OrdinalIgnoreCase)){
+                // A steam:// shortcut launches a game; the game itself runs from steamapps\common\<folder>.
+                const string marker="\\steamapps\\common\\";
+                int at=path.IndexOf(marker,StringComparison.OrdinalIgnoreCase);
+                if(at>=0){var rest=path.Substring(at+marker.Length);int slash=rest.IndexOf('\\');var folder=slash>0?rest.Substring(0,slash):rest;var folderKey=Token(folder);if(folderKey.Length>=4&&Token(entry.Name).StartsWith(folderKey,StringComparison.OrdinalIgnoreCase))return true;}
+            }
             if(target==null||path==null||!Path.GetFileName(target).Equals("steam.exe",StringComparison.OrdinalIgnoreCase))return false;
             // Only Steam's own helper under this installation, never games or another Steam install.
             return string.Equals(path,Path.Combine(Path.GetDirectoryName(target),@"bin\cef\cef.win64\steamwebhelper.exe"),StringComparison.OrdinalIgnoreCase)

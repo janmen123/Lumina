@@ -69,10 +69,9 @@ namespace GlassBoard {
             }).ToList();taskSignature=TaskSignature();
         }
         Entry KnownEntry(RunningWindow window){
-            var known=C.Prefs.Apps.FirstOrDefault(a=>!a.IsFolder&&WindowActivationRules.Executables(a).Contains(window.Path,StringComparer.OrdinalIgnoreCase));
-            if(known!=null||!string.IsNullOrEmpty(window.Path)||string.IsNullOrEmpty(window.ProcessName))return known;
-            // An elevated process hides its path; its entry is still found by image name.
-            return C.Prefs.Apps.FirstOrDefault(a=>!a.IsFolder&&WindowActivationRules.Executables(a).Any(p=>string.Equals(Path.GetFileName(p),window.ProcessName,StringComparison.OrdinalIgnoreCase)));
+            // Exact path first, then image name: launchers such as ...in\GameViewer.exe and
+            // elevated processes both need the looser rule to find their Dock entry.
+            return C.Prefs.Apps.FirstOrDefault(a=>!a.IsFolder&&RunningWindows.WindowMatch(a,window));
         }
         ImageSource TaskIcon(TaskGroup group){return group.Known!=null?FeatureUi.Icon(group.Known,false,false):RunningWindows.Icon(group.Windows[0]);}
         string TaskSignature(){return string.Join("|",RunningWindows.Snapshot().OrderBy(w=>w.Handle.ToInt64()).Select(w=>w.Handle.ToInt64()+":"+w.Path+":"+w.Title));}

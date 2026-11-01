@@ -7,8 +7,18 @@ var exact=windows.Where(w=>candidates.Contains(w.Path,StringComparer.OrdinalIgno
 var names=candidates.Select(Path.GetFileName).Where(n=>!string.IsNullOrEmpty(n)&&!new[]{"update.exe","launcher.exe","rundll32.exe","explorer.exe"}.Contains(n.ToLowerInvariant())).ToArray();
 var named=windows.Where(w=>string.IsNullOrEmpty(w.Path)?names.Contains(w.ProcessName,StringComparer.OrdinalIgnoreCase):names.Contains(Path.GetFileName(w.Path),StringComparer.OrdinalIgnoreCase)).ToList();if(named.Count>0)return named;
 string key=(entry.Name??"").Trim();if(key.Equals("DSH",StringComparison.OrdinalIgnoreCase))key="DeepSeek Harness";if(key.Contains("抖音"))key="douyin";if(key.Length<2)return new List<RunningWindow>();
-return windows.Where(w=>!string.IsNullOrEmpty(w.Path)&&!string.IsNullOrEmpty(w.Title)&&w.Title.IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0&&(Path.GetFileNameWithoutExtension(w.Path).IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0||candidates.Any(p=>string.Equals(Path.GetDirectoryName(p),Path.GetDirectoryName(w.Path),StringComparison.OrdinalIgnoreCase)))).ToList();
-}}
+return windows.Where(w=>!string.IsNullOrEmpty(w.Path)&&!string.IsNullOrEmpty(w.Title)&&w.Title.IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0&&(Path.GetFileNameWithoutExtension(w.Path).IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0||candidates.Any(p=>string.Equals(Path.GetDirectoryName(p),Path.GetDirectoryName(w.Path),StringComparison.OrdinalIgnoreCase)))).ToList();}
+internal static bool WindowMatch(Entry entry,RunningWindow window){
+if(entry==null||window==null||entry.IsFolder)return false;
+var paths=WindowActivationRules.Executables(entry);
+if(paths.Any(p=>string.Equals(p,window.Path,StringComparison.OrdinalIgnoreCase)))return true;
+if(WindowActivationRules.HostedMatch(entry,window.Path,window.AppId))return true;
+var names=paths.Select(Path.GetFileName).Where(n=>!string.IsNullOrEmpty(n)&&!new[]{"update.exe","launcher.exe","rundll32.exe","explorer.exe"}.Contains(n.ToLowerInvariant())).ToArray();
+if(names.Length==0)return false;
+if(string.IsNullOrEmpty(window.Path))return !string.IsNullOrEmpty(window.ProcessName)&&names.Contains(window.ProcessName,StringComparer.OrdinalIgnoreCase);
+return names.Contains(Path.GetFileName(window.Path),StringComparer.OrdinalIgnoreCase);
+}
+}
 public partial class Controller {
 static IEnumerable<FrameworkElement> SearchElements(DependencyObject node){foreach(object child in LogicalTreeHelper.GetChildren(node)){var d=child as DependencyObject;if(d==null)continue;var f=d as FrameworkElement;if(f!=null)yield return f;foreach(var nested in SearchElements(d))yield return nested;}}
 void InstallSettingsSearch(StackPanel title,TabControl tabs){

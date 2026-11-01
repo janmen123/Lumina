@@ -162,8 +162,11 @@ namespace GlassBoard {
         static bool MinimizeWindow(IntPtr handle){
             if(handle==IntPtr.Zero||!IsWindow(handle))return false;
             ShowWindow(handle,6);
-            if(!IsIconic(handle))PostMessage(handle,0x112,new IntPtr(0xF020),IntPtr.Zero);
-            return IsIconic(handle);
+            if(IsIconic(handle))return true;
+            // An elevated window ignores ShowWindow; the posted SC_MINIMIZE still reaches
+            // it, but only once its thread pumps the message, so success cannot be checked.
+            PostMessage(handle,0x112,new IntPtr(0xF020),IntPtr.Zero);
+            return true;
         }
         public static void Focus(IntPtr handle){
             if(handle==IntPtr.Zero||!IsWindow(handle))return;
@@ -176,6 +179,26 @@ namespace GlassBoard {
             // A recognized existing window must never fall through to launching
             // another instance merely because Windows refused foreground focus.
             return true;
+        }
+        // Some programs (the elevated 5E client does this) minimize themselves again
+        // about two seconds after being restored. Re-assert for a short, bounded time
+        // so a single click really leaves the window on screen.
+        static System.Windows.Threading.DispatcherTimer keepTimer;
+        static IntPtr keepHandle;
+        static int keepTicks;
+        static void KeepVisible(IntPtr handle){
+            keepHandle=handle;keepTicks=0;
+            if(keepTimer==null){
+                keepTimer=new System.Windows.Threading.DispatcherTimer{Interval=TimeSpan.FromMilliseconds(300)};
+                keepTimer.Tick+=(sender,args)=>{
+                    keepTicks++;
+                    if(keepTicks>10||keepHandle==IntPtr.Zero||!IsWindow(keepHandle)){keepTimer.Stop();return;}
+                    if(!IsIconic(keepHandle))return;
+                    ShowWindowAsync(keepHandle,9);SwitchToThisWindow(keepHandle,true);
+                    Store.Trace("WINDOW keep handle="+keepHandle);
+                };
+            }
+            keepTimer.Stop();keepTimer.Start();
         }
         internal static bool Valid(RunningWindow window){uint pid;return window!=null&&IsWindow(window.Handle)&&GetWindowThreadProcessId(window.Handle,out pid)!=0&&pid==window.ProcessId;}
         internal static bool OwnsForeground(IntPtr handle,IntPtr foreground){
@@ -202,7 +225,9 @@ namespace GlassBoard {
                 Store.Trace("WINDOW minimize handle="+window.Handle);
                 return true; // A rejected minimize must not launch a second instance.
             }
-            ActivateHandle(window.Handle);Store.Trace("WINDOW activate handle="+window.Handle);return true;
+            ActivateHandle(window.Handle);
+            if(string.IsNullOrEmpty(window.Path))KeepVisible(window.Handle);
+            Store.Trace("WINDOW activate handle="+window.Handle);return true;
         }
         internal static bool ToggleWindow(RunningWindow window){return ToggleWindow(window,IntPtr.Zero);}
         // One click, one window: the window the user was looking at, otherwise the

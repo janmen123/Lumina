@@ -183,3 +183,11 @@ GlassBoard 本地修改版：分组拖动排序 + 去除大面板底部署名 + 
 - 自测修复：指针排序前补 UpdateLayout（重建后的按钮此前 ActualWidth=0，起点终点重合被判成点击）；无框组件与主题模板检查先 Show 窗口再做命中测试；混排检查补开回收站入口。
 - 真实缺陷修复：组件 Build 一直调用旧版 Clock，ClockDesign（自定义时钟样式的唯一实现）从未被调用；同分钟内重建时钟不刷新文本；PaintText 把星期叠字层透明度冲回 1；海报样式时钟（样式 6/12）忘记把右列加入 Grid，时间与日期整列不显示。
 - 构建通过；--self-test 全部 PASS（此前三项失败全部转为通过），error.log 无新增。
+
+22) 2026-11-02 Dock 运行行与任务栏对齐（文件夹窗口、启动器命名、steam 快捷方式去重、运行行溢出菜单）
+- 运行行不再丢弃 folder: 分组：资源管理器里打开的文件夹窗口现在出现在 Dock 正在运行区（任务栏一直有，Dock 之前把它过滤掉了）。
+- 入口匹配改为 WindowMatch，依次按精确路径、HostedMatch、可执行文件名匹配（排除 update/launcher/rundll32/explorer 等通用名，提权进程用 ProcessName）——UU 远程这类装在 bin\ 下的启动器、以及 5E 这类提权程序都能对上 Dock 入口，名称和图标不再显示成 exe 名。
+- steam://rungameid 快捷方式：从窗口路径的 steamapps\common\<目录> 取游戏目录名与入口名做词元前缀匹配（Wallpaper Engine ↔ wallpaperui.exe），固定图标与运行窗口合并，不再重复出现。
+- 运行行超出 Dock 宽度时不再静默截断，改为补一个 “…（更多正在运行的软件）” 溢出菜单，列出剩余窗口。
+- 提权窗口增加有限次可见性保持（激活后 3 秒内若被自身最小化则重新还原），缓解 5E 这类程序还原后约 2 秒又自行隐藏。
+- 构建通过；--self-test 全部 PASS；error.log 无新增。
