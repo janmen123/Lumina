@@ -1,4 +1,4 @@
-using System;using System.Collections.Generic;using System.Linq;using System.IO;using System.Reflection;using System.Runtime.InteropServices;using System.Runtime.Serialization;using System.Runtime.Serialization.Json;using System.Diagnostics;using System.Windows;using System.Windows.Controls;using System.Windows.Media;using System.Windows.Media.Imaging;using System.Windows.Input;using System.Windows.Threading;
+﻿using System;using System.Collections.Generic;using System.Linq;using System.IO;using System.Reflection;using System.Runtime.InteropServices;using System.Runtime.Serialization;using System.Runtime.Serialization.Json;using System.Diagnostics;using System.Windows;using System.Windows.Controls;using System.Windows.Media;using System.Windows.Media.Imaging;using System.Windows.Input;using System.Windows.Threading;
 namespace Lumina {
     public static class TaskbarAutoHide {
         [StructLayout(LayoutKind.Sequential)] struct RECT{public int Left,Top,Right,Bottom;}
@@ -12,6 +12,7 @@ namespace Lumina {
         static void Apply(uint state){var data=Data();data.Param=new IntPtr(state);SHAppBarMessage(10,ref data);if((State()&1)!=(state&1))throw new InvalidOperationException("Windows 尚未确认任务栏自动隐藏状态，恢复记录已保留。");}
         public static void Set(bool enabled){uint state=State();if(((state&1)!=0)==enabled)return;Directory.CreateDirectory(Store.Folder);if(!File.Exists(Journal))File.WriteAllText(Journal,state.ToString(System.Globalization.CultureInfo.InvariantCulture));Apply(FeatureRules.AutoHideState(state,enabled));}
         public static void Restore(){if(!File.Exists(Journal))return;uint original=uint.Parse(File.ReadAllText(Journal),System.Globalization.CultureInfo.InvariantCulture);Apply(FeatureRules.AutoHideState(State(),(original&1)!=0));File.Delete(Journal);}
+        public static bool Journaled{get{return File.Exists(Journal);}}
         public static void ShowAndClear(){Apply(FeatureRules.AutoHideState(State(),false));if(File.Exists(Journal))File.Delete(Journal);}
     }
     public static class FeatureUi {

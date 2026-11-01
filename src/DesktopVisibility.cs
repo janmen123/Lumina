@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -112,6 +112,9 @@ namespace Lumina {
             }
             var handles=Taskbars();string noun="任务栏";
             if(handles.Count==0)return "未找到"+noun+"，请确认 Windows Explorer 已运行。";
+            // 隐藏任务栏时借用系统自动隐藏状态：只有"自动隐藏"这一档，系统才会把工作区退回整屏，
+            // 铺满屏幕的窗口才能盖到底部那条带（否则会露出壁纸）。任务栏窗口本身仍被隐藏，不会滑出来。
+            try{if(hide){if(!TaskbarAutoHide.Enabled)TaskbarAutoHide.Set(true);}else if(TaskbarAutoHide.Journaled)TaskbarAutoHide.Restore();}catch(Exception ex){Store.Log(ex);}
             // Journal raw WS_VISIBLE before hiding; ancestors can make a visible child appear hidden.
             int failed=0;Remember(handles);foreach(var h in handles)if(!ShowWindowAsync(h,hide?0:8)){failed++;Store.Log(new Win32Exception(Marshal.GetLastWin32Error(),"无法切换 "+Class(h)));}
             if(taskbar)taskbarHidden=hide;else iconsHidden=hide;
@@ -123,6 +126,8 @@ namespace Lumina {
         static void Maintain() {
             try {
                 foreach(bool taskbar in new bool[]{true})if((taskbar?taskbarHidden:iconsHidden)==true) {
+                    // 自动隐藏在别处被关掉时重新打开，否则工作区会缩回去、底部又露出壁纸。
+                    try{if(!TaskbarAutoHide.Enabled)TaskbarAutoHide.Set(true);}catch(Exception ex){Store.Log(ex);}
                     var handles=taskbar?Taskbars():DesktopLists();if(handles.Count==0)continue;Remember(handles);
                     foreach(var h in handles)if(IsWindowVisible(h))ShowWindowAsync(h,0);
                 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -384,7 +384,7 @@ namespace Lumina {
         public void ShellAction(int action,bool? hidden=null) {
             try {
                 string message;
-                if(action==1){bool next=hidden??!DesktopVisibility.DesiredHidden(true);if(next&&TaskbarAutoHide.Enabled)TaskbarAutoHide.Set(false);message=DesktopVisibility.SetHidden(true,next);}else if(action==2){bool next=hidden??!cleanDesktopActive;SetCleanDesktop(next);message=next?"已隐藏桌面图标和分区":"已恢复桌面图标和分区";}else {RecoveryActions.RunAll(new Action[]{()=>SetCleanDesktop(false),()=>TaskbarAutoHide.ShowAndClear(),()=>DesktopVisibility.ShowAll()});message="已执行任务栏与桌面图标恢复";}
+                if(action==1){bool next=hidden??!DesktopVisibility.DesiredHidden(true);message=DesktopVisibility.SetHidden(true,next);if(Dock!=null)try{Dock.Refresh();}catch(Exception ex){Store.Log(ex);}}else if(action==2){bool next=hidden??!cleanDesktopActive;SetCleanDesktop(next);message=next?"已隐藏桌面图标和分区":"已恢复桌面图标和分区";}else {RecoveryActions.RunAll(new Action[]{()=>SetCleanDesktop(false),()=>TaskbarAutoHide.ShowAndClear(),()=>DesktopVisibility.ShowAll()});message="已执行任务栏与桌面图标恢复";}
                 Board.SetStatus(message);if(Tray!=null)Tray.ShowBalloonTip(1500,"Lumina",message,Forms.ToolTipIcon.Info);
             }catch(Exception ex){Store.Log(ex);MessageBox.Show("无法切换系统界面："+ex.Message,"Lumina");}
         }

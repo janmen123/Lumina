@@ -86,6 +86,8 @@ namespace Lumina {
             Check("最小化的窗口不算",()=>!WindowReliabilityRules.Immersive(true,true,true,true));
             Check("窄窗口不算铺满",()=>!WindowReliabilityRules.Immersive(true,false,true,false));
             Check("没压进 Dock 带的窗口不算",()=>!WindowReliabilityRules.Immersive(true,false,false,true));
+            // 任务栏：隐藏时借用系统自动隐藏状态，让工作区退回整屏
+            Check("自动隐藏只切最低位",()=>FeatureRules.AutoHideState(0x0u,true)==0x1u&&FeatureRules.AutoHideState(0x1u,false)==0x0u&&FeatureRules.AutoHideState(0x2u,true)==0x3u);
             // 窗口激活规则
             Check("前台未最小化则最小化",()=>WindowActivationRules.MinimizeDock(true,false));
             Check("前台已最小化则恢复",()=>!WindowActivationRules.MinimizeDock(true,true));
