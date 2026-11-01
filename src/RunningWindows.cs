@@ -195,13 +195,15 @@ namespace GlassBoard {
         static System.Windows.Threading.DispatcherTimer keepTimer;
         static IntPtr keepHandle;
         static int keepTicks;
+        internal static int KeepWindowSeconds=3;
+        static int keepLimit;
         static void KeepVisible(IntPtr handle){
-            keepHandle=handle;keepTicks=0;
+            keepHandle=handle;keepTicks=0;keepLimit=KeepWindowSeconds<=0?0:(KeepWindowSeconds*1000)/300;if(keepLimit<=0){if(keepTimer!=null)keepTimer.Stop();return;}
             if(keepTimer==null){
                 keepTimer=new System.Windows.Threading.DispatcherTimer{Interval=TimeSpan.FromMilliseconds(300)};
                 keepTimer.Tick+=(sender,args)=>{
                     keepTicks++;
-                    if(keepTicks>10||keepHandle==IntPtr.Zero||!IsWindow(keepHandle)){keepTimer.Stop();return;}
+                    if(keepTicks>keepLimit||keepHandle==IntPtr.Zero||!IsWindow(keepHandle)){keepTimer.Stop();return;}
                     if(!IsIconic(keepHandle))return;
                     ShowWindowAsync(keepHandle,9);SwitchToThisWindow(keepHandle,true);
                     Store.Trace("WINDOW keep handle="+keepHandle);

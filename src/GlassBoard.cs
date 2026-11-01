@@ -154,6 +154,8 @@ namespace GlassBoard {
         [DataMember] public string BoardPageStyle="slide";
         [DataMember] public bool BoardHideSearch,BoardHideGroups,BoardHideFolders;
         [DataMember] public bool GameMode=false,AutoGameMode=false;
+        [DataMember] public int KeepWindowSeconds=3;
+        [DataMember] public int ConfigRevision;
         [DataMember] public MaterialOptions BoardMaterial=new MaterialOptions();
         [DataMember(EmitDefaultValue=false)] public List<string> RemovedIdentities=new List<string>();
         [DataMember] public long LastUpdateCheckUtc;
@@ -597,7 +599,7 @@ namespace GlassBoard {
         internal Controller(bool desktop) {
             persistConfiguration=desktop;
             if(!desktop){Prefs=new Preferences();Board=new BoardWindow(this);Dock=new DockWindow(this);return;}
-            Prefs=Store.Load();if(Prefs.ThemeFollowSystem)Prefs.Light=SystemTheme.IsLight();bool resetMotion=MotionPresets.ApplyInitialBaseline(Prefs);DesktopPersistence.DesktopOnly=Prefs.AllDesktopLayer;if(!string.IsNullOrEmpty(Store.RecoveryMessage))MessageBox.Show(Store.RecoveryMessage,"GlassBoard 配置恢复");if(Prefs.Removed.Count>0||Prefs.RemovedIdentities.Count>0)MigrateRemovalIdentities(); Board=new BoardWindow(this); Dock=new DockWindow(this);glassSuppressed=Prefs.GameMode||(Prefs.AutoGameMode&&FullscreenState.Active());
+            Prefs=Store.Load();if(Prefs.ConfigRevision<1){if(Prefs.KeepWindowSeconds<=0)Prefs.KeepWindowSeconds=3;Prefs.ConfigRevision=1;Save();}RunningWindows.KeepWindowSeconds=Prefs.KeepWindowSeconds;if(Prefs.ThemeFollowSystem)Prefs.Light=SystemTheme.IsLight();bool resetMotion=MotionPresets.ApplyInitialBaseline(Prefs);DesktopPersistence.DesktopOnly=Prefs.AllDesktopLayer;if(!string.IsNullOrEmpty(Store.RecoveryMessage))MessageBox.Show(Store.RecoveryMessage,"GlassBoard 配置恢复");if(Prefs.Removed.Count>0||Prefs.RemovedIdentities.Count>0)MigrateRemovalIdentities(); Board=new BoardWindow(this); Dock=new DockWindow(this);glassSuppressed=Prefs.GameMode||(Prefs.AutoGameMode&&FullscreenState.Active());
             Tray=new Forms.NotifyIcon {Text="GlassBoard v0.2.0 · 玻璃启动台",Icon=Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Drawing.SystemIcons.Application,Visible=true};
             RefreshTrayMenu();
             Tray.DoubleClick+=(s,e)=>Toggle(true);
@@ -899,6 +901,11 @@ namespace GlassBoard {
                 generalPage.Children.Add(new TextBlock{Text="文件夹进入「"+Prefs.DesktopFolderGroup+"」分组；PDF、Word、Excel 与其他文档进入「"+Prefs.DesktopDocsGroup+"」分组，打开该分组后可在顶部按类型筛选。只读取桌面第一层（含公共桌面）；桌面上的项目被删除或移走后入口会自动移除；手动移动到其他分组的入口不会被挪回。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,8)});
                 generalPage.Children.Add(FeatureUi.Button("立即同步桌面",()=>{SyncDesktopNow();}));
                 BuildGameSettings(generalPage);
+                range(generalPage,"提权或自动最小化的程序点击后保持窗口（秒，0 关闭）",0,10,Prefs.KeepWindowSeconds,1," 秒",value=>{Prefs.KeepWindowSeconds=(int)value;RunningWindows.KeepWindowSeconds=(int)value;Save();});
+                generalPage.Children.Add(new TextBlock{Text="部分以管理员权限运行的程序（例如 5E）恢复后会自动最小化；保持窗口会在这几秒内重新拉起它。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,10)});
+                generalPage.Children.Add(new TextBlock{Text="管理员权限",FontSize=18,Margin=new Thickness(0,22,0,10)});
+                generalPage.Children.Add(new TextBlock{Text=AdminService.IsElevated()?"当前以管理员权限运行，可以直接读取提权程序的窗口路径、缩略图与图标。":"当前以普通权限运行：以管理员权限运行的程序，其缩略图、拖拽吸附与前台激活会受限。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,10)});
+                generalPage.Children.Add(FeatureUi.Button("以管理员身份重启 GlassBoard",()=>RestartElevated()));
                 check(generalPage,"记录诊断日志（排查问题时开启）",Store.Diagnostics,value=>{Store.Diagnostics=value;});
                 generalPage.Children.Add(new TextBlock{Text="关闭时 session.log 只记录启动、保存与错误；开启后会把 Dock 点击、窗口切换、组件刷新等细节写进 session.log。日志超过 1 MB 自动轮转，最多保留 5 份。",TextWrapping=TextWrapping.Wrap,Foreground=Brushes.LightGray,Margin=new Thickness(0,4,0,10)});
                 BuildUpdateSettings(generalPage,w);generalPage.Children.Add(FeatureUi.Button("找回旧版入口与分组",()=>RecoverHistoricalEntries(w)));
@@ -1010,16 +1017,19 @@ namespace GlassBoard {
     public partial class DockWindow : GlassWindow {
         Controller C;StackPanel Items=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center};
         HwndSource source;HotkeyManager hotkeys;
+        int fullscreenTicks;
         DispatcherTimer autoTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(50)},runningTimer=new DispatcherTimer{Interval=TimeSpan.FromSeconds(5)},foregroundTimer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(300)};
         DateTime lastRunningScan=DateTime.MinValue;AutoHidePolicy hidePolicy=new AutoHidePolicy();bool renderedHidden;double shownTop;Rect dockWorkingArea,dockScreenArea;Thumb moveGrip;bool dragging;
         public double RestingTop {get{return shownTop;}}
-        public void GamePolling(bool enabled){var interval=TimeSpan.FromMilliseconds(enabled?350:5000);if(runningTimer.Interval!=interval)runningTimer.Interval=interval;}
+        public void ScanPaused(bool paused){if(paused){if(runningTimer.IsEnabled)runningTimer.Stop();return;}if(runningTimer.IsEnabled)return;runningTimer.Interval=TimeSpan.FromSeconds(5);runningTimer.Start();}
         public DockWindow(Controller c):base(29) {
             C=c;Title="GlassBoard Dock";Height=112;ShowActivated=false;Topmost=false;ContentGrid.Children.Add(Items);InitDockPointer();InitializeBackgroundMove();InitTaskDock();
             moveGrip=new Thumb{Width=42,Height=6,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,Margin=new Thickness(0,7,0,0),Cursor=Cursors.SizeAll,ToolTip="拖动 Dock；设置中可锁定位置"};Root.Children.Add(moveGrip);
             moveGrip.Template=InvisibleDockGrip();Closing+=(s,e)=>{if(!C.ShuttingDown){e.Cancel=true;Dispatcher.BeginInvoke(new Action(()=>C.Quit()));}};
             moveGrip.DragStarted+=(s,e)=>BeginDockMove();moveGrip.DragDelta+=(s,e)=>{if(!dragging)return;var area=DockPlacementArea(true);Left=FeatureRules.Position(Left+e.HorizontalChange,area.Left,area.Width,Width);Top=DockGeometryRules.Top(Top+e.VerticalChange,area,Height);};moveGrip.DragCompleted+=(s,e)=>FinishDockMove();
-            autoTimer.Tick+=(s,e)=>{RunningWindows.RememberForeground();UpdateAutoHide();};foregroundTimer.Tick+=(s,e)=>RunningWindows.RememberForeground();foregroundTimer.Start();runningTimer.Tick+=(s,e)=>{ReleaseCancelledExternalDrag();if(boardPinDragging)return;C.CheckGameMode();if(!C.Prefs.AutoGameMode){var slow=IdleState.Seconds()>=90?TimeSpan.FromSeconds(15):TimeSpan.FromSeconds(5);if(runningTimer.Interval!=slow)runningTimer.Interval=slow;}if(C.GlassSuppressed||(!IsVisible&&!C.Board.IsVisible))return;if((!C.Prefs.Dock.ShowRunning&&!taskWheel.Running&&!C.Prefs.Dock.ShowRunningSection)||(DateTime.UtcNow-lastRunningScan).TotalSeconds<(renderedHidden?20:5))return;lastRunningScan=DateTime.UtcNow;RunningWindows.Scan();RefreshTaskSnapshot();UpdateRunning();C.Board.UpdateRunning();};runningTimer.Start();
+            autoTimer.Tick+=(s,e)=>{RunningWindows.RememberForeground();UpdateAutoHide();};
+            foregroundTimer.Tick+=(s,e)=>{RunningWindows.RememberForeground();if(C.Prefs.AutoGameMode)C.CheckGameMode();if(C.Prefs.Dock.RespectFullscreen&&!C.Prefs.Dock.AutoHide&&++fullscreenTicks>=3){fullscreenTicks=0;UpdateAutoHide();}};
+            foregroundTimer.Start();runningTimer.Tick+=(s,e)=>{ReleaseCancelledExternalDrag();if(boardPinDragging)return;C.CheckGameMode();if(!C.Prefs.AutoGameMode){var slow=IdleState.Seconds()>=90?TimeSpan.FromSeconds(15):TimeSpan.FromSeconds(5);if(runningTimer.Interval!=slow)runningTimer.Interval=slow;}if(C.GlassSuppressed||(!IsVisible&&!C.Board.IsVisible))return;if((!C.Prefs.Dock.ShowRunning&&!taskWheel.Running&&!C.Prefs.Dock.ShowRunningSection)||(DateTime.UtcNow-lastRunningScan).TotalSeconds<(renderedHidden?20:5))return;lastRunningScan=DateTime.UtcNow;RunningWindows.Scan();RefreshTaskSnapshot();UpdateRunning();C.Board.UpdateRunning();};runningTimer.Start();
             SourceInitialized+=(s,e)=> {
                 source=HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);source.AddHook(Hook);
                 hotkeys=new HotkeyManager(RegisterKey,id=>Native.UnregisterHotKey(source.Handle,id));
@@ -1092,7 +1102,7 @@ namespace GlassBoard {
             }
             var accent=Accent(o.Accent);Surface.BorderBrush=GlassPercent==0?(Brush)Brushes.Transparent:new LinearGradientBrush(Color.FromArgb((byte)Math.Min(255,160*EdgeStrength),accent.R,accent.G,accent.B),Color.FromArgb((byte)Math.Min(255,30*EdgeStrength),255,255,255),90);UpdateRunning();if(!capture)AnimateDockLayout(oldLeft,oldWidth);
         }
-        void UpdateAutoHide(){ReleaseCancelledExternalDrag();if(C.GlassSuppressed||source==null||!IsVisible)return;RefreshLayer();if(C.Prefs.Dock.RespectFullscreen&&FullscreenState.Active(source.Handle)&&!boardPinDragging){ForceHideForFullscreen();return;}var position=Forms.Cursor.Position;var pointer=source.CompositionTarget.TransformFromDevice.Transform(new Point(position.X,position.Y));double bottom=dockScreenArea.Bottom;
+        void UpdateAutoHide(){ReleaseCancelledExternalDrag();if(C.GlassSuppressed||source==null||!IsVisible)return;RefreshLayer();if(C.Prefs.Dock.RespectFullscreen&&FullscreenState.Active(source.Handle)&&!boardPinDragging){ForceHideForFullscreen();ScanPaused(true);return;}ScanPaused(false);var position=Forms.Cursor.Position;var pointer=source.CompositionTarget.TransformFromDevice.Transform(new Point(position.X,position.Y));double bottom=dockScreenArea.Bottom;
             bool over=!renderedHidden&&pointer.X>=Left&&pointer.X<=Left+Width&&pointer.Y>=shownTop&&pointer.Y<=shownTop+Height;
             bool edge=pointer.X>=Left-12&&pointer.X<=Left+Width+12&&pointer.Y>=bottom-C.Prefs.Dock.EdgeRange;
             bool menu=(ContextMenu!=null&&ContextMenu.IsOpen)||Items.Children.OfType<Button>().Any(b=>b.ContextMenu!=null&&b.ContextMenu.IsOpen);
@@ -1313,6 +1323,7 @@ namespace GlassBoard {
         [STAThread] public static int Main(string[] args) {
             if(args.Length>0 && args[0]=="--quit")return Native.RequestQuit()?0:1;if(args.Length>0 && args[0]=="--open-native-tray")return NativeTrayLauncher.Run();
             
+            if(args.Length>1&&args[0]=="--wait-for"){int waitPid;if(int.TryParse(args[1],out waitPid)){try{Process.GetProcessById(waitPid).WaitForExit(8000);}catch{}}}
             if(args.Length>0 && args[0]=="--self-test"){Store.Silent=true;return SelfTest.Run();}
             if(args.Length>1 && args[0]=="--toggle-check") return ToggleCheck(args);
             if(args.Length>0 && args[0]=="--restore-shell") {
