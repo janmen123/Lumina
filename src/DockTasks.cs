@@ -55,7 +55,7 @@ namespace GlassBoard {
         static string TaskKey(RunningWindow window){
             // Hosted apps need a window identity, and an elevated process hides its image
             // path, so its windows are grouped by the name Toolhelp still reports.
-            if(!string.IsNullOrWhiteSpace(window.FolderPath))return "folder:"+window.Handle.ToInt64();
+            if(!string.IsNullOrWhiteSpace(window.FolderPath))return "folder";
             string name=Path.GetFileName(window.Path??"");
             if(!string.IsNullOrEmpty(window.Path)&&!name.Equals("ApplicationFrameHost.exe",StringComparison.OrdinalIgnoreCase))return window.Path;
             name=window.ProcessName;
@@ -63,7 +63,7 @@ namespace GlassBoard {
         }
         void ReadTaskGroups(){
             taskGroups=RunningWindows.Snapshot().GroupBy(TaskKey,StringComparer.OrdinalIgnoreCase).OrderBy(g=>g.Key,StringComparer.OrdinalIgnoreCase).Select(g=>{
-                var windows=g.OrderBy(w=>w.Handle.ToInt64()).ToList();string name=Path.GetFileNameWithoutExtension(windows[0].Path??"");
+                var windows=g.OrderBy(w=>w.Handle.ToInt64()).ToList();string name=Path.GetFileNameWithoutExtension(windows[0].Path??"");if(g.Key.StartsWith("folder",StringComparison.OrdinalIgnoreCase))name="文件资源管理器";
                 var known=KnownEntry(windows[0]);
                 return new TaskGroup{Key=g.Key,Name=known!=null?known.Name:string.IsNullOrWhiteSpace(name)||(g.Key.StartsWith("window:")||g.Key.StartsWith("folder:"))?windows[0].Title:name,Windows=windows,Known=known};
             }).ToList();taskSignature=TaskSignature();
