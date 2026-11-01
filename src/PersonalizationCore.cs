@@ -25,8 +25,17 @@ namespace Lumina {
     }
     public static class ClockCatalog {
         public static readonly string[] Names={"经典时间","手写星期叠字","极简大数字","星期与日期","分栏数字","宽距星期","日期海报","纵向数字","细线指针","日程轨道","衬线杂志","等宽电子","横向日历","纵向大字海报"};
-        public static string Weekday(DateTime now,int style){string day=now.ToString("dddd",System.Globalization.CultureInfo.GetCultureInfo("en-US"));return style==5?string.Join(" ",day.ToUpperInvariant().Select(c=>c.ToString())):style==11?now.ToString("ddd",System.Globalization.CultureInfo.GetCultureInfo("en-US")).ToUpperInvariant():day;}
-        public static string DateLabel(DateTime now,int style){var en=System.Globalization.CultureInfo.GetCultureInfo("en-US");return style==5?now.ToString("dd MMMM yyyy",en).ToUpperInvariant():style==10?now.ToString("dddd · dd MMMM",en):style==11?now.ToString("yyyy / MM / dd",en):now.ToString("M月d日  dddd");}
+        public static readonly System.Globalization.CultureInfo Culture=System.Globalization.CultureInfo.GetCultureInfo("zh-CN");
+        public static string Weekday(DateTime now,int style){return now.ToString("dddd",Culture);}
+        public static string DateLabel(DateTime now,int style){
+            if(style==1)return now.ToString("M月d日",Culture);
+            if(style==5)return now.ToString("yyyy年M月d日",Culture);
+            if(style==10)return now.ToString("dddd · M月d日",Culture);
+            if(style==11)return now.ToString("yyyy / MM / dd",Culture);
+            return now.ToString("M月d日  dddd",Culture);
+        }
+        public static string MonthLabel(DateTime now){return now.ToString("yyyy年M月",Culture);}
+        public static string PeriodLabel(DateTime now){return now.ToString("tt",Culture);}
         public static double HourAngle(DateTime now){return now.Hour%12*30+now.Minute*.5;}
         public static double MinuteAngle(DateTime now){return now.Minute*6;}
         public static double DayFraction(DateTime now){return (now.Hour*60+now.Minute)/1440.0;}

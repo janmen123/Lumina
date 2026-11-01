@@ -41,7 +41,7 @@ namespace Lumina {
             if(!runningTimer.IsEnabled){lastRunningScan=DateTime.MinValue;runningTimer.Interval=TimeSpan.FromSeconds(5);runningTimer.Start();}
         }
         public DockWindow(Controller c):base(29) {
-            C=c;Title="Lumina Dock";Height=112;ShowActivated=false;Topmost=false;ContentGrid.Children.Add(Items);InitDockPointer();InitializeBackgroundMove();InitTaskDock();
+            C=c;Title=RuntimePaths.IsTest?"Lumina Test Dock":"Lumina Dock";Height=112;ShowActivated=false;Topmost=false;ContentGrid.Children.Add(Items);InitDockPointer();InitializeBackgroundMove();InitTaskDock();
             moveGrip=new Thumb{Width=42,Height=6,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,Margin=new Thickness(0,7,0,0),Cursor=Cursors.SizeAll,ToolTip="拖动 Dock；设置中可锁定位置"};Root.Children.Add(moveGrip);
             moveGrip.Template=InvisibleDockGrip();Closing+=(s,e)=>{if(!C.ShuttingDown){e.Cancel=true;Dispatcher.BeginInvoke(new Action(()=>C.Quit()));}};
             moveGrip.DragStarted+=(s,e)=>BeginDockMove();moveGrip.DragDelta+=(s,e)=>{if(!dragging)return;var area=DockPlacementArea(true);Left=FeatureRules.Position(Left+e.HorizontalChange,area.Left,area.Width,Width);Top=DockGeometryRules.Top(Top+e.VerticalChange,area,Height);};moveGrip.DragCompleted+=(s,e)=>FinishDockMove();
@@ -71,6 +71,7 @@ namespace Lumina {
             // Preserve the application's foreground state until the icon action
             // decides whether to restore or minimize it; still deliver the click.
             if(msg==0x21){handled=true;return new IntPtr(3);} // MA_NOACTIVATE
+            if(msg==Native.ShowPanelMessage){handled=true;Dispatcher.BeginInvoke(new Action(()=>C.RevealPanel()));return IntPtr.Zero;}
             if(msg==Native.RestoreMessage){handled=true;Dispatcher.BeginInvoke(new Action(()=>C.ShellAction(3)));return IntPtr.Zero;}
             if(msg==0x312){int id=w.ToInt32();handled=true;Dispatcher.BeginInvoke(new Action(()=>{if(id==1)C.Toggle();else if(id==2)C.ShellAction(1);else if(id==3)C.ShellAction(2);else if(id==4)C.AddFromAnywhere();else if(id==5)C.Settings();else if(id==6)C.ShellAction(3);else if(id==7)C.ToggleTaskbarAutoHide();}));}return IntPtr.Zero;
         }

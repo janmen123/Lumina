@@ -50,7 +50,7 @@ namespace Lumina {
             Tray=new Forms.NotifyIcon {Text=AppInfo.Display+" · 玻璃启动台",Icon=Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Drawing.SystemIcons.Application,Visible=true};
             RefreshTrayMenu();
             Tray.DoubleClick+=(s,e)=>Toggle(true);
-            Dock.Refresh(); if(!GlassSuppressed)Dock.Show();
+            Dock.Refresh(); new WindowInteropHelper(Dock).EnsureHandle(); if(!GlassSuppressed)Dock.Show();
             if(Prefs.HotkeyMigrationConflict){Tray.ShowBalloonTip(4500,"快捷键升级提示","原有组合与 Ctrl+Alt+H 冲突，已保留原设置并关闭新增项。可在设置中录制新组合。",Forms.ToolTipIcon.Info);Save();}
             RefreshWidgets();
             if(!Prefs.Imported) {Toggle(true);Import();}

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -56,6 +56,7 @@ namespace Lumina {
         public static int Run() {
             try {
                 Step("逻辑规则",20,()=>{if(LogicTests.Run()!=0)throw new Exception("逻辑检查未通过，详见 logic-test-result.txt");});
+                Step("独立面板唤回",30,()=>PanelActivationChecks.Run());
                 Step("内存资源",60,()=>CheckMemoryResources());
                 Step("菜单外观",90,()=>MenuAppearanceChecks.Run());
                 Step("Dock 行为",90,()=>DockBehaviorChecks.Run());
@@ -78,7 +79,7 @@ namespace Lumina {
                 foreach(string key in new[]{"Wechat","Alipay"})using(var stream=new MemoryStream(CreatorAssets.Read(key),false)){var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.StreamSource=stream;bitmap.EndInit();if(bitmap.PixelWidth<200||bitmap.PixelHeight<200)throw new Exception("收款图片尺寸异常");bitmap.Freeze();}});
                 Disarm();string resultPath=System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"self-test-result.txt");
                 if(failures.Count>0){File.WriteAllText(resultPath,"FAILED（其余检查已继续执行）：\r\n"+string.Join("\r\n",failures.ToArray())+"\r\n",Encoding.UTF8);return 1;}
-                File.WriteAllText(resultPath,"PASS: transparent material bounds and widget recovery menu; Dock rendering/order/mouse-capture release and native process path/reuse; light/dark nested menus, submenu open/close, checkmarks, disabled items, header sliders, shortcut overlay cache and legacy configuration; shared theme styles, bounded thumbnails and stream-independent pixels, hidden board release/reopen; recordable glass window affinity before/after backdrop/show/hide; embedded creator image decoding, WPF light/dark button/combo/text/check/slider templates, value bindings, button handlers, visibility switch, configuration, removed entries, opacity bounds, pages and search\r\n",Encoding.UTF8);return 0;
+                File.WriteAllText(resultPath,"PASS: explicit panel activation with disabled hotkeys and game mode; transparent material bounds and widget recovery menu; Dock rendering/order/mouse-capture release and native process path/reuse; light/dark nested menus, submenu open/close, checkmarks, disabled items, header sliders, shortcut overlay cache and legacy configuration; shared theme styles, bounded thumbnails and stream-independent pixels, hidden board release/reopen; recordable glass window affinity before/after backdrop/show/hide; embedded creator image decoding, WPF light/dark button/combo/text/check/slider templates, value bindings, button handlers, visibility switch, configuration, removed entries, opacity bounds, pages and search\r\n",Encoding.UTF8);return 0;
             }catch(Exception ex){Disarm();File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"self-test-result.txt"),ex.ToString());return 1;}
         }
         static void CheckMemoryResources(){

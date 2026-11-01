@@ -34,3 +34,5 @@ desktop.ini
 /Lumina.Regression.exe
 /logic-test-result.txt
 /WindowsCheck-result.txt
+
+/test-isolation-result.txt

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -28,6 +28,17 @@ using Drawing = System.Drawing;
 namespace Lumina {
     public static class Native {
         public const int RestoreMessage=0x8000+47;
+        public const int ShowPanelMessage=0x8000+48;
+        [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window,out uint process);
+        [DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(uint process);
+        public static bool RequestShowPanel(){
+            var handle=FindWindow(null,"Lumina Dock");
+            if(handle==IntPtr.Zero)return false;
+            uint process;GetWindowThreadProcessId(handle,out process);
+            // Pass the foreground grant from the explicitly launched process to the owner.
+            AllowSetForegroundWindow(process);
+            return PostMessage(handle,ShowPanelMessage,IntPtr.Zero,IntPtr.Zero);
+        }
         [DllImport("user32.dll",CharSet=CharSet.Unicode)] static extern IntPtr FindWindow(string cls,string title);
         [DllImport("user32.dll",SetLastError=true)] static extern bool PostMessage(IntPtr h,int message,IntPtr w,IntPtr l);
         public static bool RequestQuit(){var h=FindWindow(null,"Lumina Dock");return h!=IntPtr.Zero&&PostMessage(h,0x0010,IntPtr.Zero,IntPtr.Zero);} public static bool RequestRestore() {var h=FindWindow(null,"Lumina Dock");return h!=IntPtr.Zero&&PostMessage(h,RestoreMessage,IntPtr.Zero,IntPtr.Zero);}

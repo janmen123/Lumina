@@ -45,6 +45,21 @@ public static class ReliabilityRegression {
     }
 
     static void Run() {
+        var savedCulture=System.Threading.Thread.CurrentThread.CurrentCulture;
+        try {
+            System.Threading.Thread.CurrentThread.CurrentCulture=System.Globalization.CultureInfo.GetCultureInfo("en-US");
+            var day=new DateTime(2026,11,2,9,5,0);
+            Check(ClockCatalog.DateLabel(day,10)=="星期一 · 11月2日", "Magazine date is Chinese even on English Windows");
+            Check(ClockCatalog.DateLabel(day,1)=="11月2日", "Layered clock date is Chinese");
+            Check(ClockCatalog.DateLabel(day,5)=="2026年11月2日", "Spaced clock date is Chinese");
+            Check(ClockCatalog.MonthLabel(day)=="2026年11月", "Poster month is Chinese");
+            Check(ClockCatalog.PeriodLabel(day)=="上午"&&ClockCatalog.PeriodLabel(day.AddHours(6))=="下午", "AM and PM are Chinese");
+            for(int style=0;style<ClockCatalog.Names.Length;style++) {
+                Check(ClockCatalog.Weekday(day,style)=="星期一", "Chinese weekday for clock style "+style);
+                Check(!System.Text.RegularExpressions.Regex.IsMatch(ClockCatalog.DateLabel(day,style),"[A-Za-z]"), "No English date for style "+style);
+            }
+        } finally { System.Threading.Thread.CurrentThread.CurrentCulture=savedCulture; }
+
         var pause = new ScanPauseState();
         pause.Set(ScanPauseReason.Fullscreen, true);
         pause.Set(ScanPauseReason.Game, false);

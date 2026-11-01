@@ -35,14 +35,19 @@ namespace Lumina {
             if(args.Length>0 && args[0]=="--quit")return Native.RequestQuit()?0:1;if(args.Length>0 && args[0]=="--open-native-tray")return NativeTrayLauncher.Run();
             
             if(args.Length>1&&args[0]=="--wait-for"){int waitPid;if(int.TryParse(args[1],out waitPid)){try{Process.GetProcessById(waitPid).WaitForExit(8000);}catch{}}}
-            if(args.Length>0 && args[0]=="--test-logic")return LogicTests.Run();
-            if(args.Length>0 && args[0]=="--self-test"){Store.Silent=true;return SelfTest.Run();}
+            if(args.Length>0 && args[0]=="--test-logic")return IsolatedTestRun.Run(false);
+            if(args.Length>0 && args[0]=="--self-test")return IsolatedTestRun.Run(true);
             if(args.Length>1 && args[0]=="--toggle-check") return ToggleCheck(args);
             if(args.Length>0 && args[0]=="--restore-shell") {
                 try {if(Native.RequestRestore())return 0;try{TaskbarAutoHide.ShowAndClear();}catch(Exception ex){Store.Log(ex);}DesktopVisibility.ShowAll();MessageBox.Show("已执行任务栏和桌面图标恢复。","Lumina");return 0;}catch(Exception ex){MessageBox.Show(ex.Message,"Lumina");return 1;}
             }
             bool created;using(var mutex=new Mutex(true,"Local\\Lumina.Desktop.v1",out created)) {
-                if(!created){MessageBox.Show("已有 Lumina 在运行，本次启动的 v"+AppInfo.Version+" 尚未运行。\n请先从托盘退出已有程序，再启动此版本。",AppInfo.Display);return 0;}
+                if(!created){
+                    if(args.Any(a=>a=="--startup"))return 0;
+                    if(Native.RequestShowPanel())return 0;
+                    MessageBox.Show("已有 Lumina 正在启动或暂未响应，请稍后重试，或从系统托盘打开应用面板。",AppInfo.Display);
+                    return 1;
+                }
                 try {
                     Store.Trace("START exe="+System.Reflection.Assembly.GetExecutingAssembly().Location+" OS="+Environment.OSVersion+" CLR="+Environment.Version);
                     try{DesktopVisibility.Recover();}catch(Exception ex){Store.Log(ex);}
@@ -53,7 +58,7 @@ namespace Lumina {
                     app.Exit+=(s,e)=>{try{DesktopVisibility.RestoreOriginal();}catch(Exception ex){Store.Log(ex);}try{TaskbarAutoHide.Restore();}catch(Exception ex){Store.Log(ex);}};
                     Controller controller=null;
                     app.DispatcherUnhandledException+=(s,e)=>{Store.Log(e.Exception);MessageBox.Show("操作失败，详情已记录在配置文件夹 error.log；已保留上一次成功保存的布局。\n"+e.Exception.Message,"Lumina");e.Handled=true;};
-                    controller=new Controller();app.SessionEnding+=(s,e)=>controller.SaveSession();if(args.Any(a=>a=="--recover-widgets"))controller.RecoverWidgets();app.Run();GC.KeepAlive(controller);return 0;
+                    controller=new Controller();app.SessionEnding+=(s,e)=>controller.SaveSession();if(args.Any(a=>a=="--recover-widgets"))controller.RecoverWidgets();if(args.Any(a=>a=="--show"))controller.RevealPanel();app.Run();GC.KeepAlive(controller);return 0;
                 } catch(Exception ex){Store.Log(ex);MessageBox.Show("启动失败："+ex.Message,"Lumina");return 1;}
             }
         }
