@@ -8,7 +8,7 @@ using System.Text;
 using System.Windows;using System.Windows.Media;using System.Windows.Media.Imaging;using System.Windows.Interop;
 
 namespace GlassBoard {
-    public sealed class RunningWindow {public IntPtr Handle;public uint ProcessId;public string Path,Title,FolderPath,AppId,ProcessName;}
+    public sealed class RunningWindow {public IntPtr Handle;public uint ProcessId;public string Path,Title,FolderPath,AppId,ProcessName,Class;}
     public static partial class RunningWindows {
         delegate bool Callback(IntPtr window,IntPtr value);
         [DllImport("user32.dll")] static extern bool EnumWindows(Callback callback,IntPtr value);
@@ -71,6 +71,15 @@ namespace GlassBoard {
             finally{if(snapshot!=IntPtr.Zero&&snapshot!=new IntPtr(-1))CloseHandle(snapshot);if(buffer!=IntPtr.Zero)Marshal.FreeHGlobal(buffer);}
             return found;
         }
+        // Explorer windows are file-manager windows even when the shell folder cache has not
+        // caught up with a window that was opened moments ago. Matching by window class
+        // keeps the pinned File Explorer entry in charge of them from the first frame.
+        internal static bool IsFolderWindow(RunningWindow window){
+            if(window==null)return false;
+            if(!string.IsNullOrWhiteSpace(window.FolderPath))return true;
+            return string.Equals(window.Class,"CabinetWClass",StringComparison.OrdinalIgnoreCase)
+                ||string.Equals(window.Class,"ExploreWClass",StringComparison.OrdinalIgnoreCase);
+        }
         public static void Scan(){
             windows.Clear();toolhelp=null;if((DateTime.UtcNow-foldersAt).TotalSeconds>=25){foldersAt=DateTime.UtcNow;folders=ExplorerWindows.Read();}var byPid=new Dictionary<uint,string>();var appIds=new Dictionary<uint,string>();var names=new Dictionary<uint,string>();int own=Process.GetCurrentProcess().Id;
             EnumWindows((handle,value)=>{
@@ -80,7 +89,7 @@ namespace GlassBoard {
                 if(!byPid.TryGetValue(id,out path)){try{path=ProcessPath(id);}catch{path=null;}byPid[id]=path;appIds[id]=ProcessAppId(id);string processName=null;if(string.IsNullOrEmpty(path)){if(toolhelp==null)toolhelp=ToolhelpNames();toolhelp.TryGetValue(id,out processName);}names[id]=processName;}
                 var text=new StringBuilder(1024);GetWindowText(handle,text,text.Capacity);if(string.IsNullOrWhiteSpace(text.ToString()))return true;
                 var cls=new StringBuilder(128);GetClassName(handle,cls,cls.Capacity);if(new[]{"Progman","WorkerW","Shell_TrayWnd","Shell_SecondaryTrayWnd"}.Contains(cls.ToString()))return true;
-                string folder;folders.TryGetValue(handle.ToInt64(),out folder);string windowName;names.TryGetValue(id,out windowName);windows.Add(new RunningWindow{Handle=handle,ProcessId=id,Path=path,Title=text.ToString(),FolderPath=folder,AppId=appIds[id],ProcessName=windowName});return true;
+                string folder;folders.TryGetValue(handle.ToInt64(),out folder);string windowName;names.TryGetValue(id,out windowName);windows.Add(new RunningWindow{Handle=handle,ProcessId=id,Path=path,Title=text.ToString(),FolderPath=folder,AppId=appIds[id],ProcessName=windowName,Class=cls.ToString()});return true;
             },IntPtr.Zero);
         }
         static void Resolve(Entry entry){

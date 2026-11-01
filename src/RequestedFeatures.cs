@@ -10,7 +10,7 @@ if(string.Equals(Path.GetFileName(target),"explorer.exe",StringComparison.Ordina
 return string.Equals(Path.GetFileName(entry.Path??""),"File Explorer.lnk",StringComparison.OrdinalIgnoreCase);
 }
 static List<RunningWindow> MatchWindows(Entry entry,IEnumerable<string> paths){
-if(IsFileManager(entry)){var folders=windows.Where(w=>!string.IsNullOrWhiteSpace(w.FolderPath)).ToList();if(folders.Count>0)return folders;}
+if(IsFileManager(entry)){var folders=windows.Where(IsFolderWindow).ToList();if(folders.Count>0)return folders;}
 var candidates=paths.Where(p=>!string.IsNullOrWhiteSpace(p)).ToArray();
 var exact=windows.Where(w=>candidates.Contains(w.Path,StringComparer.OrdinalIgnoreCase)||WindowActivationRules.HostedMatch(entry,w.Path,w.AppId)).ToList();if(exact.Count>0)return exact;
 var names=candidates.Select(Path.GetFileName).Where(n=>!string.IsNullOrEmpty(n)&&!new[]{"update.exe","launcher.exe","rundll32.exe","explorer.exe"}.Contains(n.ToLowerInvariant())).ToArray();
@@ -19,7 +19,7 @@ string key=(entry.Name??"").Trim();if(key.Equals("DSH",StringComparison.OrdinalI
 return windows.Where(w=>!string.IsNullOrEmpty(w.Path)&&!string.IsNullOrEmpty(w.Title)&&w.Title.IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0&&(Path.GetFileNameWithoutExtension(w.Path).IndexOf(key,StringComparison.OrdinalIgnoreCase)>=0||candidates.Any(p=>string.Equals(Path.GetDirectoryName(p),Path.GetDirectoryName(w.Path),StringComparison.OrdinalIgnoreCase)))).ToList();}
 internal static bool WindowMatch(Entry entry,RunningWindow window){
 if(entry==null||window==null||entry.IsFolder)return false;
-if(IsFileManager(entry))return !string.IsNullOrWhiteSpace(window.FolderPath);
+if(IsFileManager(entry))return IsFolderWindow(window);
 var paths=WindowActivationRules.Executables(entry);
 if(paths.Any(p=>string.Equals(p,window.Path,StringComparison.OrdinalIgnoreCase)))return true;
 if(WindowActivationRules.HostedMatch(entry,window.Path,window.AppId))return true;

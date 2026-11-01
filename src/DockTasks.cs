@@ -55,7 +55,7 @@ namespace GlassBoard {
         static string TaskKey(RunningWindow window){
             // Hosted apps need a window identity, and an elevated process hides its image
             // path, so its windows are grouped by the name Toolhelp still reports.
-            if(!string.IsNullOrWhiteSpace(window.FolderPath))return "folder";
+            if(RunningWindows.IsFolderWindow(window))return "folder";
             string name=Path.GetFileName(window.Path??"");
             if(!string.IsNullOrEmpty(window.Path)&&!name.Equals("ApplicationFrameHost.exe",StringComparison.OrdinalIgnoreCase))return window.Path;
             name=window.ProcessName;
