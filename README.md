@@ -1,14 +1,16 @@
 # Lumina
 
-当前本地维护版本：**0.2.2**。Windows 桌面启动台，基于 GlassBoard 修改，使用 .NET Framework 4.8 / WPF。
+当前版本：**0.2.7**。Windows 桌面启动台，使用 .NET Framework 4.8 / WPF。
+
+本项目是基于 [GlassBoard](https://github.com/SENLIN-SAMA/win-.-)（作者 森霖Sama，MIT）修改的衍生版，保留原许可证、原作者身份与第三方素材声明。与原版相比的本地改动见 [LOCAL_CHANGES.txt](LOCAL_CHANGES.txt) 和 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 使用
 
 运行 `Lumina.exe` 或 `Start.cmd`。软件已经运行时，再次启动会直接唤回面板；命令行也可使用 `Lumina.exe --show`。主要功能包括 Dock、应用分组与搜索、运行窗口切换、桌面时钟、控制中心、快捷键、外观方案和工作区。具体可选组件以设置界面为准。
 
-当前版本没有系统窗口玻璃注入，也不自动下载或安装上游更新。上游 GitHub 链接用于查看原项目，不能保证上游包含有本地修改。
+当前版本没有系统窗口玻璃注入，也不自动下载或安装上游更新。上游链接用于查看原项目（[GlassBoard](https://github.com/SENLIN-SAMA/win-.-)），不能保证上游包含本项目的本地修改。
 
-完整操作说明见 [使用说明.md](使用说明.md)，本次变化见 [RELEASE_NOTES_v0.2.2.md](RELEASE_NOTES_v0.2.2.md)。旧版发布说明和 CHANGELOG 是历史记录，不代表当前功能。
+完整操作说明见 [使用说明.md](使用说明.md)，本次变化见 [RELEASE_NOTES_v0.2.7.md](RELEASE_NOTES_v0.2.7.md)。旧版发布说明和 CHANGELOG 是历史记录，不代表当前功能。
 
 ## 数据与恢复
 
