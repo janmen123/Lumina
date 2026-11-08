@@ -52,6 +52,16 @@ namespace Lumina {
             bool wide, bool maximizedOrCovers) {
             return visible && !minimized && reachesBand && wide && maximizedOrCovers;
         }
+
+        // 该不该把前景窗口当成"铺满屏幕的应用窗口"：桌面挂件和悬浮层要么是工具窗口
+        // （腾讯桌面整理、壁纸引擎），要么没有标题栏又不覆盖整块屏幕。
+        // 但浏览器 F11、Electron 客户端全屏、播放器全屏这类无边框全屏同样没有 WS_CAPTION、
+        // 也不是 IsZoomed，它们一定整块盖住显示器，所以"覆盖整块屏幕"要能单独成立，
+        // 否则这些窗口没法定成铺满，Dock 会一直压在它们的画面上。
+        internal static bool ForegroundWindow(bool toolWindow, bool caption, bool maximized,
+            bool coversMonitor) {
+            return !toolWindow && (caption || maximized || coversMonitor);
+        }
     }
 
     public static partial class WindowActivationRules {

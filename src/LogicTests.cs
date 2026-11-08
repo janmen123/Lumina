@@ -95,6 +95,12 @@ namespace Lumina {
             Check("窄窗口不算铺满",()=>!WindowReliabilityRules.Immersive(true,false,true,false,true));
             Check("没压进 Dock 带的窗口不算",()=>!WindowReliabilityRules.Immersive(true,false,false,true,true));
             Check("没最大化也没铺满的窗口不算",()=>!WindowReliabilityRules.Immersive(true,false,true,true,false));
+            // 无边框全屏（浏览器 F11、Electron 客户端、播放器全屏）：没有标题栏、也没最大化，但整块盖住显示器
+            Check("无标题栏但盖住整块屏幕的全屏窗口要认",()=>WindowReliabilityRules.ForegroundWindow(false,false,false,true));
+            Check("桌面挂件是工具窗口，盖住屏幕也不认",()=>!WindowReliabilityRules.ForegroundWindow(true,false,false,true));
+            Check("无标题栏又没盖满的悬浮层不认",()=>!WindowReliabilityRules.ForegroundWindow(false,false,false,false));
+            Check("有标题栏或最大化的普通窗口照常认",()=>WindowReliabilityRules.ForegroundWindow(false,true,false,false)&&WindowReliabilityRules.ForegroundWindow(false,false,true,false));
+            Check("无边框全屏算独占全屏收整条",()=>WindowReliabilityRules.Fullscreen(true,false,false,false,true));
             Check("贴边收起要连续两轮才生效",()=>InteractionRules.DuckStreak(0,true)==1&&InteractionRules.DuckStreak(1,true)==2&&!InteractionRules.DuckConfirmed(1)&&InteractionRules.DuckConfirmed(2));
             Check("判定中断就清零",()=>InteractionRules.DuckStreak(2,false)==0);
             Check("壁纸引擎不算游戏",()=>!GameDetection.IsGamePath("E:\\Steam1\\steamapps\\common\\wallpaper_engine\\bin\\wallpaper64.exe"));

@@ -23,7 +23,7 @@ namespace Lumina {
         public void StepDock(string path,int step){var state=BeginBoardEdit();if(!Dock.StepLayout(path,step))return;EndBoardEdit(state,"调整 Dock 顺序");Dock.Refresh(false);Board.Render();}
         void AddDockWindowMenus(ContextMenu menu,Entry entry){
             bool folder=entry.IsFolder||System.IO.Directory.Exists(entry.Path);
-            var opened=new MenuItem{Header="切换已打开的窗口"};var associate=new MenuItem{Header="关联正在运行的窗口",ToolTip="用于游戏、特殊启动器或无法自动识别的软件；关联后点击切回该软件"};menu.Items.Add(opened);if(!folder)menu.Items.Add(associate);var close=new MenuItem{Header="关闭窗口"};menu.Items.Add(close);close.Click+=(s,e)=>{foreach(var window in RunningWindows.For(entry))RunningWindows.RequestClose(window);};
+            var opened=new MenuItem{Header="切换已打开的窗口"};var associate=new MenuItem{Header="关联正在运行的窗口",ToolTip="用于游戏、特殊启动器或无法自动识别的软件；关联后点击切回该软件"};menu.Items.Add(opened);if(!folder)menu.Items.Add(associate);var close=new MenuItem{Header="关闭窗口"};menu.Items.Add(close);close.Click+=(s,e)=>{string failure=null;foreach(var window in RunningWindows.For(entry))if(!RunningWindows.RequestClose(window))failure=RunningWindows.CloseFailure;if(failure!=null)MessageBox.Show(failure,"Lumina");};
             menu.Opened+=(s,e)=>{
                 RunningWindows.Scan();opened.Items.Clear();associate.Items.Clear();var matches=RunningWindows.For(entry);opened.IsEnabled=close.IsEnabled=matches.Count>0;
                 foreach(var window in matches){var selected=window;var item=new MenuItem{Header=WindowLabel(selected),ToolTip=selected.Title};item.Click+=(ss,ee)=>RunningWindows.ActivateHandle(selected.Handle);opened.Items.Add(item);}

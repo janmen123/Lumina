@@ -91,7 +91,7 @@ namespace Lumina {
             if(taskGroups.Count==0)Items.Children.Add(DockButton("—",null,()=>SetTaskMode(false),"暂无正在运行的软件 · 点击返回常用"));
         }
         MenuItem TaskWindowItem(RunningWindow window){var selected=window;var item=new MenuItem{Header=string.IsNullOrWhiteSpace(window.Title)?"未命名窗口":window.Title,ToolTip=window.Title};item.Click+=(s,e)=>ActivateTask(selected.Handle);return item;}
-        ContextMenu TaskWindowMenu(TaskGroup group){var menu=MenuTheme.Create(C.Prefs.Light);foreach(var window in group.Windows)menu.Items.Add(TaskWindowItem(window));menu.Items.Add(new Separator());foreach(var window in group.Windows){var selected=window;var close=new MenuItem{Header=group.Windows.Count==1?"关闭窗口":"关闭 · "+window.Title};close.Click+=(s,e)=>{if(!RunningWindows.RequestClose(selected))ShowTaskHint("窗口已关闭或当前无法发送请求");};menu.Items.Add(close);}AddDockControls(menu);return menu;}
+        ContextMenu TaskWindowMenu(TaskGroup group){var menu=MenuTheme.Create(C.Prefs.Light);foreach(var window in group.Windows)menu.Items.Add(TaskWindowItem(window));menu.Items.Add(new Separator());foreach(var window in group.Windows){var selected=window;var close=new MenuItem{Header=group.Windows.Count==1?"关闭窗口":"关闭 · "+window.Title};close.Click+=(s,e)=>{if(!RunningWindows.RequestClose(selected))ShowTaskHint(RunningWindows.CloseFailure);};menu.Items.Add(close);}AddDockControls(menu);return menu;}
         void OpenTask(TaskGroup group,FrameworkElement owner){
             // Refresh before acting: a launcher may replace its window after an update.
             RunningWindows.Scan();

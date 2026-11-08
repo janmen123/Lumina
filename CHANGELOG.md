@@ -1,3 +1,28 @@
+﻿# Lumina 1.0.1（2026-11-09）
+
+1.0.0 之后的维护版，修好三处直接影响日常使用的问题：无边框全屏不再让 Dock 让开、Dock 在桌面与运行窗口之间的恢复/关闭误判，以及完整备份导出失败与分组撤销遗漏。发布包 `Lumina_v1.0.1_win64.zip` 与源码来自同一提交（tag `v1.0.1`），详细说明见 `RELEASE_NOTES_v1.0.1.md`。
+
+## Dock 与运行窗口
+
+- 无边框全屏（浏览器 F11、Electron 客户端、播放器全屏）没有 `WS_CAPTION`、也不 `IsZoomed`，1.0.0 为挡掉桌面挂件加的过滤把它们一起挡掉了，Dock 会一直压在画面上。判定收敛到 `WindowReliabilityRules.ForegroundWindow`：非工具窗口，且「有标题栏 / 最大化 / 整块盖住显示器」任一成立即算铺满；桌面挂件仍由 `WS_EX_TOOLWINDOW` 排除（`src/RuntimeReliability.cs`、`src/FeedbackUi.cs`）。
+- 点击桌面后清除记住的前台窗口，不再把桌面当成可恢复的应用；恢复附属弹窗前先恢复主窗口，避免点了没反应（`src/RunningWindows.cs`）。
+- 关闭运行窗口改走系统菜单的关闭命令（`WM_SYSCOMMAND` + `SC_CLOSE`），保留应用自己的「确认关闭」；发送失败时在 Dock 与预览卡片上提示原因并记录日志，不再静默失败（`src/RunningWindows.cs`、`src/DockTasks.cs`、`src/DockInteractions.cs`、`src/RequestedFeatures.cs`）。
+- 激活窗口抽出 `src/WindowActivationAttempt.cs`，恢复后 250ms 再核验：异步恢复期间最小化窗口会短暂成为前台，旧逻辑据此过早返回；现在要求非最小化且确实在前台，未达成才闪任务栏并记录 `WINDOW_SWITCH not completed`，用户有新输入时放弃核验。
+
+## 控制中心与备份
+
+- 修复控制中心无线读取初始化 `MakeGenericType` 抛异常、蓝牙只能走兼容列表且开关不可用的问题（`src/SystemControl.ps1`）。
+- 修复完整备份导出没有收集 `notes.json`、校验却强制读取导致导出失败：旧便签存在则完整保留，不存在则允许备份，恢复不删除目标里的旧便签；校验改用 `Store.ReadLayout` 并拒绝不支持的配置版本（`src/ProductCore.cs`）。
+- 修复分组改名未同步大小写不同的成员关系与学习规则；撤销/重做分组改名、删除时补上桌面文件夹/文档自动归类目标与开关（`src/FeatureCore.cs`、`src/ProductCore.cs`）。
+
+## 验证
+
+- `Build.ps1` 构建通过，产物 `FileVersion` / `ProductVersion` 为 `1.0.1.0`。
+- `--test-logic`：`LOGIC PASS 75 项检查，失败 0 项`，其中新增 5 项前台窗口判定。
+- `verification\RunRegression.ps1`：既有回归与可靠性 74 项断言全 PASS；新增 `DeepAuditRegression` 的 9 项备份/分组回归全 PASS（`passed=9 failed=0`）。
+- 新增 `verification/DockWindowRegression.cs`（15 项窗口生命周期，含关闭请求与异步激活核验）与 `verification/RadioTypeTests.ps1`（嵌入脚本的 WinRT 泛型类型），均对 1.0.1 产物 PASS。
+- `verification\RunSelfTest.ps1`：界面自检 PASS，核对 46 个真实配置文件后 0 变化。
+
 # Lumina 1.0.0（2026-11-02，正式版）
 
 版本号由 0.2.7 提升到 1.0.0（程序集、清单、界面与托盘统一取 `src/AppInfo.cs`），功能与 0.2.7 一致；首次提供可直接下载的运行包 `Lumina_v1.0.0_win64.zip`，源码与发布包来自同一提交（tag `v1.0.0`）。README 增加下载入口与上游署名，使用说明标题去掉硬编码版本号。详细说明见 RELEASE_NOTES_v1.0.0.md。

@@ -22,3 +22,11 @@ foreach ($name in @('ReliabilityRegression.cs','PersistenceTests.cs','DockPointe
 if ($LASTEXITCODE -ne 0) { throw 'Regression compilation failed.' }
 & $runner
 if ($LASTEXITCODE -ne 0) { throw 'Regression checks failed.' }
+
+# Exercise backup export/restore and group undo against the same production binary.
+$deepRunner = Join-Path (Split-Path -Parent $Binary) 'Lumina.DeepRegression.exe'
+$deepArgs = @('/nologo','/target:exe','/langversion:5','/codepage:65001',('/out:' + $deepRunner),('/reference:' + $Binary),'/reference:System.dll','/reference:System.Core.dll','/reference:System.Runtime.Serialization.dll',(Join-Path $PSScriptRoot 'DeepAuditRegression.cs'))
+& (Join-Path $framework 'csc.exe') @deepArgs
+if ($LASTEXITCODE -ne 0) { throw 'Deep regression compilation failed.' }
+& $deepRunner
+if ($LASTEXITCODE -ne 0) { throw 'Backup/group regression checks failed.' }

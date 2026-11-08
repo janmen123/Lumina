@@ -102,10 +102,12 @@ namespace Lumina {
             }
             .Contains(cls.ToString()))return false;
             // 桌面挂件和悬浮层（腾讯桌面整理、壁纸引擎等）是工具窗口、没有标题栏，
-            // 也不该被当成"铺满屏幕的应用窗口"，否则 Dock 会在桌面上自己收起来。
-            if((GetWindowLong(window,-20)&0x00000080)!=0)return false;
-            if((GetWindowLong(window,-16)&0x00C00000)==0&&!IsZoomed(window))return false;
-            return GetWindowRect(window,out rect)&&GetMonitorInfo(MonitorFromWindow(window,2),ref monitor);
+            // 也不该被当成"铺满屏幕的应用窗口"，否则 Dock 会在桌面上自己收起来；
+            // 但无边框全屏（浏览器 F11、Electron 客户端全屏、播放器全屏）同样没有标题栏、
+            // 也不是最大化，这种一定整块盖住显示器，必须放行。
+            if(!GetWindowRect(window,out rect)||!GetMonitorInfo(MonitorFromWindow(window,2),ref monitor))return false;
+            if(!WindowReliabilityRules.ForegroundWindow((GetWindowLong(window,-20)&0x00000080)!=0,(GetWindowLong(window,-16)&0x00C00000)!=0,IsZoomed(window),Covers(rect,monitor)))return false;
+            return true;
         }
     }
     public partial class Controller {

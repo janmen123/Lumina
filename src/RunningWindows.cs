@@ -239,12 +239,17 @@ namespace Lumina {
             return entry==null?0:For(entry).Count;
         }
         [DllImport("user32.dll",SetLastError=true)]static extern bool PostMessage(IntPtr window,uint message,IntPtr w,IntPtr l);
+        public static string CloseFailure { get; private set; }
         public static bool RequestClose(RunningWindow window) {
-            if(window==null||!IsWindow(window.Handle))return false;
-            uint pid;
-            GetWindowThreadProcessId(window.Handle,out pid);
-            if(pid!=window.ProcessId)return false;
-            return PostMessage(window.Handle,0x10,IntPtr.Zero,IntPtr.Zero);
+            CancelKeepVisible();
+            CloseFailure=null;
+            if(!Valid(window)) { CloseFailure="此窗口已关闭，请重新打开预览。"; return false; }
+            // Follow the caption/system-menu close route, preserving application prompts.
+            if(PostMessage(window.Handle,0x112,new IntPtr(0xF060),IntPtr.Zero))return true;
+            int error=Marshal.GetLastWin32Error();
+            CloseFailure=error==5?"Windows 拒绝了关闭请求，请使用该软件自身的关闭按钮。":"无法发送关闭请求，请使用该软件自身的关闭按钮。";
+            Store.Trace("ERROR WINDOW_CLOSE rejected handle="+window.Handle+" error="+error);
+            return false;
         }
         [DllImport("user32.dll")]static extern bool ShowWindow(IntPtr window,int command);
         [DllImport("kernel32.dll")]static extern uint GetCurrentThreadId();
@@ -264,7 +269,9 @@ namespace Lumina {
         static uint rememberedProcess;
         public static void RememberForeground() {
             var handle=GetForegroundWindow();
-            if(handle==IntPtr.Zero||IsOwnWindow(handle)||IsShellSurface(handle))return;
+            if(handle==IntPtr.Zero||IsOwnWindow(handle))return;
+            if(IsDesktopSurface(handle)){remembered=IntPtr.Zero;rememberedProcess=0;return;}
+            if(IsShellSurface(handle))return;
             remembered=handle;
             rememberedProcess=OwnerOf(handle);
         }
@@ -275,6 +282,11 @@ namespace Lumina {
         }
         // The taskbar, Start menu and the ForegroundStaging helper are not the app
         // the user is working in; they must not replace the remembered app.
+        static bool IsDesktopSurface(IntPtr handle) {
+            var name=new StringBuilder(128);
+            GetClassName(handle,name,name.Capacity);
+            return name.ToString()=="Progman"||name.ToString()=="WorkerW";
+        }
         static bool IsShellSurface(IntPtr handle) {
             if(handle==IntPtr.Zero)return true;
             var text=new StringBuilder(128);
@@ -290,6 +302,7 @@ namespace Lumina {
         }
         static IntPtr EffectiveForeground() {
             var handle=GetForegroundWindow();
+            if(IsDesktopSurface(handle))return IntPtr.Zero;
             if(handle!=IntPtr.Zero&&!IsOwnWindow(handle)&&!IsShellSurface(handle))return handle;
             if(remembered!=IntPtr.Zero&&IsWindow(remembered)&&OwnerOf(remembered)==rememberedProcess&&!IsShellSurface(remembered))return remembered;
             return IntPtr.Zero;
@@ -338,17 +351,14 @@ namespace Lumina {
         // and activates that window, and a posted SC_MINIMIZE still minimizes it.
         static bool ActivateWindow(IntPtr handle) {
             if(handle==IntPtr.Zero||!IsWindow(handle))return false;
-            if(IsIconic(handle))ShowWindowAsync(handle,9);
-            ForceForeground(handle);
-            if(GetForegroundWindow()==handle)return true;
-            try {
-                SwitchToThisWindow(handle,true);
-            }
-            catch(Exception ex) {
-                Store.Log(ex);
-            }
-            return GetForegroundWindow()==handle;
+            return WindowActivationAttempt.Run(
+                ()=>IsIconic(handle),()=>GetForegroundWindow()==handle,
+                ()=>ShowWindowAsync(handle,9),()=>ForceForeground(handle),()=> {
+                    try { SwitchToThisWindow(handle,true); }
+                    catch(Exception ex) { Store.Log(ex); }
+                });
         }
+
         static bool MinimizeWindow(IntPtr handle) {
             if(handle==IntPtr.Zero||!IsWindow(handle))return false;
             ShowWindow(handle,6);
@@ -360,24 +370,40 @@ namespace Lumina {
         public static void Focus(IntPtr handle) {
             CancelKeepVisible();
             if(handle==IntPtr.Zero||!IsWindow(handle))return;
-            ActivateWindow(handle);
+            ActivateHandle(handle);
         }
         public static bool ActivateHandle(IntPtr handle) {
             CancelKeepVisible();
             if(!IsWindow(handle))return false;
+            // Restore the owner first: its last active dialog can be visible while
+            // the owner remains minimized, making activation appear to do nothing.
+            if(IsIconic(handle))ActivateWindow(handle);
             var popup=GetLastActivePopup(handle);
             var target=popup!=IntPtr.Zero&&IsWindowVisible(popup)?popup:handle;
-            if(!ActivateWindow(target)) {
-                var flash=new FLASHWINFO {
-                    Size=(uint)Marshal.SizeOf(typeof(FLASHWINFO)),Window=target,Flags=3,Count=2
-                }
-                ;
-                FlashWindowEx(ref flash);
-                Store.Trace("WINDOW_SWITCH foreground request blocked handle="+target);
-            }
+            if(!ActivateWindow(target))VerifyActivation(target);
             // A recognized existing window must never fall through to launching
             // another instance merely because Windows refused foreground focus.
             return true;
+        }
+        static System.Windows.Threading.DispatcherTimer activationCheck;
+        static void VerifyActivation(IntPtr target) {
+            // A posted restore may finish after ActivateWindow returns. Do not
+            // flash the taskbar or log a failure until the target has had time
+            // to process it; abandon the check when the user does anything else.
+            uint pid=OwnerOf(target),input=InputStamp();
+            var timer=new System.Windows.Threading.DispatcherTimer { Interval=TimeSpan.FromMilliseconds(250) };
+            activationCheck=timer;
+            timer.Tick+=(sender,args)=> {
+                timer.Stop();
+                if(activationCheck!=timer)return;
+                activationCheck=null;
+                if(InputStamp()!=input||!IsWindow(target)||OwnerOf(target)!=pid)return;
+                if(!IsIconic(target)&&OwnsForeground(target,GetForegroundWindow()))return;
+                var flash=new FLASHWINFO { Size=(uint)Marshal.SizeOf(typeof(FLASHWINFO)),Window=target,Flags=3,Count=2 };
+                FlashWindowEx(ref flash);
+                Store.Trace("ERROR WINDOW_SWITCH not completed handle="+target+" minimized="+IsIconic(target));
+            };
+            timer.Start();
         }
         // Some programs (the elevated 5E client does this) minimize themselves again
         // about two seconds after being restored. Re-assert for a short, bounded time
@@ -394,6 +420,7 @@ namespace Lumina {
         static readonly Stopwatch keepWatch = new Stopwatch();
         internal static int KeepWindowSeconds = 3;
         internal static void CancelKeepVisible() {
+            if(activationCheck!=null){activationCheck.Stop();activationCheck=null;}
             if (keepTimer != null) keepTimer.Stop();
             keepWatch.Reset();
             keepWindow = null;
@@ -469,7 +496,7 @@ namespace Lumina {
             }
             ActivateHandle(window.Handle);
             if(string.IsNullOrEmpty(window.Path))KeepVisible(window);
-            Store.Trace("WINDOW activate handle="+window.Handle);
+            Store.Trace("WINDOW activate handle="+window.Handle+" iconicAfter="+IsIconic(window.Handle)+" foregroundAfter="+GetForegroundWindow());
             return true;
         }
         internal static bool ToggleWindow(RunningWindow window) {

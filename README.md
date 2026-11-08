@@ -1,12 +1,12 @@
 # Lumina
 
-当前版本：**1.0.0**。Windows 桌面启动台，使用 .NET Framework 4.8 / WPF。
+当前版本：**1.0.1**。Windows 桌面启动台，使用 .NET Framework 4.8 / WPF。
 
 本项目是基于 [GlassBoard](https://github.com/SENLIN-SAMA/win-.-)（作者 森霖Sama，MIT）修改的衍生版，保留原许可证、原作者身份与第三方素材声明。与原版相比的本地改动见 [LOCAL_CHANGES.txt](LOCAL_CHANGES.txt) 和 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 下载
 
-Windows 10 / 11（x64），需要 .NET Framework 4.8：到 [Releases](https://github.com/janmen123/Lumina/releases/latest) 下载 `Lumina_v1.0.0_win64.zip`，解压后运行 `Lumina.exe`。压缩包内 `lib/NPSMLib.dll` 是可选组件，程序会校验它的 SHA-256；缺失时音乐封面增强功能不可用，其余功能正常。
+Windows 10 / 11（x64），需要 .NET Framework 4.8：到 [Releases](https://github.com/janmen123/Lumina/releases/latest) 下载 `Lumina_v1.0.1_win64.zip`，解压后运行 `Lumina.exe`。压缩包内 `lib/NPSMLib.dll` 是可选组件，程序会校验它的 SHA-256；缺失时音乐封面增强功能不可用，其余功能正常。
 
 ## 使用
 
@@ -14,7 +14,7 @@ Windows 10 / 11（x64），需要 .NET Framework 4.8：到 [Releases](https://gi
 
 当前版本没有系统窗口玻璃注入，也不自动下载或安装上游更新。上游链接用于查看原项目（[GlassBoard](https://github.com/SENLIN-SAMA/win-.-)），不能保证上游包含本项目的本地修改。
 
-完整操作说明见 [使用说明.md](使用说明.md)，本次变化见 [RELEASE_NOTES_v1.0.0.md](RELEASE_NOTES_v1.0.0.md)。旧版发布说明和 CHANGELOG 是历史记录，不代表当前功能。
+完整操作说明见 [使用说明.md](使用说明.md)，本次变化见 [RELEASE_NOTES_v1.0.1.md](RELEASE_NOTES_v1.0.1.md)。旧版发布说明和 CHANGELOG 是历史记录，不代表当前功能。
 
 ## 数据与恢复
 

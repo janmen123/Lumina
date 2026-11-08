@@ -29,7 +29,7 @@ function Initialize-Controls {
     $script:radioType=Resolve-ControlType 'Windows.Devices.Radios.Radio' 'Windows.System.Devices'
     $script:radioStateType=Resolve-ControlType 'Windows.Devices.Radios.RadioState' 'Windows.System.Devices'
     $script:radioAccessType=Resolve-ControlType 'Windows.Devices.Radios.RadioAccessStatus' 'Windows.System.Devices'
-    $script:radioListType=([type]'System.Collections.Generic.IReadOnlyList`1').MakeGenericType($script:radioType)
+    $script:radioListType=[System.Collections.Generic.IReadOnlyList[Windows.Devices.Radios.Radio]]
     $script:controlsReady=$true
 }
 function Initialize-Bluetooth {
